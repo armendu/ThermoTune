@@ -6,6 +6,7 @@ import Observation
 @MainActor
 @Observable
 final class HardwareMonitor {
+    /// Average CPU and GPU temperature at one refresh, for the chart.
     struct Sample: Identifiable {
         let id = UUID()
         let date: Date
@@ -42,7 +43,8 @@ final class HardwareMonitor {
         }
     }
 
-    static let historyDuration: TimeInterval = 300
+    /// Long enough for the chart's widest time range (an hour).
+    static let historyDuration: TimeInterval = 3600
 
     let profiles: ProfileStore
 
@@ -95,7 +97,7 @@ final class HardwareMonitor {
             (try? smc.read(key)).map { TemperatureSensor(key: key, value: $0) }
         }
         guard !sensors.isEmpty else { return }
-        history.append(Sample(date: .now, cpu: cpuSummary?.maximum, gpu: gpuSummary?.maximum))
+        history.append(Sample(date: .now, cpu: cpuSummary?.average, gpu: gpuSummary?.average))
         history.removeAll { $0.date.timeIntervalSinceNow < -Self.historyDuration }
         applyActiveProfile()
     }

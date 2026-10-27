@@ -7,6 +7,7 @@ enum PreferenceKey {
     static let restoreAutomaticOnQuit = "restoreAutomaticOnQuit"
     static let showMenuBarExtra = "showMenuBarExtra"
     static let menuBarSource = "menuBarSource"
+    static let chartWindowMinutes = "chartWindowMinutes"
     static let profiles = "profiles"
     static let activeProfileID = "activeProfileID"
 
@@ -17,6 +18,7 @@ enum PreferenceKey {
             restoreAutomaticOnQuit: true,
             showMenuBarExtra: true,
             menuBarSource: SensorSource.cpu.rawValue,
+            chartWindowMinutes: 5,
         ])
     }
 }
