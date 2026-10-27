@@ -9,7 +9,7 @@ SwiftUI app that reads the System Management Controller (SMC) directly: no kerne
 no background daemons, no third-party code.
 
 <p align="center">
-  <img src="docs/main-window.png" width="520" alt="ThermoTune's main window: CPU, GPU and fan tiles, a temperature chart, per-fan Auto/Manual/Max controls, and temperatures grouped by sensor type">
+  <img src="docs/main-window.png" width="520" alt="ThermoTune's main window: CPU, GPU and fan tiles, an average-temperature chart, per-fan Auto/Manual/Max controls with each fan's top speed, and temperatures grouped by sensor type">
 </p>
 
 > [!WARNING]
@@ -22,7 +22,7 @@ no background daemons, no third-party code.
 
 - **Temperatures:** finds every temperature sensor your Mac has. Shows the hottest and average
   reading for the CPU (performance and efficiency cores separately on Apple silicon) and the
-  GPU, plus a 5-minute chart. Hover over a group's temperatures to see every sensor behind
+  GPU, plus a chart of the average CPU and GPU temperature over the last 1 to 60 minutes. Hover over a group's temperatures to see every sensor behind
   them, or open **All Sensors…** for the full list.
 - **Fan control:** see each fan's current and maximum speed, and set it to **Auto** (macOS
   decides), **Manual** (pick a speed with a slider) or **Max**. **All Max** and **All Auto**
@@ -39,7 +39,8 @@ no background daemons, no third-party code.
 - **Menu bar:** a live temperature in the menu bar, with a quick panel for profiles and fan
   actions. ThermoTune keeps running there after you close its window.
 - **Preferences (⌘,):** launch at login, °C or °F, refresh rate, which temperature the menu bar
-  shows, and what happens to the fans when you quit.
+  shows, and what happens to the fans when you quit. The About tab has the version, license
+  and links to the source.
 
 ## Requirements
 
