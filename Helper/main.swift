@@ -36,7 +36,7 @@ do {
 
     if args == ["status"] {
         for fan in smc.fans() {
-            print("\(fan.id) actual=\(Int(fan.actual)) target=\(Int(fan.target)) min=\(Int(fan.minimum)) max=\(Int(fan.maximum)) manual=\(fan.isManual)")
+            print("\(fan.id) actual=\(Int(fan.actual)) target=\(Int(fan.target)) min=\(Int(fan.minimum)) max=\(Int(fan.maximum)) manual=\(fan.isManual) unlocked=\(fan.isControlUnlocked)")
         }
         exit(0)
     }

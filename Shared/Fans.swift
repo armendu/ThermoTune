@@ -6,9 +6,17 @@ struct FanInfo: Identifiable, Equatable, Sendable {
     var minimum: Double
     var maximum: Double
     var target: Double
+    /// This fan's own mode is manual.
     var isManual: Bool
+    /// The `Ftst` unlock is on. That suspends macOS thermal control for every fan,
+    /// so a fan whose own mode is automatic is still not being managed: it is held
+    /// at its minimum speed until every fan is back on automatic.
+    var isControlUnlocked: Bool
 
     var name: String { "Fan \(id + 1)" }
+
+    /// True when macOS is managing this fan, i.e. nothing needs handing back.
+    var isSystemControlled: Bool { !isManual && !isControlUnlocked }
 }
 
 extension SMC {
@@ -34,14 +42,9 @@ extension SMC {
             minimum: (try? read("F\(index)Mn")) ?? 0,
             maximum: (try? read("F\(index)Mx")) ?? 0,
             target: (try? read("F\(index)Tg")) ?? 0,
-            isManual: isFanManual(index)
+            isManual: hasManualMode(index),
+            isControlUnlocked: isFanControlUnlocked
         )
-    }
-
-    /// True when macOS is not managing this fan: it is in manual mode, or the
-    /// `Ftst` unlock is active, which suspends thermal control for every fan.
-    func isFanManual(_ index: Int) -> Bool {
-        isFanControlUnlocked || hasManualMode(index)
     }
 
     var isFanControlUnlocked: Bool {

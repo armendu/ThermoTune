@@ -50,6 +50,13 @@ private struct GroupRow: View {
         }
     }
 
+    @State private var isHovering = false
+    @State private var showsBreakdown = false
+    /// Set by a click, so the breakdown stays open when the pointer moves into it
+    /// (the Other group has too many sensors to read without scrolling).
+    @State private var isPinned = false
+    @State private var hoverDelay: Task<Void, Never>?
+
     var body: some View {
         if let summary = TemperatureSummary(sensors) {
             HStack(spacing: 12) {
@@ -60,14 +67,47 @@ private struct GroupRow: View {
                     .padding(.horizontal, 5)
                     .background(.quaternary, in: Capsule())
                 Spacer()
-                Text("avg \(summary.average.degrees)")
-                    .foregroundStyle(.secondary)
-                Text(summary.maximum.degrees)
-                    .fontWeight(.semibold)
-                    .foregroundStyle(Color.temperature(summary.maximum))
-                    .frame(width: 40, alignment: .trailing)
+                HStack(spacing: 12) {
+                    Text("avg \(summary.average.degrees)")
+                        .foregroundStyle(.secondary)
+                    Text(summary.maximum.degrees)
+                        .fontWeight(.semibold)
+                        .foregroundStyle(Color.temperature(summary.maximum))
+                        .frame(width: 40, alignment: .trailing)
+                }
+                .padding(.horizontal, 6)
+                .padding(.vertical, 2)
+                .background(isHovering || showsBreakdown ? Color.primary.opacity(0.08) : .clear,
+                            in: RoundedRectangle(cornerRadius: 5))
+                .contentShape(Rectangle())
+                .onHover(perform: hover)
+                .onTapGesture {
+                    isPinned = true
+                    showsBreakdown = true
+                }
+                .popover(isPresented: $showsBreakdown, arrowEdge: .trailing) {
+                    SensorBreakdown(title: title, sensors: sensors)
+                }
+                .onChange(of: showsBreakdown) {
+                    if !showsBreakdown { isPinned = false }
+                }
             }
             .monospacedDigit()
+            .padding(.trailing, -6)
+        }
+    }
+
+    private func hover(_ hovering: Bool) {
+        isHovering = hovering
+        hoverDelay?.cancel()
+        if hovering {
+            // A short delay, so sweeping the pointer across the list doesn't flash popovers.
+            hoverDelay = Task {
+                try? await Task.sleep(for: .milliseconds(350))
+                if !Task.isCancelled { showsBreakdown = true }
+            }
+        } else if !isPinned {
+            showsBreakdown = false
         }
     }
 }

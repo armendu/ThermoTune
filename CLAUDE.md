@@ -155,13 +155,18 @@ thermal control stayed off with fans pinned near minimum while the UI said *Auto
 relock decision excludes the fan just written, and the UI holds a requested mode in
 `pendingModes` for a grace period instead of trusting the next read.
 
-**`Ftst = 1` suspends thermal control for every fan, not just the one you set.** So while it is
-set, `isFanManual` is true for all fans and the UI says so. Never leave `Ftst = 1` with no fan
-in manual mode.
+**`Ftst = 1` suspends thermal control for every fan, not just the one you set.** A fan whose own
+mode is automatic is then held at its minimum speed, not managed. `FanInfo` keeps the two facts
+apart: `isManual` is the fan's own mode, `isControlUnlocked` is `Ftst`, and
+`isSystemControlled` needs both false. They used to be one flag, so after *All Max*, setting one
+fan to Auto made it read as manual again and the switch snapped back: there was no visible way
+to stop the fans. Now that fan shows Auto with a "held at minimum" note, and *All Auto* is the
+way out. Never leave `Ftst = 1` with no fan in manual mode.
 
-**Mode values are not just 0 and 1.** At idle this M3 Pro reports `F0Md = 3` (system control).
-ThermoTune writes `1` for manual and `0` for automatic; after `Ftst` goes back to 0, the system
-sets 3 again by itself. Manual means `== 1`, not "anything but 0".
+**Mode values are not just 0 and 1.** This M3 Pro has reported `F0Md = 3` with its fans stopped
+at idle, and `0` while macOS was running them. ThermoTune writes `1` for manual and `0` for
+automatic. Manual means `== 1`, not "anything but 0"; whether macOS is in charge is `Ftst == 0`
+plus a mode other than 1.
 
 **The `TC*` package sensors read well above the cores, even at idle.** `TCMz` sat at ~72° while
 the hottest core read 59°. Counting them made the CPU tile ~14° too hot and would have spun
@@ -221,7 +226,7 @@ Until then, a change is verified by:
 | it compiles | `make build` and `make release` |
 | it looks right | `make shot`, then read the PNGs |
 | fan writes work | run the installed helper directly: `make helper-status`, then `set 0 3000`, `max-all`, `auto 0`, `auto-all` |
-| fans were given back | `make fans-auto`; `F0Md`/`F1Md` read 3 and `Ftst` reads 0 |
+| fans were given back | `make fans-auto`; every fan reports `manual=false unlocked=false` |
 
 **Always end hardware testing with `make fans-auto` and check the result.** This is somebody's
 actual laptop. A fan left in manual mode, or `Ftst` left at 1, means macOS is no longer

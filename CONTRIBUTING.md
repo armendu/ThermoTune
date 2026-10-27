@@ -67,7 +67,7 @@ There's no automated test suite yet, so please check your change by hand:
    to `build/screenshots/`, handy for the pull request description.
 3. **If your change touches fans**, try it on your own Mac and say which model in the pull
    request. Afterwards, run `make fans-auto` and check that `make helper-status` shows every fan
-   with `manual=false`.
+   with `manual=false unlocked=false`.
 
 Never leave a fan in manual mode after testing. While a fan is manual, macOS isn't managing that
 Mac's temperature.
