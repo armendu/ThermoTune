@@ -1,0 +1,40 @@
+name: CI
+
+# Main and pull requests only. Day-to-day work happens on `development`, and what matters
+# about a commit there is whether it survives the pull request into main, which the
+# `pull_request` trigger covers.
+on:
+  push:
+    branches:
+      - main
+  pull_request:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: ${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+
+# Actions are pinned to commit SHAs, not tags: a tag is mutable, so `@v7` is a promise the
+# action's owner can rewrite under us. The trailing comment is the human-readable version.
+jobs:
+  build:
+    # Pinned rather than `macos-latest`, so an image migration can't change the toolchain
+    # under a pull request. macos-26 is Apple silicon with Xcode 26; the project needs 16+.
+    # No hardware is involved: this proves ThermoTune compiles, not that fans move.
+    runs-on: macos-26
+    timeout-minutes: 20
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+
+      - name: Toolchain
+        run: xcodebuild -version && swift --version
+
+      # Debug and Release both: they are compiled differently (the DEBUG flag, -Onone vs
+      # whole-module -O), and a mistake can hide in either. Release is what users install.
+      - name: Debug build
+        run: make build
+
+      - name: Release build
+        run: make release

@@ -1,0 +1,25 @@
+name: Feature request
+description: Suggest an idea or an improvement.
+labels: [enhancement]
+body:
+  - type: textarea
+    id: problem
+    attributes:
+      label: What problem would this solve?
+      description: Describe the situation, not only the solution. "I want my Mac quiet in meetings but cool when I'm compiling" is more useful than "add a schedule".
+    validations:
+      required: true
+  - type: textarea
+    id: idea
+    attributes:
+      label: What would you like ThermoTune to do?
+    validations:
+      required: true
+  - type: textarea
+    id: alternatives
+    attributes:
+      label: Alternatives you've considered
+  - type: input
+    id: model
+    attributes:
+      label: Mac model (if it matters)
