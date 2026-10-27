@@ -41,7 +41,7 @@ run: release ## build Release, then launch it (quits a running copy first)
 
 # SIGTERM rather than SIGKILL: the app restores automatic fan control on SIGTERM, and a
 # killed app would leave any manual speed it had set in place.
-shot: release ## save the app's windows to build/screenshots (TAB=general|profiles|helper adds Preferences)
+shot: release ## save the app's windows to build/screenshots (TAB=general|profiles|helper|about adds Preferences)
 	-@pkill -TERM -x ThermoTune; sleep 1
 	@rm -rf "$(SHOTS)"
 	@THERMOTUNE_SNAPSHOT_DIR="$(CURDIR)/$(SHOTS)" THERMOTUNE_SETTINGS_TAB="$(TAB)" \

@@ -9,7 +9,7 @@ import AppKit
 /// installed (Release) helper as out of date.
 ///
 ///   THERMOTUNE_SNAPSHOT_DIR   where to write window-<n>.png
-///   THERMOTUNE_SETTINGS_TAB   general | profiles | helper: also open Preferences on that tab
+///   THERMOTUNE_SETTINGS_TAB   general | profiles | helper | about: also open Preferences on that tab
 enum WindowSnapshot {
     static func scheduleIfRequested() {
         let environment = ProcessInfo.processInfo.environment
