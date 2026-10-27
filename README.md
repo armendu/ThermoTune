@@ -22,9 +22,11 @@ no background daemons, no third-party code.
 
 - **Temperatures:** finds every temperature sensor your Mac has. Shows the hottest and average
   reading for the CPU (performance and efficiency cores separately on Apple silicon) and the
-  GPU, plus a 5-minute chart. **All Sensors…** lists every individual sensor.
-- **Fan control:** set each fan to **Auto** (macOS decides), **Manual** (pick a speed with a
-  slider) or **Max**, or use **All Max** for every fan at once.
+  GPU, plus a 5-minute chart. Hover over a group's temperatures to see every sensor behind
+  them, or open **All Sensors…** for the full list.
+- **Fan control:** see each fan's current and maximum speed, and set it to **Auto** (macOS
+  decides), **Manual** (pick a speed with a slider) or **Max**. **All Max** and **All Auto**
+  switch every fan at once.
 - **Profiles:** reusable fan behaviours for every fan:
   - *System Automatic*: macOS manages the fans.
   - *Fixed Speed*: a set share of each fan's speed range.

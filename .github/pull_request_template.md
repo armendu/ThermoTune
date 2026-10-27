@@ -11,7 +11,7 @@
 
 - Mac model and macOS version tested on:
 - [ ] Fan changes behave as expected on that Mac
-- [ ] Ran `make fans-auto` afterwards, and `make helper-status` shows `manual=false` for every fan
+- [ ] Ran `make fans-auto` afterwards, and `make helper-status` shows `manual=false unlocked=false` for every fan
 
 ### If this touches `Helper/` or `Shared/`
 
