@@ -122,7 +122,7 @@ final class HardwareMonitor {
 
         switch profile.kind {
         case .automatic:
-            if fans.contains(where: \.isManual) { sendAllAutomatic() }
+            if !fans.allSatisfy(\.isSystemControlled) { sendAllAutomatic() }
         case .max:
             if fans.contains(where: { $0.mode != .max }) { sendAllMax() }
         case .fixed, .curve:
@@ -253,7 +253,7 @@ final class HardwareMonitor {
         guard UserDefaults.standard.bool(forKey: PreferenceKey.restoreAutomaticOnQuit),
               HelperInstaller.state() == .ready,
               let smc = try? SMC(),
-              smc.fans().contains(where: \.isManual) else { return }
+              !smc.fans().allSatisfy(\.isSystemControlled) else { return }
         _ = try? HelperInstaller.run(["auto-all"])
     }
 }

@@ -31,7 +31,12 @@ struct ContentView: View {
                         if monitor.fans.count > 1 {
                             Button("All Max") { monitor.setAllMax() }
                                 .buttonStyle(.link)
+                                .disabled(monitor.fans.allSatisfy { monitor.mode(of: $0) == .max })
                         }
+                        Button("All Auto") { monitor.setAllAutomatic() }
+                            .buttonStyle(.link)
+                            .disabled(monitor.fans.allSatisfy(\.isSystemControlled))
+                            .help("Hand every fan back to macOS")
                     }
                 }
             } footer: {
@@ -90,7 +95,7 @@ private struct FanTile: View {
 
     var body: some View {
         let fastest = fans.map(\.actual).max() ?? 0
-        let mode = fans.contains(where: \.isManual) ? "manual" : "automatic"
+        let mode = fans.allSatisfy(\.isSystemControlled) ? "automatic" : "manual"
         Tile(title: "Fans", symbol: "fan",
              value: fastest < 1 ? "Off" : "\(Int(fastest))",
              caption: fastest < 1 ? mode : "RPM · \(mode)")

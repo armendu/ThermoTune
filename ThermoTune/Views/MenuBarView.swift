@@ -37,7 +37,7 @@ struct MenuBarView: View {
                 ProfilePicker()
                 Divider()
                 Button("Set All Fans to Max") { monitor.setAllMax() }
-                if monitor.fans.contains(where: \.isManual) {
+                if !monitor.fans.allSatisfy(\.isSystemControlled) {
                     Button("Reset Fans to Automatic") { monitor.setAllAutomatic() }
                 }
             }
