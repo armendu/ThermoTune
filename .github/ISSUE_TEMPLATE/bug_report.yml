@@ -1,0 +1,58 @@
+name: Bug report
+description: Something is wrong, like a wrong reading, a fan that won't change, or a crash.
+labels: [bug]
+body:
+  - type: markdown
+    attributes:
+      value: |
+        Thanks for reporting. Fan and sensor behaviour differs between Mac models, so the
+        hardware details below matter more than usual.
+
+        **If your fans are stuck in manual mode right now**, choose *Reset Fans to Automatic*
+        from ThermoTune's menu bar item, or run
+        `/Library/PrivilegedHelperTools/com.armend.ThermoTune.Helper auto-all`.
+  - type: textarea
+    id: what-happened
+    attributes:
+      label: What happened?
+      description: What you did, what you expected, and what happened instead.
+    validations:
+      required: true
+  - type: input
+    id: model
+    attributes:
+      label: Mac model
+      description: From  › About This Mac, e.g. "MacBook Pro 14-inch, M3 Pro, 2023".
+    validations:
+      required: true
+  - type: input
+    id: macos
+    attributes:
+      label: macOS version
+      placeholder: e.g. 27.0.1
+    validations:
+      required: true
+  - type: input
+    id: commit
+    attributes:
+      label: ThermoTune version
+      description: The commit you built from (`git rev-parse --short HEAD`).
+    validations:
+      required: true
+  - type: textarea
+    id: helper-status
+    attributes:
+      label: Helper status
+      description: Output of `make helper-status`, or of `/Library/PrivilegedHelperTools/com.armend.ThermoTune.Helper status`.
+      render: text
+  - type: checkboxes
+    id: other-apps
+    attributes:
+      label: Other fan apps
+      options:
+        - label: No other fan-control app (Macs Fan Control, TG Pro, Stats, …) was running at the time.
+  - type: textarea
+    id: extra
+    attributes:
+      label: Anything else?
+      description: Screenshots, logs, or the steps that reproduce it.

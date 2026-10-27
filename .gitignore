@@ -3,3 +3,6 @@ DerivedData/
 xcuserdata/
 *.xcuserstate
 .DS_Store
+.swiftpm/
+*.xcworkspace/xcshareddata/swiftpm/
+.claude/settings.local.json
