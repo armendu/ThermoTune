@@ -40,6 +40,7 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
     private var terminationSource: DispatchSourceSignal?
 
     func applicationDidFinishLaunching(_ notification: Notification) {
+        WindowSnapshot.scheduleIfRequested()
         // `kill`/`pkill` send SIGTERM, which would otherwise skip
         // applicationWillTerminate and leave fans under manual control.
         signal(SIGTERM, SIG_IGN)
