@@ -1,54 +1,107 @@
 # ThermoTune
 
-A SwiftUI macOS app that shows your CPU and GPU temperatures and lets you set fan speeds by hand. It reads from the System Management Controller (SMC) directly.
+[![CI](https://github.com/armendu/ThermoTune/actions/workflows/ci.yml/badge.svg?branch=main)](https://github.com/armendu/ThermoTune/actions/workflows/ci.yml)
+[![License: MIT](https://img.shields.io/badge/license-MIT-blue.svg)](LICENSE)
+![macOS 15+](https://img.shields.io/badge/macOS-15%2B-lightgrey.svg)
 
-- **Temperatures**: finds every SMC temperature sensor on its own. Shows the max and average for the CPU (split into performance and efficiency cores on Apple Silicon) and for the GPU, plus a 5-minute history chart. You can expand each group to see every individual sensor.
-- **Fans**: shows the current, minimum and maximum RPM of each fan. You can switch any fan between Automatic and Manual, and choose a target RPM with a slider.
-- **Profiles**: named fan behaviors that apply to every fan. Each profile is one of four kinds: *System Automatic* (macOS manages the fans), *Fixed Speed* (a percentage of each fan's speed range), *Temperature Curve* (fan speed rises from minimum to maximum between two temperatures of the CPU, the GPU or whichever is hotter) or *Full Speed*. ThermoTune comes with Automatic, Balanced, Cool and Full Speed. You choose the active profile from the Fans header or the menu bar. Changing a fan by hand turns the active profile off.
-- **Preferences (⌘,)**:
-  - **General**: launch at login, restore automatic control on quit, show or hide the menu bar item and choose which temperature it shows, °C or °F, refresh rate.
-  - **Profiles**: create, duplicate, edit and delete profiles, with a live preview of each temperature curve.
-  - **Helper**: install, update or uninstall the helper tool.
-- **Menu bar**: shows a temperature in the menu bar, with a popover that has a summary, the profile picker and a Max button. The app keeps running there after you close the window.
+See your Mac's CPU and GPU temperatures, and take control of its fans. ThermoTune is a native
+SwiftUI app that reads the System Management Controller (SMC) directly: no kernel extensions,
+no background daemons, no third-party code.
 
-Built and tested on Apple Silicon (M3 Pro). Intel SMC key formats (`sp78`, `fpe2`, `FS! `) are handled in the code but have not been tested.
+<p align="center">
+  <img src="docs/main-window.png" width="520" alt="ThermoTune's main window: CPU, GPU and fan tiles, a temperature chart, per-fan Auto/Manual/Max controls, and temperatures grouped by sensor type">
+</p>
 
-## Build
+> [!WARNING]
+> ThermoTune changes how your Mac cools itself. Manual fan speeds stay where you put them
+> however hot the Mac gets, until you switch back to Automatic or quit the app. It's built and
+> tested on an M3 Pro MacBook Pro; other Macs should work but haven't been confirmed. Use it at
+> your own risk.
 
-Open `ThermoTune.xcodeproj` in Xcode and run the **ThermoTune** scheme, or from the command line:
+## Features
+
+- **Temperatures:** finds every temperature sensor your Mac has. Shows the hottest and average
+  reading for the CPU (performance and efficiency cores separately on Apple silicon) and the
+  GPU, plus a 5-minute chart. **All Sensors…** lists every individual sensor.
+- **Fan control:** set each fan to **Auto** (macOS decides), **Manual** (pick a speed with a
+  slider) or **Max**, or use **All Max** for every fan at once.
+- **Profiles:** reusable fan behaviours for every fan:
+  - *System Automatic*: macOS manages the fans.
+  - *Fixed Speed*: a set share of each fan's speed range.
+  - *Temperature Curve*: fans ramp up from minimum to full speed between two temperatures of
+    the CPU, the GPU, or whichever is hotter.
+  - *Full Speed*: every fan at maximum.
+
+  ThermoTune comes with **Automatic**, **Balanced**, **Cool** and **Full Speed**, and you can
+  create your own.
+- **Menu bar:** a live temperature in the menu bar, with a quick panel for profiles and fan
+  actions. ThermoTune keeps running there after you close its window.
+- **Preferences (⌘,):** launch at login, °C or °F, refresh rate, which temperature the menu bar
+  shows, and what happens to the fans when you quit.
+
+## Requirements
+
+- macOS 15 or newer
+- A Mac with fans. Apple silicon is tested; Intel is supported in the code but untested.
+- Xcode 16 or newer, to build it
+
+## Install
+
+There are no prebuilt downloads yet; build it from source:
 
 ```sh
-xcodebuild -project ThermoTune.xcodeproj -scheme ThermoTune -configuration Release -derivedDataPath build build
+git clone https://github.com/armendu/ThermoTune.git
+cd ThermoTune
+make release
 open build/Build/Products/Release/ThermoTune.app
 ```
 
-The app is not sandboxed, because it needs direct IOKit access to `AppleSMC`. It is signed ad hoc so it runs locally.
+Copy `ThermoTune.app` into `/Applications` if you want to keep it. Temperatures work straight
+away. To change fan speeds, click **Install Helper…** under the fans. macOS asks for your
+administrator password once, for the reason explained below.
 
-## How fan control works
+## How it works
 
-Any user can read the SMC, but only root can write to it. The app therefore includes a small command-line tool, `ThermoTuneHelper`. The first time you click **Install Helper…**, macOS asks for your administrator password and the app copies the tool to `/Library/PrivilegedHelperTools/com.armend.ThermoTune.Helper` as setuid root. After that, changing fan speeds does not ask for a password again.
-
-The helper accepts only these commands, and it only ever writes fan keys:
+Any app can *read* the SMC, but only root can *write* to it. ThermoTune therefore installs a
+small helper tool at `/Library/PrivilegedHelperTools/com.armend.ThermoTune.Helper`, owned by
+root with the setuid bit set, so changing fans doesn't ask for a password every time. The helper
+accepts only these commands, and only ever writes fan settings:
 
 ```
-ThermoTuneHelper status
-ThermoTuneHelper set <fan> <rpm>   # rpm is clamped to the fan's min/max
-ThermoTuneHelper auto <fan>
-ThermoTuneHelper auto-all
+status              show every fan's speed, range and mode
+set <fan> <rpm>     manual speed for one fan, clamped to that fan's own range
+max-all             every fan at full speed
+auto <fan>          hand one fan back to macOS
+auto-all            hand every fan back to macOS
 ```
 
-On Apple Silicon, manual mode is enabled by setting the `Ftst` unlock key, then `F<n>Md = 1` and `F<n>Tg = <rpm>`. Switching back to automatic clears both keys.
+**The first switch to Manual or Max takes a few seconds.** On Apple silicon, ThermoTune first
+has to ask the SMC to release fan control, and the SMC takes about 5 to 10 seconds to agree.
+Later changes are instant. While any fan is under manual control, macOS's own fan management is
+paused for every fan, so ThermoTune shows all of them as manual until the last one goes back to
+Auto.
 
-After `Ftst` is set, the SMC rejects the mode change with error `0x82` for roughly 5–10 seconds (measured on an M3 Pro), so the first switch to Manual or Max takes that long. While `Ftst` is set, macOS's thermal control is paused for *every* fan, so the app shows every fan as manual until the last one is switched back to Automatic.
+**Your fans are handed back when ThermoTune quits.** That includes being quit from the terminal
+with `kill`. You can turn this off in Preferences if you want a profile to keep running without
+the app; it's re-applied the next time ThermoTune starts. If a crash ever leaves a fan in manual
+mode, run:
 
-**Safety:** whenever ThermoTune quits, all fans go back to automatic control. This includes a quit from `kill` (SIGTERM). You can turn this off in Preferences. A Fixed or Curve profile that was active when you quit is applied again on the next launch. To remove the helper, use **Preferences › Helper › Uninstall Helper…**.
+```sh
+/Library/PrivilegedHelperTools/com.armend.ThermoTune.Helper auto-all
+```
 
-## Layout
+## Uninstall
 
-| Path | Contents |
-| --- | --- |
-| `Shared/SMC.swift` | AppleSMC client: raw packet I/O, key enumeration, value decoding and encoding |
-| `Shared/Fans.swift` | Fan reads and writes, and temperature-key discovery (used by both targets) |
-| `Helper/main.swift` | The privileged helper tool |
-| `ThermoTune/Model` | `HardwareMonitor` (polling, state and the profile engine), `FanProfile` and `ProfileStore`, `HelperInstaller`, preference keys, sensor model |
-| `ThermoTune/Views` | SwiftUI views for the main window, Preferences and the menu bar |
+1. In ThermoTune, open **Preferences › Helper** and click **Uninstall Helper…**. This also hands
+   the fans back to macOS.
+2. Quit ThermoTune and delete the app.
+
+## Contributing
+
+Bug reports, Mac-model confirmations and pull requests are welcome. Start with
+[CONTRIBUTING.md](CONTRIBUTING.md). Report security issues privately, as described in
+[SECURITY.md](SECURITY.md).
+
+## License
+
+[MIT](LICENSE) © Armend Ukëhaxhaj
