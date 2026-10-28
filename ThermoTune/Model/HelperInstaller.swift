@@ -32,16 +32,22 @@ enum HelperInstaller {
     }
 
     static func state() -> State {
-        let fm = FileManager.default
-        guard let attributes = try? fm.attributesOfItem(atPath: installURL.path) else { return .notInstalled }
-        let owner = (attributes[.ownerAccountID] as? NSNumber)?.intValue
-        let mode = (attributes[.posixPermissions] as? NSNumber)?.intValue ?? 0
-        guard owner == 0, mode & 0o4000 != 0 else { return .needsUpdate }
+        guard FileManager.default.fileExists(atPath: installURL.path) else { return .notInstalled }
+        guard isInstalledAsRoot else { return .needsUpdate }
         if let bundledURL, let bundled = try? Data(contentsOf: bundledURL),
            bundled != (try? Data(contentsOf: installURL)) {
             return .needsUpdate
         }
         return .ready
+    }
+
+    /// An installed helper that runs as root, whether or not it matches the one
+    /// in this build.
+    static var isInstalledAsRoot: Bool {
+        guard let attributes = try? FileManager.default.attributesOfItem(atPath: installURL.path) else { return false }
+        let owner = (attributes[.ownerAccountID] as? NSNumber)?.intValue
+        let mode = (attributes[.posixPermissions] as? NSNumber)?.intValue ?? 0
+        return owner == 0 && mode & 0o4000 != 0
     }
 
     /// Copies the helper into place and marks it setuid root. Shows the standard
@@ -70,7 +76,29 @@ enum HelperInstaller {
         try runProcess(installURL, arguments)
     }
 
+    /// Runs the installed helper off the main thread. The call counts as running
+    /// from the moment it is made on the main actor, not from when a background
+    /// thread picks it up, so quitting in between still waits for it.
+    @MainActor
+    static func runInBackground(_ arguments: [String]) async throws {
+        runningCalls.enter()
+        try await Task.detached {
+            defer { runningCalls.leave() }
+            try run(arguments)
+        }.value
+    }
+
+    /// Blocks until no `runInBackground` call is running, or the timeout passes.
+    /// Returns whether any was running.
+    static func waitForRunningCalls(timeout: TimeInterval) -> Bool {
+        guard runningCalls.wait(timeout: .now()) == .timedOut else { return false }
+        _ = runningCalls.wait(timeout: .now() + timeout)
+        return true
+    }
+
     // MARK: Private
+
+    private static let runningCalls = DispatchGroup()
 
     private static func runAsAdministrator(_ command: String) throws {
         let escaped = command
