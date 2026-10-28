@@ -6,7 +6,7 @@ extension Double {
         let unit = TemperatureUnit.current
         return "\(Int(unit.convert(self).rounded()))\(unit.symbol)"
     }
-    var rpm: String { self < 1 ? "Off" : "\(Int(rounded())) RPM" }
+    var rpm: String { self < 1 ? String(localized: "Off") : "\(Int(rounded())) RPM" }
 }
 
 extension Color {

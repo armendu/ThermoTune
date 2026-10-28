@@ -132,9 +132,9 @@ private struct ProfilesDocument: FileDocument {
         var errorDescription: String? {
             switch self {
             case .unsupported(let version):
-                return "This file was made by a newer version of \(AppInfo.name) (format \(version)). Update \(AppInfo.name) to import it."
+                return String(localized: "This file was made by a newer version of \(AppInfo.name) (format \(version)). Update \(AppInfo.name) to import it.")
             case .empty:
-                return "This file has no profiles in it."
+                return String(localized: "This file has no profiles in it.")
             }
         }
     }
@@ -191,7 +191,7 @@ private struct ProfileEditor: View {
             if profile.isPerFan {
                 Section {
                     Picker("Fan", selection: $fanIndex) {
-                        ForEach(fans) { Text($0.name).tag($0.id) }
+                        ForEach(fans) { Text($0.title).tag($0.id) }
                     }
                     .pickerStyle(.segmented)
                 }
@@ -259,10 +259,10 @@ private struct BehaviorEditor: View {
 
     private var summary: String {
         switch behavior.kind {
-        case .automatic: return "macOS manages the fans, as if ThermoTune weren't running."
-        case .fixed: return "The fan runs at a constant share of its speed range."
-        case .curve: return "The fan follows the curve as the chosen temperature changes. Drag the points, or double-click the chart to add one."
-        case .max: return "The fan runs at its maximum speed."
+        case .automatic: return String(localized: "macOS manages the fans, as if ThermoTune weren't running.")
+        case .fixed: return String(localized: "The fan runs at a constant share of its speed range.")
+        case .curve: return String(localized: "The fan follows the curve as the chosen temperature changes. Drag the points, or double-click the chart to add one.")
+        case .max: return String(localized: "The fan runs at its maximum speed.")
         }
     }
 
@@ -317,7 +317,7 @@ private struct SourcePicker: View {
             ForEach(TemperatureSensor.Group.allCases, id: \.self) { group in
                 let sensors = monitor.sensors.filter { $0.group == group }
                 if !sensors.isEmpty {
-                    Menu(group.rawValue) {
+                    Menu(group.title) {
                         ForEach(sensors) { sensor in
                             Text("\(monitor.name(of: sensor.key)) (\(sensor.key)) · \(sensor.value.degrees)").tag(SensorSource.sensor(sensor.key))
                         }

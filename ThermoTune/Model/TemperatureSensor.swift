@@ -7,6 +7,16 @@ struct TemperatureSensor: Identifiable, Equatable {
         case cpu = "CPU"
         case gpu = "GPU"
         case other = "Other"
+
+        var title: String {
+            switch self {
+            case .cpuPerformance: return String(localized: "Performance Cores")
+            case .cpuEfficiency: return String(localized: "Efficiency Cores")
+            case .cpu: return String(localized: "CPU")
+            case .gpu: return String(localized: "GPU")
+            case .other: return String(localized: "Other")
+            }
+        }
     }
 
     let key: String
@@ -34,18 +44,18 @@ struct TemperatureSensor: Identifiable, Equatable {
     /// for Apple silicon, and unknown prefixes stay a plain "Sensor".
     var label: String {
         switch key.prefix(2) {
-        case "Tp": return "Performance cores"
-        case "Te": return "Efficiency cores"
-        case "Tg", "TG": return "GPU"
-        case "TC": return "CPU package"
-        case "TB": return "Battery"
-        case "TH": return "SSD"
-        case "TW": return "Wi-Fi"
-        case "Ts": return "Palm rest"
-        case "Ta": return "Airflow"
-        case "TA": return "Ambient"
-        case "Tm": return "Memory"
-        default: return "Sensor"
+        case "Tp": return String(localized: "Performance cores")
+        case "Te": return String(localized: "Efficiency cores")
+        case "Tg", "TG": return String(localized: "GPU")
+        case "TC": return String(localized: "CPU package")
+        case "TB": return String(localized: "Battery")
+        case "TH": return String(localized: "SSD")
+        case "TW": return String(localized: "Wi-Fi")
+        case "Ts": return String(localized: "Palm rest")
+        case "Ta": return String(localized: "Airflow")
+        case "TA": return String(localized: "Ambient")
+        case "Tm": return String(localized: "Memory")
+        default: return String(localized: "Sensor")
         }
     }
 
@@ -56,7 +66,7 @@ struct TemperatureSensor: Identifiable, Equatable {
         for (_, group) in Dictionary(grouping: sensors, by: \.label) {
             let sorted = group.sorted { $0.key < $1.key }
             for (index, sensor) in sorted.enumerated() {
-                names[sensor.key] = sorted.count == 1 ? sensor.label : "\(sensor.label) \(index + 1)"
+                names[sensor.key] = sorted.count == 1 ? sensor.label : String(localized: "\(sensor.label) \(index + 1)", comment: "A sensor name numbered among several with the same name, e.g. Performance cores 3")
             }
         }
         return names

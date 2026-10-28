@@ -84,6 +84,13 @@ The helper runs as root on users' machines, so changes there get extra scrutiny:
 - Any change to `Shared/` or `Helper/` changes the helper binary, so every user will be asked
   for their password again after updating. Mention it in the pull request.
 
+## Translations
+
+ThermoTune ships in English and German. The German was written without a native speaker's
+review, so corrections are very welcome, and so are new languages: open
+`ThermoTune/Localizable.xcstrings` in Xcode, add a language, and fill in the column. CLAUDE.md
+explains how to keep the catalog in step with the code.
+
 ## Code style
 
 - Match the code around you: naming, structure, comment density.

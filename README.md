@@ -63,6 +63,8 @@ no background daemons, no third-party code.
   shows, and what happens to the fans when you quit. The About tab has the version, license
   and links to the source.
 
+- **Languages:** English and German.
+
 ## Requirements
 
 - macOS 15 or newer

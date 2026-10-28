@@ -136,7 +136,7 @@ private struct RuleRow: View {
 
 /// Click, then press a key combination; Esc cancels and Delete clears.
 private struct ShortcutRow: View {
-    let title: String
+    let title: LocalizedStringKey
     let action: ShortcutAction
     @Environment(HardwareMonitor.self) private var monitor
     @State private var isRecording = false
@@ -152,8 +152,16 @@ private struct ShortcutRow: View {
                         .foregroundStyle(.orange)
                         .help("macOS didn't accept this shortcut; another app may already use it.")
                 }
-                Button(isRecording ? "Type shortcut…" : (shortcut?.title ?? "Record Shortcut")) {
+                Button {
                     isRecording ? stopRecording() : startRecording()
+                } label: {
+                    if isRecording {
+                        Text("Type shortcut…")
+                    } else if let shortcut {
+                        Text(verbatim: shortcut.title)
+                    } else {
+                        Text("Record Shortcut")
+                    }
                 }
                 .monospacedDigit()
                 if shortcut != nil, !isRecording {

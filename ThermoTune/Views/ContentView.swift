@@ -147,8 +147,8 @@ private struct OverviewTiles: View {
 
     var body: some View {
         HStack(spacing: 12) {
-            StatTile(title: "CPU", symbol: "cpu", summary: monitor.cpuSummary)
-            StatTile(title: "GPU", symbol: "square.stack.3d.up", summary: monitor.gpuSummary)
+            StatTile(title: String(localized: "CPU"), symbol: "cpu", summary: monitor.cpuSummary)
+            StatTile(title: String(localized: "GPU"), symbol: "square.stack.3d.up", summary: monitor.gpuSummary)
             FanTile(fans: monitor.fans)
         }
         .padding(.vertical, 4)
@@ -165,9 +165,9 @@ private struct StatTile: View {
             Tile(title: title, symbol: symbol,
                  value: "\(Int(TemperatureUnit.current.convert(summary.average).rounded()))",
                  unit: TemperatureUnit.current.symbol,
-                 valueColor: .temperature(summary.average), caption: "average · hottest \(summary.maximum.degrees)")
+                 valueColor: .temperature(summary.average), caption: String(localized: "average · hottest \(summary.maximum.degrees)"))
         } else {
-            Tile(title: title, symbol: symbol, value: "–", caption: "reading…")
+            Tile(title: title, symbol: symbol, value: "–", caption: String(localized: "reading…"))
         }
     }
 }
@@ -177,11 +177,11 @@ private struct FanTile: View {
 
     var body: some View {
         let fastest = fans.map(\.actual).max() ?? 0
-        let mode = fans.allSatisfy(\.isSystemControlled) ? "automatic" : "manual"
-        Tile(title: "Fans", symbol: "fan",
-             value: fastest < 1 ? "Off" : Int(fastest).formatted(),
+        let mode = fans.allSatisfy(\.isSystemControlled) ? String(localized: "automatic") : String(localized: "manual")
+        Tile(title: String(localized: "Fans"), symbol: "fan",
+             value: fastest < 1 ? String(localized: "Off") : Int(fastest).formatted(),
              unit: fastest < 1 ? nil : "RPM",
-             caption: fastest < 1 || fans.count < 2 ? mode : "fastest · \(mode)")
+             caption: fastest < 1 || fans.count < 2 ? mode : String(localized: "fastest · \(mode)"))
     }
 }
 
@@ -229,9 +229,9 @@ private struct TemperatureChart: View {
 
     private static func title(minutes: Int) -> String {
         switch minutes {
-        case 1: return "Last minute"
-        case 60: return "Last hour"
-        default: return "Last \(minutes) minutes"
+        case 1: return String(localized: "Last minute")
+        case 60: return String(localized: "Last hour")
+        default: return String(localized: "Last \(minutes) minutes")
         }
     }
 

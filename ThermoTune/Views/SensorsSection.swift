@@ -47,8 +47,8 @@ private struct GroupRow: View {
 
     private var title: String {
         switch group {
-        case .cpu: return "CPU Package"
-        default: return group.rawValue
+        case .cpu: return String(localized: "CPU Package")
+        default: return group.title
         }
     }
 
@@ -124,7 +124,7 @@ private struct AllSensorsView: View {
                     let sensors = monitor.sensors.filter { $0.group == group }
                     if !sensors.isEmpty {
                         VStack(alignment: .leading, spacing: 6) {
-                            Text(group.rawValue).font(.headline)
+                            Text(group.title).font(.headline)
                             SensorGrid(sensors: sensors)
                         }
                     }
