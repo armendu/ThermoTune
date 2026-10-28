@@ -6,18 +6,26 @@ import Observation
 @MainActor
 @Observable
 final class HardwareMonitor {
-    /// Average CPU and GPU temperature at one refresh, for the chart.
+    /// One refresh's readings, for the chart and the CSV history. `cpu` and
+    /// `gpu` are averages, which is what the chart plots.
     struct Sample: Identifiable {
         let id = UUID()
         let date: Date
         let cpu: Double?
         let gpu: Double?
+        var cpuMaximum: Double?
+        var gpuMaximum: Double?
+        var fanRPMs: [Double] = []
+        var thermalState: ProcessInfo.ThermalState = .nominal
+        var profile: String?
     }
 
     private(set) var fans: [FanInfo] = []
     private(set) var sensors: [TemperatureSensor] = []
     private(set) var history: [Sample] = []
     private(set) var isDiscoveringSensors = true
+    /// Readable names by SMC key; see `TemperatureSensor.names(for:)`.
+    private(set) var sensorNames: [String: String] = [:]
     private(set) var helperState = HelperInstaller.state()
     private(set) var busyFans: Set<Int> = []
     private(set) var pendingModes: [Int: FanMode] = [:]
@@ -44,6 +52,10 @@ final class HardwareMonitor {
         case .hottest: return [cpuSummary?.average, gpuSummary?.average].compactMap { $0 }.max()
         case .sensor: return temperature(source)
         }
+    }
+
+    func name(of key: String) -> String {
+        sensorNames[key] ?? key
     }
 
     func temperature(_ source: SensorSource) -> Double? {
@@ -73,6 +85,7 @@ final class HardwareMonitor {
     let alerts = Alerts()
     let rules = ProfileRules()
     let hotKeys = HotKeys()
+    @ObservationIgnored private let logger = HistoryLog()
     private(set) var thermalState = ProcessInfo.processInfo.thermalState
     private(set) var safetyTrip: SafetyTrip?
 
@@ -134,6 +147,7 @@ final class HardwareMonitor {
                 (try? SMC())?.discoverTemperatureKeys() ?? []
             }.value
             sensorKeys = keys
+            sensorNames = TemperatureSensor.names(for: keys.map { TemperatureSensor(key: $0, value: 0) })
             isDiscoveringSensors = false
             refresh()
         }
@@ -153,8 +167,13 @@ final class HardwareMonitor {
             return TemperatureSensor(key: key, value: value)
         }
         if !sensors.isEmpty {
-            history.append(Sample(date: .now, cpu: cpuSummary?.average, gpu: gpuSummary?.average))
+            let sample = Sample(date: .now, cpu: cpuSummary?.average, gpu: gpuSummary?.average,
+                                cpuMaximum: cpuSummary?.maximum, gpuMaximum: gpuSummary?.maximum,
+                                fanRPMs: fans.map(\.actual), thermalState: ProcessInfo.processInfo.thermalState,
+                                profile: profiles.activeProfile?.name)
+            history.append(sample)
             history.removeAll { $0.date.timeIntervalSinceNow < -Self.historyDuration }
+            logger.append(sample)
         }
         thermalState = ProcessInfo.processInfo.thermalState
         applyRules()

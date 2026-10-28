@@ -29,13 +29,37 @@ struct TemperatureSensor: Identifiable, Equatable {
     var isCPU: Bool { [.cpuPerformance, .cpuEfficiency, .cpu].contains(group) }
     var isGPU: Bool { group == .gpu }
 
+    /// Where the sensor most likely sits, from its key's prefix. Apple doesn't
+    /// publish what each key measures; these are the community's best guesses
+    /// for Apple silicon, and unknown prefixes stay a plain "Sensor".
     var label: String {
         switch key.prefix(2) {
+        case "Tp": return "Performance cores"
+        case "Te": return "Efficiency cores"
+        case "Tg", "TG": return "GPU"
+        case "TC": return "CPU package"
         case "TB": return "Battery"
         case "TH": return "SSD"
-        case "TW": return "Wireless"
-        default: return group == .other ? "Sensor" : group.rawValue
+        case "TW": return "Wi-Fi"
+        case "Ts": return "Palm rest"
+        case "Ta": return "Airflow"
+        case "TA": return "Ambient"
+        case "Tm": return "Memory"
+        default: return "Sensor"
         }
+    }
+
+    /// A readable name per key: the label, numbered when several sensors share it
+    /// ("Performance cores 3"), in key order so numbers stay stable between launches.
+    static func names(for sensors: [TemperatureSensor]) -> [String: String] {
+        var names: [String: String] = [:]
+        for (_, group) in Dictionary(grouping: sensors, by: \.label) {
+            let sorted = group.sorted { $0.key < $1.key }
+            for (index, sensor) in sorted.enumerated() {
+                names[sensor.key] = sorted.count == 1 ? sensor.label : "\(sensor.label) \(index + 1)"
+            }
+        }
+        return names
     }
 }
 

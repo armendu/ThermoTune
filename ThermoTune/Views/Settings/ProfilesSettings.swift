@@ -319,7 +319,7 @@ private struct SourcePicker: View {
                 if !sensors.isEmpty {
                     Menu(group.rawValue) {
                         ForEach(sensors) { sensor in
-                            Text("\(sensor.key) · \(sensor.value.degrees)").tag(SensorSource.sensor(sensor.key))
+                            Text("\(monitor.name(of: sensor.key)) (\(sensor.key)) · \(sensor.value.degrees)").tag(SensorSource.sensor(sensor.key))
                         }
                     }
                 }
