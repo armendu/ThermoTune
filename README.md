@@ -100,7 +100,7 @@ mode, run:
 
 ## Uninstall
 
-1. In ThermoTune, open **Preferences › Helper** and click **Uninstall Helper…**. This also hands
+1. In ThermoTune, open **Settings › Advanced** and click **Uninstall Helper…**. This also hands
    the fans back to macOS, and leaves the helper installed if it can't.
 2. Quit ThermoTune and delete the app.
 

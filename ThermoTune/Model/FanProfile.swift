@@ -116,6 +116,20 @@ final class ProfileStore {
         if activeProfileID == id { activeProfileID = nil }
     }
 
+    /// Adds profiles from an exported file. They get new IDs, so importing the
+    /// same file twice, or one exported from this Mac, never replaces a profile.
+    @discardableResult
+    func importProfiles(_ imported: [FanProfile]) -> [FanProfile] {
+        let added = imported.map { profile in
+            var copy = profile
+            copy.id = UUID()
+            copy.name = uniqueName(profile.name)
+            profiles.append(copy)
+            return copy
+        }
+        return added
+    }
+
     func restoreDefaults() {
         activeProfileID = nil
         profiles = FanProfile.defaults.map { profile in
@@ -136,4 +150,14 @@ final class ProfileStore {
             UserDefaults.standard.set(data, forKey: PreferenceKey.profiles)
         }
     }
+}
+
+/// The file format for exported profiles. `version` is bumped whenever a field
+/// changes meaning, so a later ThermoTune can still read an older file.
+struct ProfileArchive: Codable {
+    static let currentVersion = 1
+
+    var app = AppInfo.name
+    var version = Self.currentVersion
+    var profiles: [FanProfile]
 }

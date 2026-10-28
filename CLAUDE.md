@@ -72,7 +72,7 @@ make build          # Debug build, a compile check
 make release        # Release build, what CI builds and what users run
 make run            # Release build, then launch it
 make shot           # Release build, launch, PNGs of its windows in build/screenshots
-make shot TAB=profiles   # …plus Preferences on that tab (general | profiles | helper | about)
+make shot TAB=profiles   # …plus Preferences on that tab (general | profiles | menuBar | advanced | about)
 make helper-status  # what the installed helper reports for each fan
 make fans-auto      # hand every fan back to macOS, whatever state they were left in
 ```
