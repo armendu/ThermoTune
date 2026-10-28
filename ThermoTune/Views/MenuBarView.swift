@@ -23,7 +23,7 @@ struct MenuBarLabel: View {
 
     private var fanText: String? {
         guard let fastest = monitor.fans.map(\.actual).max() else { return nil }
-        if fastest < 1 { return compact ? "Off" : "Fans off" }
+        if fastest < 1 { return compact ? String(localized: "Off") : String(localized: "Fans off") }
         return compact ? String(format: "%.1fk", fastest / 1000) : "\(Int(fastest).formatted()) RPM"
     }
 
@@ -138,7 +138,7 @@ struct MenuBarView: View {
                     Text(fan.isManual ? "\(fan.actual.rpm) · manual" : fan.actual.rpm)
                         .monospacedDigit()
                 } label: {
-                    Label(fan.name, systemImage: "fan")
+                    Label(fan.title, systemImage: "fan")
                 }
             }
 

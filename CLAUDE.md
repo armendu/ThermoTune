@@ -282,6 +282,25 @@ Actions are pinned to commit SHAs, not tags: a tag is mutable, so `@v5` is a pro
 action's owner can rewrite. The trailing comment is the human-readable version. Dependabot
 keeps them current.
 
+## Translations
+
+Strings live in `ThermoTune/Localizable.xcstrings` (English source, German). SwiftUI translates
+only **literals**: `Text("Fans")` is looked up, `Text(someString)` is shown as it is. So any
+string built in code and later shown, such as a `title` property, an alert or an error message,
+is written `String(localized: "…")` at the point it's created. `FanInfo.name` lives in
+`Shared/`, which the helper also builds, so the app uses `FanInfo.title` instead.
+
+`xcodebuild` extracts strings into `.stringsdata` files but doesn't write them back to the
+catalog the way Xcode's editor does. After adding or changing user-facing text:
+
+```sh
+make build
+xcrun xcstringstool sync ThermoTune/Localizable.xcstrings --stringsdata $(find build/Build/Intermediates.noindex/ThermoTune.build/Debug -name '*.stringsdata')
+```
+
+then add the German for any new key. Machine translations are marked `needs_review`. To see the
+app in German without changing the system language, launch the binary with `-AppleLanguages '(de)'`.
+
 ## Style
 
 Explain *why* in comments, not *what*; the code already says what. A comment that survives is

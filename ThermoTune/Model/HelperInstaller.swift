@@ -15,7 +15,7 @@ enum HelperInstaller {
 
         var errorDescription: String? {
             switch self {
-            case .missingFromBundle: return "The helper tool is missing from the app bundle."
+            case .missingFromBundle: return String(localized: "The helper tool is missing from the app bundle.")
             case .failed(let message): return message
             }
         }

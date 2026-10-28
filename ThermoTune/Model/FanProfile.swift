@@ -13,10 +13,10 @@ struct FanProfile: Codable, Identifiable, Hashable {
 
         var title: String {
             switch self {
-            case .automatic: return "System Automatic"
-            case .fixed: return "Fixed Speed"
-            case .curve: return "Temperature Curve"
-            case .max: return "Full Speed"
+            case .automatic: return String(localized: "System Automatic")
+            case .fixed: return String(localized: "Fixed Speed")
+            case .curve: return String(localized: "Temperature Curve")
+            case .max: return String(localized: "Full Speed")
             }
         }
 
@@ -52,12 +52,12 @@ struct FanProfile: Codable, Identifiable, Hashable {
     var symbol: String { isPerFan ? "square.split.2x1" : behavior.kind.symbol }
 
     static let defaults: [FanProfile] = [
-        FanProfile(name: "Automatic", behavior: FanBehavior(kind: .automatic)),
-        FanProfile(name: "Balanced", behavior: FanBehavior(kind: .curve, source: .hottest,
+        FanProfile(name: String(localized: "Automatic"), behavior: FanBehavior(kind: .automatic)),
+        FanProfile(name: String(localized: "Balanced"), behavior: FanBehavior(kind: .curve, source: .hottest,
                                                            curve: [.init(60, 0), .init(90, 100)])),
-        FanProfile(name: "Cool", behavior: FanBehavior(kind: .curve, source: .hottest,
+        FanProfile(name: String(localized: "Cool"), behavior: FanBehavior(kind: .curve, source: .hottest,
                                                        curve: [.init(45, 0), .init(75, 100)])),
-        FanProfile(name: "Full Speed", behavior: FanBehavior(kind: .max)),
+        FanProfile(name: String(localized: "Full Speed"), behavior: FanBehavior(kind: .max)),
     ]
 
     // Profiles saved before per-fan settings and multi-point curves kept the
@@ -191,7 +191,7 @@ final class ProfileStore {
 
     @discardableResult
     func add(kind: FanProfile.Kind = .curve) -> FanProfile {
-        let profile = FanProfile(name: uniqueName("New Profile"), behavior: FanBehavior(kind: kind))
+        let profile = FanProfile(name: uniqueName(String(localized: "New Profile")), behavior: FanBehavior(kind: kind))
         profiles.append(profile)
         return profile
     }
@@ -200,7 +200,7 @@ final class ProfileStore {
     func duplicate(_ profile: FanProfile) -> FanProfile {
         var copy = profile
         copy.id = UUID()
-        copy.name = uniqueName("\(profile.name) Copy")
+        copy.name = uniqueName(String(localized: "\(profile.name) Copy"))
         profiles.insert(copy, at: (profiles.firstIndex(of: profile) ?? profiles.count - 1) + 1)
         return copy
     }

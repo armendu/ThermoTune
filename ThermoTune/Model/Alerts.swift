@@ -70,8 +70,8 @@ final class Alerts: NSObject {
                 temperatureSince = since
                 if !temperatureFired, now.timeIntervalSince(since) >= duration {
                     temperatureFired = true
-                    post("temperature", title: "\(source.title) is running hot",
-                         body: "\(source.title) has been at \(value.degrees) or more for \(Int(duration)) seconds.")
+                    post("temperature", title: String(localized: "\(source.title) is running hot"),
+                         body: String(localized: "\(source.title) has been at \(value.degrees) or more for \(Int(duration)) seconds."))
                 }
             } else {
                 temperatureSince = nil
@@ -87,8 +87,8 @@ final class Alerts: NSObject {
                     stalledSince[fan.id] = since
                     if !stallFired.contains(fan.id), now.timeIntervalSince(since) >= Self.stallGrace {
                         stallFired.insert(fan.id)
-                        post("stall-\(fan.id)", title: "\(fan.name) isn't spinning",
-                             body: "It was set to \(Int(fan.target)) RPM but reads \(Int(fan.actual)) RPM. It may be blocked or failing.")
+                        post("stall-\(fan.id)", title: String(localized: "\(fan.title) isn't spinning"),
+                             body: String(localized: "It was set to \(Int(fan.target)) RPM but reads \(Int(fan.actual)) RPM. It may be blocked or failing."))
                     }
                 } else {
                     stalledSince[fan.id] = nil
@@ -102,8 +102,8 @@ final class Alerts: NSObject {
             case .serious, .critical:
                 if !thermalFired {
                     thermalFired = true
-                    post("thermal", title: "macOS is slowing your Mac down",
-                         body: "Thermal pressure is \(monitor.thermalState.title). macOS is reducing performance to keep the Mac cool.")
+                    post("thermal", title: String(localized: "macOS is slowing your Mac down"),
+                         body: String(localized: "Thermal pressure is \(monitor.thermalState.title). macOS is reducing performance to keep the Mac cool."))
                 }
             default:
                 thermalFired = false
@@ -112,17 +112,17 @@ final class Alerts: NSObject {
 
         if defaults.bool(forKey: PreferenceKey.alertHelper), monitor.helperState == .needsUpdate, !helperFired {
             helperFired = true
-            post("helper", title: "Update the ThermoTune helper",
-                 body: "ThermoTune can't change fan speeds until its helper tool is updated. Open ThermoTune to update it.")
+            post("helper", title: String(localized: "Update the ThermoTune helper"),
+                 body: String(localized: "ThermoTune can't change fan speeds until its helper tool is updated. Open ThermoTune to update it."))
         }
     }
 
     func postSafetyNet(temperature: Double, action: SafetyAction) {
         guard UserDefaults.standard.bool(forKey: PreferenceKey.alertSafetyNet) else { return }
         let outcome = action == .automatic
-            ? "macOS is managing the fans again, and the active profile was switched off."
-            : "Every fan is at full speed until it cools down."
-        post("safety", title: "Safety net: \(temperature.degrees)", body: outcome)
+            ? String(localized: "macOS is managing the fans again, and the active profile was switched off.")
+            : String(localized: "Every fan is at full speed until it cools down.")
+        post("safety", title: String(localized: "Safety net: \(temperature.degrees)"), body: outcome)
     }
 
     private func post(_ id: String, title: String, body: String) {
@@ -146,11 +146,11 @@ extension Alerts: UNUserNotificationCenterDelegate {
 extension ProcessInfo.ThermalState {
     var title: String {
         switch self {
-        case .nominal: return "Nominal"
-        case .fair: return "Fair"
-        case .serious: return "Serious"
-        case .critical: return "Critical"
-        @unknown default: return "Unknown"
+        case .nominal: return String(localized: "Nominal")
+        case .fair: return String(localized: "Fair")
+        case .serious: return String(localized: "Serious")
+        case .critical: return String(localized: "Critical")
+        @unknown default: return String(localized: "Unknown")
         }
     }
 }

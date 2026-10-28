@@ -70,7 +70,7 @@ enum TemperatureUnit: String, CaseIterable, Identifiable {
     case fahrenheit
 
     var id: Self { self }
-    var title: String { self == .celsius ? "Celsius (°C)" : "Fahrenheit (°F)" }
+    var title: String { self == .celsius ? String(localized: "Celsius (°C)") : String(localized: "Fahrenheit (°F)") }
     var symbol: String { self == .celsius ? "°C" : "°F" }
 
     static var current: TemperatureUnit {
@@ -102,10 +102,10 @@ enum SensorSource: Hashable, Identifiable {
 
     var title: String {
         switch self {
-        case .cpu: return "CPU"
-        case .gpu: return "GPU"
-        case .hottest: return "Hottest (CPU or GPU)"
-        case .sensor(let key): return "Sensor \(key)"
+        case .cpu: return String(localized: "CPU")
+        case .gpu: return String(localized: "GPU")
+        case .hottest: return String(localized: "Hottest (CPU or GPU)")
+        case .sensor(let key): return String(localized: "Sensor \(key)")
         }
     }
 }
@@ -163,8 +163,8 @@ enum SafetyAction: String, CaseIterable, Identifiable {
 
     var title: String {
         switch self {
-        case .automatic: return "Hand the fans back to macOS"
-        case .max: return "Run every fan at full speed"
+        case .automatic: return String(localized: "Hand the fans back to macOS")
+        case .max: return String(localized: "Run every fan at full speed")
         }
     }
 }
@@ -180,10 +180,10 @@ enum MenuBarContent: String, CaseIterable, Identifiable {
 
     var title: String {
         switch self {
-        case .temperature: return "Temperature"
-        case .fanSpeed: return "Fan speed"
-        case .both: return "Temperature and fan speed"
-        case .icon: return "Icon only"
+        case .temperature: return String(localized: "Temperature")
+        case .fanSpeed: return String(localized: "Fan speed")
+        case .both: return String(localized: "Temperature and fan speed")
+        case .icon: return String(localized: "Icon only")
         }
     }
 }

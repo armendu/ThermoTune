@@ -15,10 +15,10 @@ struct ProfileRule: Codable, Identifiable, Hashable {
 
         var title: String {
             switch self {
-            case .onBattery: return "On battery"
-            case .onPowerAdapter: return "On power adapter"
-            case .appRunning(_, let name): return "While \(name) is running"
-            case .temperatureAbove(let source, let limit): return "\(source.title) at \(limit.degrees) or more"
+            case .onBattery: return String(localized: "On battery")
+            case .onPowerAdapter: return String(localized: "On power adapter")
+            case .appRunning(_, let name): return String(localized: "While \(name) is running")
+            case .temperatureAbove(let source, let limit): return String(localized: "\(source.title) at \(limit.degrees) or more")
             }
         }
     }

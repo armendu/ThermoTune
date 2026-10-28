@@ -259,7 +259,7 @@ final class HardwareMonitor {
     func activate(_ profile: FanProfile?) {
         profiles.activeProfileID = profile?.id
         if profile != nil, helperState != .ready {
-            errorMessage = "Install the helper tool to use fan profiles."
+            errorMessage = String(localized: "Install the helper tool to use fan profiles.")
             profiles.activeProfileID = nil
             return
         }
@@ -422,7 +422,7 @@ final class HardwareMonitor {
     private func runHelper(fans ids: [Int], mode: FanMode, _ arguments: [String]) {
         guard !isUninstalling else { return }
         guard helperState == .ready else {
-            errorMessage = "Install the helper tool to control fan speed."
+            errorMessage = String(localized: "Install the helper tool to control fan speed.")
             return
         }
         for id in ids {
@@ -485,7 +485,7 @@ final class HardwareMonitor {
                 refresh()
                 // Nothing could hand them back once the helper is gone.
                 if !fans.allSatisfy(\.isSystemControlled) {
-                    errorMessage = "The fans could not be handed back to macOS, so the helper was left installed. "
+                    errorMessage = String(localized: "The fans could not be handed back to macOS, so the helper was left installed.") + " "
                         + error.localizedDescription
                     return
                 }
