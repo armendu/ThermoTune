@@ -81,10 +81,7 @@ final class HotKeys {
             }
         }
         shortcuts[action.storageKey] = shortcut
-        if let data = try? JSONEncoder().encode(shortcuts) {
-            UserDefaults.standard.set(data, forKey: PreferenceKey.shortcuts)
-        }
-        registerAll()
+        save()
     }
 
     /// Drops shortcuts for profiles that no longer exist.
@@ -94,6 +91,10 @@ final class HotKeys {
         }
         guard !stale.isEmpty else { return }
         for key in stale { shortcuts[key] = nil }
+        save()
+    }
+
+    private func save() {
         if let data = try? JSONEncoder().encode(shortcuts) {
             UserDefaults.standard.set(data, forKey: PreferenceKey.shortcuts)
         }
@@ -101,11 +102,9 @@ final class HotKeys {
     }
 
     func registerAll() {
-        guard !WindowSnapshot.isActive else { return }
+        guard !RunMode.isReadOnly else { return }
         installHandler()
-        for ref in registered.values { UnregisterEventHotKey(ref) }
-        registered = [:]
-        idsByNumber = [:]
+        unregisterAll()
         failed = []
         for (key, shortcut) in shortcuts {
             let number = nextNumber
@@ -121,6 +120,12 @@ final class HotKeys {
                 failed.insert(key)
             }
         }
+    }
+
+    func unregisterAll() {
+        for ref in registered.values { UnregisterEventHotKey(ref) }
+        registered = [:]
+        idsByNumber = [:]
     }
 
     private func installHandler() {

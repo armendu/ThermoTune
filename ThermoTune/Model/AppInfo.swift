@@ -11,12 +11,19 @@ enum AppInfo {
     static let issuesURL = URL(string: "https://github.com/armendu/ThermoTune/issues/new/choose")!
     static let securityURL = URL(string: "https://github.com/armendu/ThermoTune/blob/main/SECURITY.md")!
 
-    static var version: String {
-        let info = Bundle.main.infoDictionary
-        let short = info?["CFBundleShortVersionString"] as? String ?? "?"
-        let build = info?["CFBundleVersion"] as? String ?? "?"
-        return String(localized: "Version \(short) (\(build))")
+    /// `MARKETING_VERSION`. Every pull request raises it (`make bump`), so the
+    /// window title says which build is running.
+    static var shortVersion: String {
+        Bundle.main.infoDictionary?["CFBundleShortVersionString"] as? String ?? "?"
     }
+
+    static var version: String {
+        let build = Bundle.main.infoDictionary?["CFBundleVersion"] as? String ?? "?"
+        return String(localized: "Version \(shortVersion) (\(build))")
+    }
+
+    /// "ThermoTune v0.1.0", the same in every language.
+    static var windowTitle: String { "\(name) v\(shortVersion)" }
 
     static var copyright: String {
         Bundle.main.object(forInfoDictionaryKey: "NSHumanReadableCopyright") as? String ?? ""

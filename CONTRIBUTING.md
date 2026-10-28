@@ -60,12 +60,13 @@ feat(app): temperature-curve profiles
 
 ## Testing your change
 
-There's no automated test suite yet, so please check your change by hand:
-
-1. `make build` and `make release` both succeed with no new warnings.
-2. `make run` and look at what you changed. `make shot` saves screenshots of the app's windows
+1. `make build` and `make release` both succeed with no new warnings, and `make test` passes. The
+   tests need no special hardware; add one for logic you change where you can.
+2. `make bump` to raise the version. Every pull request does, so the version in the window title
+   says which build someone is running; CI checks it.
+3. `make run` and look at what you changed. `make shot` saves screenshots of the app's windows
    to `build/screenshots/`, handy for the pull request description.
-3. **If your change touches fans**, try it on your own Mac and say which model in the pull
+4. **If your change touches fans**, try it on your own Mac and say which model in the pull
    request. Afterwards, run `make fans-auto` and check that `make helper-status` shows every fan
    with `manual=false unlocked=false`.
 

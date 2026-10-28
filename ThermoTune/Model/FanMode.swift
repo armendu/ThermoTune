@@ -31,4 +31,14 @@ extension FanInfo {
     func isIn(_ requested: FanMode) -> Bool {
         requested == .manual ? isManual : mode == requested
     }
+
+    /// The same fan with a NaN or infinite reading as 0. Every RPM label converts
+    /// to `Int`, which traps on those, and a crash skips handing the fans back.
+    var withFiniteReadings: FanInfo {
+        var fan = self
+        for keyPath in [\FanInfo.actual, \.minimum, \.maximum, \.target] where !fan[keyPath: keyPath].isFinite {
+            fan[keyPath: keyPath] = 0
+        }
+        return fan
+    }
 }

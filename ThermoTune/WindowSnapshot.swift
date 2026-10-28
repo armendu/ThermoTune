@@ -11,8 +11,7 @@ import AppKit
 ///   THERMOTUNE_SNAPSHOT_DIR   where to write window-<n>.png
 ///   THERMOTUNE_SETTINGS_TAB   general | profiles | automation | safety | menuBar | advanced | about: also open Preferences on that tab
 enum WindowSnapshot {
-    /// A snapshot run is read-only: it doesn't apply the active profile or hand the
-    /// fans back on quit, because it runs beside a copy of the app someone is using.
+    /// A snapshot run is read-only; see `RunMode.isReadOnly`.
     static let isActive = ProcessInfo.processInfo.environment["THERMOTUNE_SNAPSHOT_DIR"] != nil
 
     static func scheduleIfRequested() {

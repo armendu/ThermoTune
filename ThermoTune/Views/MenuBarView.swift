@@ -18,7 +18,7 @@ struct MenuBarLabel: View {
 
     private var temperatureText: String? {
         guard let temperature else { return nil }
-        return compact ? "\(Int(unit.convert(temperature).rounded()))°" : temperature.degrees
+        return compact ? temperature.degreesNumber + "°" : temperature.degrees
     }
 
     private var fanText: String? {
@@ -39,6 +39,8 @@ struct MenuBarLabel: View {
     private var symbol: String { content == .fanSpeed ? "fan" : "thermometer.medium" }
 
     var body: some View {
+        // Read so a change of unit redraws the label straight away, not at the next refresh.
+        let _ = unit
         if content != .icon, colored || graph {
             Image(nsImage: rendered)
         } else if let text, content != .icon {
@@ -52,25 +54,43 @@ struct MenuBarLabel: View {
         }
     }
 
-    /// The last ten minutes of the chosen reading, for the graph.
+    /// The last ten minutes of the reading the label shows, for the graph.
     private var graphValues: [Double] {
         let start = Date.now.addingTimeInterval(-600)
-        return monitor.history.filter { $0.date >= start }.compactMap { sample in
+        // History is in time order, so only its tail needs looking at.
+        return monitor.history.reversed().prefix { $0.date >= start }.reversed().compactMap { sample in
+            let cpu = usesAverage ? sample.cpu : sample.cpuMaximum
+            let gpu = usesAverage ? sample.gpu : sample.gpuMaximum
             switch source {
-            case .gpu: return sample.gpu
-            case .cpu: return sample.cpu
-            default: return [sample.cpu, sample.gpu].compactMap { $0 }.max()
+            case .cpu: return cpu
+            case .gpu: return gpu
+            default: return [cpu, gpu].compactMap { $0 }.max()
             }
         }
     }
 
+    /// The last image drawn, keyed by everything that went into it. With colour
+    /// on and no graph, most refreshes change nothing worth drawing again.
+    @MainActor private static var cache: (key: String, image: NSImage)?
+
     private var rendered: NSImage {
+        let isDark = NSApp.effectiveAppearance.bestMatch(from: [.darkAqua, .aqua]) == .darkAqua
+        let values = graph ? graphValues : []
+        let key = [temperatureText ?? "", fanText ?? "", "\(content)", "\(unit)", "\(colored)", "\(graph)", "\(compact)", "\(isDark)",
+                   values.map { String(Int($0.rounded())) }.joined(separator: ",")].joined(separator: "|")
+        if let cache = Self.cache, cache.key == key { return cache.image }
+        let image = render(values: values, isDark: isDark)
+        Self.cache = (key, image)
+        return image
+    }
+
+    private func render(values: [Double], isDark: Bool) -> NSImage {
         let view = HStack(spacing: 3) {
             if !compact {
                 Image(systemName: symbol).font(.system(size: 12, weight: .medium))
             }
             if graph {
-                Sparkline(values: graphValues)
+                Sparkline(values: values)
                     .stroke(colored ? AnyShapeStyle(Color.temperature(temperature ?? 0)) : AnyShapeStyle(.black),
                             style: StrokeStyle(lineWidth: 1.5, lineCap: .round, lineJoin: .round))
                     .frame(width: 26, height: 12)
@@ -92,7 +112,7 @@ struct MenuBarLabel: View {
         .padding(.vertical, 2)
         // The status bar follows the appearance of what's behind it; the app's
         // appearance is the nearest available guess for the parts not coloured.
-        .environment(\.colorScheme, NSApp.effectiveAppearance.bestMatch(from: [.darkAqua, .aqua]) == .darkAqua ? .dark : .light)
+        .environment(\.colorScheme, isDark ? .dark : .light)
 
         let renderer = ImageRenderer(content: view)
         renderer.scale = NSScreen.main?.backingScaleFactor ?? 2

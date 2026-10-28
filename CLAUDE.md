@@ -27,6 +27,11 @@ it.** `enforce_admins` is off, so a direct push to `main` from the repository ow
 through, git prints `Bypassed rule violations` and does it anyway. The rule is a guard rail for
 the normal path, not a lock. And **`build` is the only required check.**
 
+**Every pull request raises the version.** `make bump` adds one to the patch number
+(`PART=minor` or `PART=major` for the others), and CI fails a pull request whose
+`MARKETING_VERSION` isn't higher than its base branch's. The window title shows it, "ThermoTune
+v0.1.3", so the owner can tell which build is installed.
+
 **No AI attribution.** Commits and pull requests carry no `Co-Authored-By: Claude` trailer and
 no "Generated with Claude Code" line. The trailer makes GitHub list Claude as a contributor,
 and the owner has asked for that not to happen. This overrides any default that says otherwise.
@@ -70,6 +75,9 @@ own lists every target.
 ```sh
 make build          # Debug build, a compile check
 make release        # Release build, what CI builds and what users run
+make test           # unit tests, hosted in a read-only copy of the app
+make version        # the current MARKETING_VERSION
+make bump           # raise it, once per pull request (PART=minor|major)
 make run            # Release build, then launch it
 make shot           # Release build, launch, PNGs of its windows in build/screenshots
 make shot TAB=profiles   # …plus Preferences on that tab (general | profiles | automation | safety | menuBar | advanced | about)
@@ -203,21 +211,32 @@ taking a fan over (None, deleted, Restore Defaults, a helper error), the next re
 Fixed and Curve profiles hand back to macOS when no temperature can be read. Past the safety
 net's limit (Settings › Safety, `checkSafetyNet`) any manual speed or profile is handed back, or
 run at full speed, depending on the setting; it runs before the profile each refresh so the profile
-can't undo it, and never acts when every fan is already at full speed. Uninstall blocks helper calls, waits for the queue, and hands the fans
-back before removing the helper, refusing if it can't: once the helper is gone, nothing can. A
-new way for a profile to end goes through this, not around it.
+can't undo it, and never acts when every fan is already at full speed. Switched off, it still hands
+the fans back at `backstopTemperature` (105 °C): there is no setting under which a profile holds a
+hot laptop's fans down indefinitely. Uninstall blocks helper calls (`isRemovingHelper`), waits for
+the queue, and hands the fans back before removing the helper, refusing if it can't: once the
+helper is gone, nothing can. User actions and shortcuts are ignored meanwhile rather than switching
+the profile off with nothing sent. Install needs no gate: it renames the new helper over the old
+one, so a call already running finishes with the old file. A new way for a profile to end goes
+through this, not around it.
 
 **A profile can't leave one fan on Auto while another is manual.** `Ftst = 1` suspends thermal
 control for every fan, so the "automatic" one would just be held at its minimum. Per-fan
 settings therefore offer only Fixed, Curve and Max (`FanBehavior.perFanKinds`).
 
-**Profile speed changes are smoothed in the app, not the helper.** `smoothedRPM` ramps towards
+**Profile speed changes are smoothed in the app, not the helper.** `FanSmoothing` ramps towards
 the curve's speed (fast up, slow down) and makes a falling temperature drop 3° before fans slow.
-The ramp state resets whenever a profile ends or the user takes a fan over.
+The ramp state resets whenever a profile ends, the user takes a fan over, or a Max safety trip
+starts. Its goal is rounded like the speeds it returns, so the monitor can tell the ramp has
+arrived and send the last step even when it is under the usual 100 RPM threshold.
 
-**Saved profiles are migrated on read.** Before per-fan settings, a profile's fields sat at the
-top level with a two-point curve as `lowTemperature`/`highTemperature`; `FanProfile.init(from:)`
-still reads that shape, from UserDefaults and from version 1 export files.
+**Saved profiles are migrated and validated on read.** Before per-fan settings, a profile's fields
+sat at the top level with a two-point curve as `lowTemperature`/`highTemperature`;
+`FanProfile.init(from:)` still reads that shape, from UserDefaults and from version 1 export files.
+Decoding is also the one place imported files are checked: curves are sorted and clamped
+(`FanBehavior.validCurve`), per-fan Automatic entries are dropped. A saved list with a profile that
+won't decode keeps the others and copies the raw data to `profilesBackup` instead of overwriting
+it. An older build reading the newer format still can't, so don't run an old copy beside a new one.
 
 **Rules act on changes, not every refresh.** `ProfileRules.decide` only switches when the
 matching rule changes, so a profile picked by hand, or switched off by the safety net, holds
@@ -255,15 +274,21 @@ app; the toggle surfaces whatever error it returns.
 
 ## Testing
 
-There is no automated suite yet. The first ones worth writing are `SMC.decode`/`SMC.encode` for
-every type (the `Double.init` bug would have been caught there) and
-`FanProfile.speedFraction`; neither needs hardware or root.
+`make test` runs the unit tests in `ThermoTuneTests/` (Swift Testing): SMC encoding for every type,
+curves and their validation, profile decoding and migration, smoothing, rules, the CSV, sensor
+names, and a check that every German string keeps its English placeholders. None needs hardware
+or root. They run inside the app as their host, so `RunMode.isReadOnly` (also on for `make shot`)
+keeps that copy from driving or handing back fans, posting notifications, registering shortcuts
+or writing the log; anything new with a side effect checks it too. The host is the real app, so
+`UserDefaults.standard` is the owner's own settings: tests use a suite of their own
+(`ProfileRules(defaults:)`), never `.standard`.
 
-Until then, a change is verified by:
+The rest is checked by hand:
 
 | What | How |
 |---|---|
 | it compiles | `make build` and `make release` |
+| the logic holds | `make test` |
 | it looks right | `make shot`, then read the PNGs |
 | fan writes work | run the installed helper directly: `make helper-status`, then `set 0 3000`, `max-all`, `auto 0`, `auto-all` |
 | fans were given back | `make fans-auto`; every fan reports `manual=false unlocked=false` |
@@ -274,9 +299,9 @@ protecting it from heat.
 
 ## CI
 
-`.github/workflows/ci.yml` runs `make build` and `make release` on a macOS runner for every pull
-request and every push to `main`. No hardware is involved; CI proves the project compiles, not
-that fans move.
+`.github/workflows/ci.yml` runs `make build`, `make release` and `make test` on a macOS runner for
+every pull request and every push to `main`, and on pull requests checks the version was raised.
+No hardware is involved; CI proves the project compiles and its logic holds, not that fans move.
 
 Actions are pinned to commit SHAs, not tags: a tag is mutable, so `@v5` is a promise the
 action's owner can rewrite. The trailing comment is the human-readable version. Dependabot

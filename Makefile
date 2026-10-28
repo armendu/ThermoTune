@@ -15,7 +15,7 @@ HELPER      := /Library/PrivilegedHelperTools/com.armend.ThermoTune.Helper
 XCODEBUILD  := xcodebuild -project $(PROJECT) -scheme $(SCHEME) -derivedDataPath $(DERIVED) -destination "generic/platform=macOS" -quiet
 
 .DEFAULT_GOAL := help
-.PHONY: help build release run shot open helper-status fans-auto clean
+.PHONY: help build release test run shot open version bump helper-status fans-auto clean
 
 help: ## list every target
 	@grep -E '^[a-z-]+:.*## ' $(MAKEFILE_LIST) | awk 'BEGIN {FS = ":.*## "}; {printf "  make %-14s %s\n", $$1, $$2}'
@@ -25,6 +25,11 @@ build: ## Debug build into build/
 
 release: ## Release build into build/
 	$(XCODEBUILD) -configuration Release build
+
+# The tests run inside the app as their host. RunMode keeps that copy read-only, so testing
+# beside a ThermoTune someone is using never touches the fans.
+test: ## run the unit tests (Debug)
+	xcodebuild -project $(PROJECT) -scheme $(SCHEME) -derivedDataPath $(DERIVED) -destination "platform=macOS" -quiet test
 
 # run and shot use Release on purpose. The app compares the installed helper with the one it
 # bundles byte for byte, and the helper you installed came from a Release build, so a Debug
@@ -44,6 +49,18 @@ shot: release ## save the app's windows to build/screenshots (TAB=general|profil
 
 open: ## open the project in Xcode
 	open $(PROJECT)
+
+version: ## print the app's version
+	@sed -n 's/.*MARKETING_VERSION = \(.*\);/\1/p' $(PROJECT)/project.pbxproj | head -1
+
+# Every pull request raises the version, and CI checks that it did, so the "v0.1.3" in the window
+# title says which build is installed. Patch by default; PART=minor or PART=major for the others.
+bump: ## raise the version for a pull request (PART=minor|major, default patch)
+	@old=$$($(MAKE) -s version); \
+	new=$$(echo $$old | awk -F. -v part="$(PART)" '{ if (part == "major") { $$1++; $$2 = 0; $$3 = 0 } \
+		else if (part == "minor") { $$2++; $$3 = 0 } else { $$3++ }; print $$1 "." $$2 "." $$3 }'); \
+	sed -i '' "s/MARKETING_VERSION = $$old;/MARKETING_VERSION = $$new;/" $(PROJECT)/project.pbxproj; \
+	echo "$$old -> $$new"
 
 helper-status: ## what the installed helper reports for each fan
 	@test -x "$(HELPER)" || { echo "helper not installed at $(HELPER)"; exit 1; }

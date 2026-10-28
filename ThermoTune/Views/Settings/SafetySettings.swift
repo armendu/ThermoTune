@@ -27,7 +27,7 @@ struct SafetySettings: View {
                 Group {
                     LabeledContent("When the hottest sensor reaches") {
                         HStack {
-                            Slider(value: $safetyLimit, in: 80...105, step: 1)
+                            Slider(value: $safetyLimit, in: 80...HardwareMonitor.backstopTemperature, step: 1)
                             Text(safetyLimit.degrees)
                                 .monospacedDigit()
                                 .frame(width: 48, alignment: .trailing)
@@ -50,7 +50,7 @@ struct SafetySettings: View {
             } footer: {
                 Text(safetyEnabled
                      ? "Only acts while ThermoTune is controlling the fans, with a manual speed or a profile. Fans already all at full speed are left alone."
-                     : "Manual speeds and profiles will stay where they are, however hot the Mac gets.")
+                     : "Manual speeds and profiles stay where they are until the hottest sensor reaches \(HardwareMonitor.backstopTemperature.degrees). Then the fans go back to macOS.")
                     .foregroundStyle(safetyEnabled ? .secondary : Color.orange)
             }
 
