@@ -26,6 +26,12 @@ enum PreferenceKey {
     static let rules = "profileRules"
     static let rulesFallbackProfileID = "rulesFallbackProfileID"
     static let shortcuts = "shortcuts"
+    static let menuBarContent = "menuBarContent"
+    static let menuBarUsesAverage = "menuBarUsesAverage"
+    static let menuBarColored = "menuBarColored"
+    static let menuBarGraph = "menuBarGraph"
+    static let menuBarCompact = "menuBarCompact"
+    static let hideDockIcon = "hideDockIcon"
 
     static func registerDefaults() {
         UserDefaults.standard.register(defaults: [
@@ -34,6 +40,12 @@ enum PreferenceKey {
             restoreAutomaticOnQuit: true,
             showMenuBarExtra: true,
             menuBarSource: SensorSource.cpu.rawValue,
+            menuBarContent: MenuBarContent.temperature.rawValue,
+            menuBarUsesAverage: false,
+            menuBarColored: false,
+            menuBarGraph: false,
+            menuBarCompact: false,
+            hideDockIcon: false,
             chartWindowMinutes: 5,
             safetyNetEnabled: true,
             safetyLimit: 95.0,
@@ -151,6 +163,25 @@ enum SafetyAction: String, CaseIterable, Identifiable {
         switch self {
         case .automatic: return "Hand the fans back to macOS"
         case .max: return "Run every fan at full speed"
+        }
+    }
+}
+
+/// What the menu bar item shows.
+enum MenuBarContent: String, CaseIterable, Identifiable {
+    case temperature
+    case fanSpeed
+    case both
+    case icon
+
+    var id: Self { self }
+
+    var title: String {
+        switch self {
+        case .temperature: return "Temperature"
+        case .fanSpeed: return "Fan speed"
+        case .both: return "Temperature and fan speed"
+        case .icon: return "Icon only"
         }
     }
 }

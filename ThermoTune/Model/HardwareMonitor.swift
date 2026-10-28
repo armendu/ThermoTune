@@ -35,6 +35,17 @@ final class HardwareMonitor {
     var cpuSummary: TemperatureSummary? { TemperatureSummary(cpuSensors) }
     var gpuSummary: TemperatureSummary? { TemperatureSummary(gpuSensors) }
 
+    /// The average of a group's sensors rather than its hottest; a single
+    /// sensor is its own average.
+    func averageTemperature(_ source: SensorSource) -> Double? {
+        switch source {
+        case .cpu: return cpuSummary?.average
+        case .gpu: return gpuSummary?.average
+        case .hottest: return [cpuSummary?.average, gpuSummary?.average].compactMap { $0 }.max()
+        case .sensor: return temperature(source)
+        }
+    }
+
     func temperature(_ source: SensorSource) -> Double? {
         switch source {
         case .cpu: return cpuSummary?.maximum
