@@ -132,6 +132,21 @@ private struct Tile: View {
 
 private struct TemperatureChart: View {
     @Environment(HardwareMonitor.self) private var monitor
+    @AppStorage(PreferenceKey.chartWindowMinutes) private var windowMinutes = 5
+
+    private static let windows = [1, 5, 15, 30, 60]
+
+    private static func title(minutes: Int) -> String {
+        switch minutes {
+        case 1: return "Last minute"
+        case 60: return "Last hour"
+        default: return "Last \(minutes) minutes"
+        }
+    }
+
+    private var windowStart: Date {
+        Date.now.addingTimeInterval(-Double(windowMinutes) * 60)
+    }
 
     private struct Point: Identifiable {
         let id: String
@@ -142,7 +157,8 @@ private struct TemperatureChart: View {
 
     private var points: [Point] {
         let unit = TemperatureUnit.current
-        return monitor.history.flatMap { sample in
+        let start = windowStart
+        return monitor.history.filter { $0.date >= start }.flatMap { sample in
             [("CPU", sample.cpu), ("GPU", sample.gpu)].compactMap { series, value in
                 value.map { Point(id: "\(sample.id)-\(series)", date: sample.date, series: series, value: unit.convert($0)) }
             }
@@ -151,9 +167,19 @@ private struct TemperatureChart: View {
 
     var body: some View {
         VStack(alignment: .leading, spacing: 6) {
-            Text("Hottest sensor, last 5 minutes")
-                .font(.caption)
-                .foregroundStyle(.secondary)
+            HStack {
+                Text("Average temperature")
+                    .font(.caption)
+                    .foregroundStyle(.secondary)
+                Spacer()
+                Picker("Time range", selection: $windowMinutes) {
+                    ForEach(Self.windows, id: \.self) { Text(Self.title(minutes: $0)).tag($0) }
+                }
+                .pickerStyle(.menu)
+                .labelsHidden()
+                .fixedSize()
+                .controlSize(.small)
+            }
             Chart(points) { point in
                 LineMark(x: .value("Time", point.date),
                          y: .value("Temperature", point.value))
