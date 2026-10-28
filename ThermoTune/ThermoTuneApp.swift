@@ -22,8 +22,10 @@ struct ThermoTuneApp: App {
         }
         .defaultSize(width: 900, height: 640)
         .commands {
+            // The About tab rather than the standard panel, so there is one
+            // About screen to keep current.
             CommandGroup(replacing: .appInfo) {
-                AboutMenuButton()
+                SettingsTabButton(title: "About \(AppInfo.name)", tab: .about)
             }
         }
 

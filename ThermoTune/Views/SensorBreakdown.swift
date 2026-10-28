@@ -40,9 +40,7 @@ struct SensorBreakdown: View {
 
     private func row(_ sensor: TemperatureSensor) -> some View {
         HStack(spacing: 6) {
-            Circle()
-                .fill(Color.temperature(sensor.value))
-                .frame(width: 6, height: 6)
+            TemperatureDot(value: sensor.value)
             Text(sensor.key)
                 .font(.caption.monospaced())
                 .foregroundStyle(.secondary)

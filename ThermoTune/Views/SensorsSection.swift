@@ -5,20 +5,13 @@ struct SensorsSection: View {
     @Environment(HardwareMonitor.self) private var monitor
     @State private var showsAllSensors = false
 
-    private var groups: [(TemperatureSensor.Group, [TemperatureSensor])] {
-        let grouped = Dictionary(grouping: monitor.sensors, by: \.group)
-        return TemperatureSensor.Group.allCases.compactMap { group in
-            grouped[group].map { (group, $0) }
-        }
-    }
-
     var body: some View {
         Panel {
             if monitor.sensors.isEmpty {
                 Text(monitor.isDiscoveringSensors ? "Discovering sensors…" : "No sensors found.")
                     .foregroundStyle(.secondary)
             }
-            ForEach(groups, id: \.0) { group, sensors in
+            ForEach(monitor.sensorGroups, id: \.group) { group, sensors in
                 GroupRow(group: group, sensors: sensors)
             }
         } header: {
@@ -45,12 +38,7 @@ private struct GroupRow: View {
     let group: TemperatureSensor.Group
     let sensors: [TemperatureSensor]
 
-    private var title: String {
-        switch group {
-        case .cpu: return "CPU Package"
-        default: return group.rawValue
-        }
-    }
+    private var title: String { group.title }
 
     @State private var isHovering = false
     @State private var showsBreakdown = false
@@ -120,13 +108,10 @@ private struct AllSensorsView: View {
     var body: some View {
         ScrollView {
             VStack(alignment: .leading, spacing: 14) {
-                ForEach(TemperatureSensor.Group.allCases, id: \.self) { group in
-                    let sensors = monitor.sensors.filter { $0.group == group }
-                    if !sensors.isEmpty {
-                        VStack(alignment: .leading, spacing: 6) {
-                            Text(group.rawValue).font(.headline)
-                            SensorGrid(sensors: sensors)
-                        }
+                ForEach(monitor.sensorGroups, id: \.group) { group, sensors in
+                    VStack(alignment: .leading, spacing: 6) {
+                        Text(group.title).font(.headline)
+                        SensorGrid(sensors: sensors)
                     }
                 }
             }
@@ -143,9 +128,7 @@ private struct SensorGrid: View {
         LazyVGrid(columns: [GridItem(.adaptive(minimum: 120), spacing: 8)], spacing: 8) {
             ForEach(sensors) { sensor in
                 HStack(spacing: 6) {
-                    Circle()
-                        .fill(Color.temperature(sensor.value))
-                        .frame(width: 6, height: 6)
+                    TemperatureDot(value: sensor.value)
                     VStack(alignment: .leading, spacing: 0) {
                         Text(sensor.label)
                             .font(.caption)

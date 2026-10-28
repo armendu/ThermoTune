@@ -14,15 +14,16 @@ enum SettingsTab: String {
     }
 }
 
-/// The app menu's "About ThermoTune", pointed at the About tab so there is one
-/// About screen rather than the standard panel and a tab that drift apart.
-struct AboutMenuButton: View {
-    @AppStorage(SettingsTab.storageKey) private var tab: SettingsTab = .general
+/// Opens Settings on a given tab, for menu items and buttons outside Settings.
+struct SettingsTabButton: View {
+    let title: String
+    let tab: SettingsTab
+    @AppStorage(SettingsTab.storageKey) private var selectedTab: SettingsTab = .general
     @Environment(\.openSettings) private var openSettings
 
     var body: some View {
-        Button("About \(AppInfo.name)") {
-            tab = .about
+        Button(title) {
+            selectedTab = tab
             openSettings()
         }
     }
@@ -250,7 +251,7 @@ private struct ProfileEditor: View {
                         }
                     }
                     if let fan = monitor.fans.first, let rpm = profile.targetRPM(for: fan, temperature: nil) {
-                        LabeledContent("Fan speed", value: "\(Int(rpm)) RPM")
+                        LabeledContent("Fan speed", value: rpm.rpm)
                     }
                 }
             case .curve:
@@ -281,7 +282,7 @@ private struct ProfileEditor: View {
                             .foregroundStyle(.tint)
                     } else {
                         Button("Use This Profile") { monitor.activate(profile) }
-                            .disabled(monitor.helperState != .ready)
+                            .disabled(!monitor.canControlFans)
                     }
                 }
             }
@@ -367,7 +368,7 @@ private struct CurvePreview: View {
             .frame(height: 110)
 
             if let current, let fan, let rpm = profile.targetRPM(for: fan, temperature: current) {
-                Text("Now \(current.degrees) → \(Int(rpm)) RPM")
+                Text("Now \(current.degrees) → \(rpm.rpm)")
                     .font(.caption)
                     .foregroundStyle(.secondary)
             }
@@ -407,19 +408,29 @@ private struct HelperSettings: View {
                 HStack {
                     Spacer()
                     if monitor.helperState != .ready {
-                        Button(monitor.helperState == .notInstalled ? "Install Helper…" : "Update Helper…") {
-                            monitor.installHelper()
-                        }
+                        HelperInstallButton()
                     }
                     Button("Uninstall Helper…", role: .destructive) {
                         monitor.uninstallHelper()
                     }
-                    .disabled(monitor.helperState == .notInstalled)
+                    .disabled(monitor.helperState == .notInstalled || monitor.isChangingHelper)
                 }
             }
         }
         .formStyle(.grouped)
         .frame(height: 300)
+    }
+}
+
+/// Install or Update, whichever the helper needs.
+struct HelperInstallButton: View {
+    @Environment(HardwareMonitor.self) private var monitor
+
+    var body: some View {
+        Button(monitor.helperState == .notInstalled ? "Install Helper…" : "Update Helper…") {
+            monitor.installHelper()
+        }
+        .disabled(monitor.isChangingHelper)
     }
 }
 

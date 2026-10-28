@@ -65,19 +65,23 @@ private struct FansPanel: View {
                 Text("Fans").font(.headline)
                 Spacer()
                 if monitor.helperState == .ready {
-                    ProfilePicker()
-                        .fixedSize()
-                    EditProfilesButton()
-                        .buttonStyle(.link)
-                    if monitor.fans.count > 1 {
-                        Button("All Max") { monitor.setAllMax() }
+                    Group {
+                        ProfilePicker()
+                            .fixedSize()
+                        SettingsTabButton(title: "Edit…", tab: .profiles)
                             .buttonStyle(.link)
-                            .disabled(monitor.fans.allSatisfy { monitor.mode(of: $0) == .max })
+                            .help("Create and edit fan profiles")
+                        if monitor.fans.count > 1 {
+                            Button("All Max") { monitor.setAllMax() }
+                                .buttonStyle(.link)
+                                .disabled(monitor.fans.allSatisfy { monitor.mode(of: $0) == .max })
+                        }
+                        Button("All Auto") { monitor.setAllAutomatic() }
+                            .buttonStyle(.link)
+                            .disabled(monitor.fansAreSystemControlled)
+                            .help("Hand every fan back to macOS")
                     }
-                    Button("All Auto") { monitor.setAllAutomatic() }
-                        .buttonStyle(.link)
-                        .disabled(monitor.fans.allSatisfy(\.isSystemControlled))
-                        .help("Hand every fan back to macOS")
+                    .disabled(!monitor.canControlFans)
                 }
             }
         } footer: {
@@ -94,41 +98,40 @@ private struct OverviewTiles: View {
 
     var body: some View {
         HStack(spacing: 12) {
-            StatTile(title: "CPU", symbol: "cpu", summary: monitor.cpuSummary)
-            StatTile(title: "GPU", symbol: "square.stack.3d.up", summary: monitor.gpuSummary)
-            FanTile(fans: monitor.fans)
+            StatTile(source: .cpu)
+            StatTile(source: .gpu)
+            FanTile()
         }
         .padding(.vertical, 4)
     }
 }
 
 private struct StatTile: View {
-    let title: String
-    let symbol: String
-    let summary: TemperatureSummary?
+    let source: SensorSource
+    @Environment(HardwareMonitor.self) private var monitor
 
     var body: some View {
-        if let summary {
-            Tile(title: title, symbol: symbol,
-                 value: "\(Int(TemperatureUnit.current.convert(summary.average).rounded()))",
+        if let summary = monitor.summary(source) {
+            Tile(title: source.title, symbol: source.symbol,
+                 value: summary.average.degreesNumber,
                  unit: TemperatureUnit.current.symbol,
                  valueColor: .temperature(summary.average), caption: "average · hottest \(summary.maximum.degrees)")
         } else {
-            Tile(title: title, symbol: symbol, value: "–", caption: "reading…")
+            Tile(title: source.title, symbol: source.symbol, value: "–", caption: "reading…")
         }
     }
 }
 
 private struct FanTile: View {
-    let fans: [FanInfo]
+    @Environment(HardwareMonitor.self) private var monitor
 
     var body: some View {
-        let fastest = fans.map(\.actual).max() ?? 0
-        let mode = fans.allSatisfy(\.isSystemControlled) ? "automatic" : "manual"
+        let fastest = monitor.fans.map(\.actual).max() ?? 0
+        let mode = monitor.fansAreSystemControlled ? "automatic" : "manual"
         Tile(title: "Fans", symbol: "fan",
              value: fastest < 1 ? "Off" : Int(fastest).formatted(),
              unit: fastest < 1 ? nil : "RPM",
-             caption: fastest < 1 || fans.count < 2 ? mode : "fastest · \(mode)")
+             caption: fastest < 1 || monitor.fans.count < 2 ? mode : "fastest · \(mode)")
     }
 }
 
@@ -284,20 +287,21 @@ private struct TemperatureChart: View {
 
 private struct HelperFooter: View {
     @Environment(HardwareMonitor.self) private var monitor
+    @AppStorage(PreferenceKey.restoreAutomaticOnQuit) private var restoreOnQuit = true
 
     var body: some View {
         switch monitor.helperState {
         case .ready:
-            Text("Fans return to automatic when ThermoTune quits.")
+            Text(restoreOnQuit
+                 ? "Fans return to automatic when ThermoTune quits."
+                 : "Fans keep their speeds when ThermoTune quits.")
         case .notInstalled, .needsUpdate:
             HStack(alignment: .firstTextBaseline) {
                 Text(monitor.helperState == .notInstalled
                      ? "Changing fan speed needs a helper tool, installed once with your administrator password."
                      : "The installed helper tool is out of date.")
                 Spacer()
-                Button(monitor.helperState == .notInstalled ? "Install Helper…" : "Update Helper…") {
-                    monitor.installHelper()
-                }
+                HelperInstallButton()
             }
         }
     }

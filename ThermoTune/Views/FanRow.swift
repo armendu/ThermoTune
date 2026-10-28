@@ -10,7 +10,7 @@ struct FanRow: View {
     private var isBusy: Bool { monitor.busyFans.contains(fan.id) }
 
     private var canControl: Bool {
-        monitor.helperState == .ready && fan.maximum > fan.minimum && !isBusy
+        monitor.canControlFans && fan.maximum > fan.minimum && !isBusy
     }
 
     private var range: ClosedRange<Double> {
@@ -54,7 +54,7 @@ struct FanRow: View {
                     }
                     .controlSize(.small)
                     .disabled(!canControl)
-                    Text("\(Int(targetRPM)) RPM")
+                    Text(targetRPM.rpm)
                         .font(.callout.monospacedDigit())
                         .frame(width: 76, alignment: .trailing)
                 }
