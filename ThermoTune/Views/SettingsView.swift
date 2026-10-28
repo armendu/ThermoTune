@@ -2,9 +2,16 @@ import Charts
 import ServiceManagement
 import SwiftUI
 
+/// Which tab Settings shows. Stored only so menu items in other scenes (About,
+/// Edit Profiles…) can pick the tab before opening Settings; it is reset to
+/// General whenever Settings closes, so plain ⌘, always lands on General.
 enum SettingsTab: String {
     case general, profiles, helper, about
     static let storageKey = "settingsTab"
+
+    static func reset() {
+        UserDefaults.standard.removeObject(forKey: storageKey)
+    }
 }
 
 /// The app menu's "About ThermoTune", pointed at the About tab so there is one
@@ -40,6 +47,7 @@ struct SettingsView: View {
                 .tag(SettingsTab.about)
         }
         .frame(width: 640)
+        .onDisappear(perform: SettingsTab.reset)
     }
 }
 
