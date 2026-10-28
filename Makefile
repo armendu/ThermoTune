@@ -1,11 +1,5 @@
 # Everything ThermoTune needs, from the command line. Xcode is only needed for its toolchain.
 #
-#   make build        Debug build (a quick compile check)
-#   make release      Release build (what CI builds and what users run)
-#   make run          release, then launch it
-#   make shot         release, launch, and save PNGs of the app's windows to build/screenshots
-#   make fans-auto    hand every fan back to macOS, whatever state they were left in
-#
 # `make` on its own lists every target, which is the only documentation of this file that
 # cannot go stale.
 
