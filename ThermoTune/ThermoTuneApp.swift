@@ -27,6 +27,16 @@ struct ThermoTuneApp: App {
             CommandGroup(replacing: .appInfo) {
                 SettingsTabButton(title: "About \(AppInfo.name)", tab: .about)
             }
+            // Every fan action in the window and the menu bar item, also in the
+            // menu bar, where macOS apps keep their commands.
+            CommandMenu("Fans") {
+                FanCommands()
+                    .environment(monitor)
+            }
+            // The default Help item only says help isn't available.
+            CommandGroup(replacing: .help) {
+                Link("\(AppInfo.name) Help", destination: AppInfo.helpURL)
+            }
         }
 
         Settings {
