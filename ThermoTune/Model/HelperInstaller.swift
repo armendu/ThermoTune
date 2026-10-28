@@ -1,4 +1,5 @@
 import Foundation
+import os
 
 /// Installs and runs the setuid-root `ThermoTuneHelper`, which performs all SMC
 /// writes. Reading sensors needs no privileges; changing fan speed does.
@@ -11,11 +12,14 @@ enum HelperInstaller {
 
     enum HelperError: LocalizedError {
         case missingFromBundle
+        /// The administrator password prompt was dismissed.
+        case cancelled
         case failed(String)
 
         var errorDescription: String? {
             switch self {
             case .missingFromBundle: return "The helper tool is missing from the app bundle."
+            case .cancelled: return "Cancelled."
             case .failed(let message): return message
             }
         }
@@ -70,11 +74,13 @@ enum HelperInstaller {
         try runAsAdministrator("/bin/rm -f \(shellQuoted(installURL.path)) \(shellQuoted(legacyInstallURL.path))")
     }
 
-    /// Runs the installed helper with the given arguments and waits for it.
-    @discardableResult
-    static func run(_ arguments: [String]) throws -> String {
+    static func run(_ arguments: [String]) throws {
         try runProcess(installURL, arguments)
     }
+
+    /// How long after a helper call its SMC writes may still be landing. Until
+    /// then, reading the fans back can still show the state from before it.
+    static let writeSettleTime: TimeInterval = 5
 
     /// Runs the installed helper off the main thread. The call counts as running
     /// from the moment it is made on the main actor, not from when a background
@@ -83,48 +89,54 @@ enum HelperInstaller {
     static func runInBackground(_ arguments: [String]) async throws {
         runningCalls.enter()
         try await Task.detached {
-            defer { runningCalls.leave() }
+            defer {
+                lastCallEnded.withLock { $0 = .now }
+                runningCalls.leave()
+            }
             try run(arguments)
         }.value
     }
 
     /// Blocks until no `runInBackground` call is running, or the timeout passes.
-    /// Returns whether any was running.
-    static func waitForRunningCalls(timeout: TimeInterval) -> Bool {
-        guard runningCalls.wait(timeout: .now()) == .timedOut else { return false }
+    /// Returns whether one was running or ended within `writeSettleTime`, i.e.
+    /// whether the fans can't yet be trusted to read back what it wrote.
+    static func waitForRecentCalls(timeout: TimeInterval) -> Bool {
+        let wasRunning = runningCalls.wait(timeout: .now()) == .timedOut
         _ = runningCalls.wait(timeout: .now() + timeout)
-        return true
+        return wasRunning || lastCallEnded.withLock { $0.timeIntervalSinceNow > -writeSettleTime }
     }
 
     // MARK: Private
 
     private static let runningCalls = DispatchGroup()
+    private static let lastCallEnded = OSAllocatedUnfairLock(initialState: Date.distantPast)
 
     private static func runAsAdministrator(_ command: String) throws {
         let escaped = command
             .replacingOccurrences(of: "\\", with: "\\\\")
             .replacingOccurrences(of: "\"", with: "\\\"")
         let script = "do shell script \"\(escaped)\" with administrator privileges"
-        try runProcess(URL(fileURLWithPath: "/usr/bin/osascript"), ["-e", script])
+        do {
+            try runProcess(URL(fileURLWithPath: "/usr/bin/osascript"), ["-e", script])
+        } catch HelperError.failed(let message) where message.contains("(-128)") {
+            throw HelperError.cancelled
+        }
     }
 
-    @discardableResult
-    private static func runProcess(_ url: URL, _ arguments: [String]) throws -> String {
+    private static func runProcess(_ url: URL, _ arguments: [String]) throws {
         let process = Process()
         process.executableURL = url
         process.arguments = arguments
-        let stdout = Pipe(), stderr = Pipe()
-        process.standardOutput = stdout
+        let stderr = Pipe()
+        process.standardOutput = FileHandle.nullDevice
         process.standardError = stderr
         try process.run()
         process.waitUntilExit()
-        let output = String(decoding: stdout.fileHandleForReading.readDataToEndOfFile(), as: UTF8.self)
         guard process.terminationStatus == 0 else {
             let message = String(decoding: stderr.fileHandleForReading.readDataToEndOfFile(), as: UTF8.self)
                 .trimmingCharacters(in: .whitespacesAndNewlines)
             throw HelperError.failed(message.isEmpty ? "Helper exited with status \(process.terminationStatus)." : message)
         }
-        return output
     }
 
     private static func shellQuoted(_ string: String) -> String {

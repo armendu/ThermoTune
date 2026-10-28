@@ -7,6 +7,9 @@ struct TemperatureSensor: Identifiable, Equatable {
         case cpu = "CPU"
         case gpu = "GPU"
         case other = "Other"
+
+        /// `.cpu` is the whole package, as opposed to the per-core groups.
+        var title: String { self == .cpu ? "CPU Package" : rawValue }
     }
 
     let key: String

@@ -95,14 +95,12 @@ final class ProfileStore {
         activeProfileID = defaults.string(forKey: PreferenceKey.activeProfileID).flatMap(UUID.init)
     }
 
-    @discardableResult
-    func add(kind: FanProfile.Kind = .curve) -> FanProfile {
-        let profile = FanProfile(name: uniqueName("New Profile"), kind: kind)
+    func add() -> FanProfile {
+        let profile = FanProfile(name: uniqueName("New Profile"), kind: .curve)
         profiles.append(profile)
         return profile
     }
 
-    @discardableResult
     func duplicate(_ profile: FanProfile) -> FanProfile {
         var copy = profile
         copy.id = UUID()

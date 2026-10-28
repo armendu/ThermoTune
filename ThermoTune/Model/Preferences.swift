@@ -55,4 +55,12 @@ enum SensorSource: String, CaseIterable, Identifiable, Codable {
         case .hottest: return "Hottest (CPU or GPU)"
         }
     }
+
+    var symbol: String {
+        switch self {
+        case .cpu: return "cpu"
+        case .gpu: return "square.stack.3d.up"
+        case .hottest: return "thermometer.medium"
+        }
+    }
 }
