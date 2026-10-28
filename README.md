@@ -51,7 +51,8 @@ no background daemons, no third-party code.
   every fan to Max or back to macOS, from any app.
 - **Safety net:** while ThermoTune controls the fans, a reading that stays at your limit (95 °C
   by default, for 10 seconds) hands the fans back to macOS and switches the profile off, or, if
-  you prefer, runs every fan at full speed until it cools down.
+  you prefer, runs every fan at full speed until it cools down. Even switched off, it hands the
+  fans back to macOS at 105 °C.
 - **Notifications:** when the safety net steps in, a fan isn't spinning, macOS starts slowing
   the Mac to cool it, the helper needs updating, or a temperature stays above a limit you set.
   The main window and the menu bar also show macOS's thermal pressure.
