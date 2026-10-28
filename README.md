@@ -14,7 +14,8 @@ no background daemons, no third-party code.
 
 > [!WARNING]
 > ThermoTune changes how your Mac cools itself. Manual fan speeds stay where you put them
-> however hot the Mac gets, until you switch back to Automatic or quit the app. It's built and
+> however hot the Mac gets, until you switch back to Automatic or quit the app; only profiles have
+> the overheating safety net described below. It's built and
 > tested on an M3 Pro MacBook Pro; other Macs should work but haven't been confirmed. Use it at
 > your own risk.
 
@@ -36,7 +37,10 @@ no background daemons, no third-party code.
   - *Full Speed*: every fan at maximum.
 
   ThermoTune comes with **Automatic**, **Balanced**, **Cool** and **Full Speed**, and you can
-  create your own.
+  create your own. Whatever a Fixed Speed or Temperature Curve profile says, every fan goes to
+  full speed once the hottest sensor reaches 95 °C, until it is back under 85 °C. If the
+  temperatures can't be read at all, macOS gets the fans until they can. Choosing **None**, or
+  a profile stopping because of an error, also hands the fans back to macOS.
 - **Menu bar:** a live temperature in the menu bar, with a quick panel for profiles and fan
   actions. ThermoTune keeps running there after you close its window.
 - **Preferences (⌘,):** launch at login, °C or °F, refresh rate, which temperature the menu bar
@@ -82,8 +86,8 @@ auto-all            hand every fan back to macOS
 **The first switch to Manual or Max takes a few seconds.** On Apple silicon, ThermoTune first
 has to ask the SMC to release fan control, and the SMC takes about 5 to 10 seconds to agree.
 Later changes are instant. While any fan is under manual control, macOS's own fan management is
-paused for every fan, so ThermoTune shows all of them as manual until the last one goes back to
-Auto.
+paused for every fan: a fan set to Auto meanwhile is held at its minimum speed, and says so,
+until the last one goes back to Auto or you use **All Auto**.
 
 **Your fans are handed back when ThermoTune quits.** That includes being quit from the terminal
 with `kill`. You can turn this off in Preferences if you want a profile to keep running without
@@ -97,7 +101,7 @@ mode, run:
 ## Uninstall
 
 1. In ThermoTune, open **Preferences › Helper** and click **Uninstall Helper…**. This also hands
-   the fans back to macOS.
+   the fans back to macOS, and leaves the helper installed if it can't.
 2. Quit ThermoTune and delete the app.
 
 ## Contributing

@@ -192,7 +192,18 @@ pull request.
 handler routes `kill`/`pkill` through it, because SIGTERM otherwise skips it, which is exactly
 how a test once left a fan in manual mode. SIGKILL and crashes can't be caught: `make
 fans-auto` is the recovery. The preference "Restore automatic fan control when quitting" can
-turn this off for users who want a profile to outlive the app.
+turn this off for users who want a profile to outlive the app. Quitting first waits for a helper
+call still running: it would otherwise land after the decision, and since its writes apply
+asynchronously, the fans read straight after it can still look automatic.
+
+**Whenever ThermoTune stops driving the fans, they go back to macOS.** `profileHoldsFans` marks
+a Fixed, Curve or Max profile in charge. If that profile ends by any route other than the user
+taking a fan over (None, deleted, Restore Defaults, a helper error), the next refresh sends
+`auto-all`; otherwise the fans stay at the profile's last speed with thermal control suspended.
+Fixed and Curve profiles also go to full speed past 95 °C, and hand back to macOS when no
+temperature can be read. Uninstall blocks helper calls, waits for the queue, and hands the fans
+back before removing the helper, refusing if it can't: once the helper is gone, nothing can. A
+new way for a profile to end goes through this, not around it.
 
 **Default profiles are saved on first launch.** `FanProfile.defaults` mints fresh UUIDs per
 process, so unsaved defaults had new IDs every launch and an active default profile was

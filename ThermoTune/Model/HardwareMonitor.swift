@@ -46,12 +46,27 @@ final class HardwareMonitor {
     /// Long enough for the chart's widest time range (an hour).
     static let historyDuration: TimeInterval = 3600
 
+    /// A Fixed or Curve profile can hold fans near minimum at any temperature,
+    /// with macOS's thermal control suspended. Past this the fans go to full
+    /// speed whatever the profile says, until the hottest sensor is back under
+    /// `overheatClearTemperature`.
+    static let overheatTemperature: Double = 95
+    static let overheatClearTemperature: Double = 85
+
     let profiles: ProfileStore
 
     @ObservationIgnored private var smc: SMC?
     @ObservationIgnored private var sensorKeys: [String] = []
     @ObservationIgnored private var timer: Timer?
     @ObservationIgnored private var helperQueue: Task<Void, Never>?
+    /// A Fixed, Curve or Max profile is driving the fans. If it stops other than
+    /// by the user taking a fan over (None, deleted, a helper error), the fans go
+    /// back to macOS instead of staying at the profile's last speed.
+    @ObservationIgnored private var profileHoldsFans = false
+    @ObservationIgnored private var isOverheating = false
+    /// No helper calls while uninstalling: one landing after the final
+    /// `auto-all` would leave a fan manual with no helper left to undo it.
+    @ObservationIgnored private var isUninstalling = false
 
     init(profiles: ProfileStore) {
         self.profiles = profiles
@@ -100,9 +115,12 @@ final class HardwareMonitor {
             guard let value = try? smc.read(key), value > 1 else { return nil }
             return TemperatureSensor(key: key, value: value)
         }
-        guard !sensors.isEmpty else { return }
-        history.append(Sample(date: .now, cpu: cpuSummary?.average, gpu: gpuSummary?.average))
-        history.removeAll { $0.date.timeIntervalSinceNow < -Self.historyDuration }
+        if !sensors.isEmpty {
+            history.append(Sample(date: .now, cpu: cpuSummary?.average, gpu: gpuSummary?.average))
+            history.removeAll { $0.date.timeIntervalSinceNow < -Self.historyDuration }
+        }
+        // Even with no readings: a profile that has lost its sensors must let go
+        // of the fans rather than hold its last speed.
         applyActiveProfile()
     }
 
@@ -110,8 +128,7 @@ final class HardwareMonitor {
 
     func activate(_ profile: FanProfile?) {
         profiles.activeProfileID = profile?.id
-        if profile == nil { return }
-        guard helperState == .ready else {
+        if profile != nil, helperState != .ready {
             errorMessage = "Install the helper tool to use fan profiles."
             profiles.activeProfileID = nil
             return
@@ -123,8 +140,17 @@ final class HardwareMonitor {
     /// so curves follow temperature and the profile is re-applied if macOS takes
     /// control back.
     private func applyActiveProfile() {
-        guard !WindowSnapshot.isActive, let profile = profiles.activeProfile, helperState == .ready,
+        guard !WindowSnapshot.isActive, !isDiscoveringSensors, !isUninstalling, helperState == .ready,
               busyFans.isEmpty, pendingModes.isEmpty, !fans.isEmpty else { return }
+        guard let profile = profiles.activeProfile else {
+            if profileHoldsFans {
+                profileHoldsFans = false
+                isOverheating = false
+                sendAllAutomatic()
+            }
+            return
+        }
+        profileHoldsFans = profile.kind != .automatic
 
         switch profile.kind {
         case .automatic:
@@ -132,7 +158,25 @@ final class HardwareMonitor {
         case .max:
             if fans.contains(where: { $0.mode != .max }) { sendAllMax() }
         case .fixed, .curve:
-            let temperature = temperature(profile.source)
+            // With no temperature at all, nothing would notice the Mac
+            // overheating: macOS gets the fans until there is a reading again.
+            guard let hottest = temperature(.hottest) else {
+                if !fans.allSatisfy(\.isSystemControlled) { sendAllAutomatic() }
+                return
+            }
+            if hottest >= Self.overheatTemperature {
+                isOverheating = true
+            } else if hottest <= Self.overheatClearTemperature {
+                isOverheating = false
+            }
+            if isOverheating {
+                if fans.contains(where: { $0.mode != .max }) { sendAllMax() }
+                return
+            }
+            // GPU sensors can all drop out while it is powered down. Following
+            // the hottest reading meanwhile errs towards more cooling, and avoids
+            // a ~10 second hand-over to macOS and back each time.
+            let temperature = temperature(profile.source) ?? hottest
             for fan in fans {
                 guard let rpm = profile.targetRPM(for: fan, temperature: temperature) else { continue }
                 // Skip small changes so a curve doesn't call the helper every tick.
@@ -145,8 +189,6 @@ final class HardwareMonitor {
 
     // MARK: Fan control
 
-    // MARK: Fan control
-
     /// The mode to show for a fan: a just-requested mode wins until the SMC
     /// reports it, since entering manual mode can take ~10 seconds.
     func mode(of fan: FanInfo) -> FanMode {
@@ -156,18 +198,26 @@ final class HardwareMonitor {
     // User actions take over from any active profile.
 
     func setMode(_ mode: FanMode, fan: FanInfo, rpm: Double? = nil) {
-        profiles.activeProfileID = nil
+        takeOverFromProfile()
         sendMode(mode, fan: fan, rpm: rpm)
     }
 
     func setAllMax() {
-        profiles.activeProfileID = nil
+        takeOverFromProfile()
         sendAllMax()
     }
 
     func setAllAutomatic() {
-        profiles.activeProfileID = nil
+        takeOverFromProfile()
         sendAllAutomatic()
+    }
+
+    /// Ends the active profile without handing the fans back, because the
+    /// caller is about to set them itself.
+    private func takeOverFromProfile() {
+        profileHoldsFans = false
+        isOverheating = false
+        profiles.activeProfileID = nil
     }
 
     private func sendMode(_ mode: FanMode, fan: FanInfo, rpm: Double? = nil) {
@@ -188,6 +238,7 @@ final class HardwareMonitor {
     }
 
     private func runHelper(fans ids: [Int], mode: FanMode, _ arguments: [String]) {
+        guard !isUninstalling else { return }
         guard helperState == .ready else {
             errorMessage = "Install the helper tool to control fan speed."
             return
@@ -202,10 +253,12 @@ final class HardwareMonitor {
         let run = Task {
             await previous?.value
             do {
-                try await Task.detached { _ = try HelperInstaller.run(arguments) }.value
+                try await HelperInstaller.runInBackground(arguments)
             } catch {
                 errorMessage = error.localizedDescription
                 for id in ids { pendingModes[id] = nil }
+                // With `profileHoldsFans` still set, the next refresh hands the
+                // fans back to macOS.
                 profiles.activeProfileID = nil
             }
             for id in ids { busyFans.remove(id) }
@@ -239,8 +292,22 @@ final class HardwareMonitor {
     }
 
     func uninstallHelper() {
+        takeOverFromProfile()
+        isUninstalling = true
         Task {
-            _ = try? await Task.detached { try HelperInstaller.run(["auto-all"]) }.value
+            defer { isUninstalling = false }
+            await helperQueue?.value
+            do {
+                try await HelperInstaller.runInBackground(["auto-all"])
+            } catch {
+                refresh()
+                // Nothing could hand them back once the helper is gone.
+                if !fans.allSatisfy(\.isSystemControlled) {
+                    errorMessage = "The fans could not be handed back to macOS, so the helper was left installed. "
+                        + error.localizedDescription
+                    return
+                }
+            }
             do {
                 try await Task.detached { try HelperInstaller.uninstall() }.value
             } catch {
@@ -257,10 +324,17 @@ final class HardwareMonitor {
     /// so a manual speed never outlives the app.
     nonisolated static func restoreAutomaticFans() {
         guard !WindowSnapshot.isActive,
-              UserDefaults.standard.bool(forKey: PreferenceKey.restoreAutomaticOnQuit),
-              HelperInstaller.state() == .ready,
-              let smc = try? SMC(),
-              !smc.fans().allSatisfy(\.isSystemControlled) else { return }
+              UserDefaults.standard.bool(forKey: PreferenceKey.restoreAutomaticOnQuit) else { return }
+        // A `set` still running would otherwise land after the decision below,
+        // and outlive the app. Its writes also apply asynchronously, so reading
+        // the fans straight after it can still show them automatic: if one was
+        // running, hand back regardless.
+        let helperWasRunning = HelperInstaller.waitForRunningCalls(timeout: 30)
+        // Any installed root helper can run `auto-all`, even one out of date.
+        guard HelperInstaller.isInstalledAsRoot else { return }
+        if !helperWasRunning {
+            guard let smc = try? SMC(), !smc.fans().allSatisfy(\.isSystemControlled) else { return }
+        }
         _ = try? HelperInstaller.run(["auto-all"])
     }
 }

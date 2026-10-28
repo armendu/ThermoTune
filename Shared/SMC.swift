@@ -9,6 +9,7 @@ enum SMCError: LocalizedError {
     case smcResult(key: String, code: UInt8)
     case unsupportedType(key: String, type: String)
     case sizeMismatch(key: String)
+    case noFanRange(fan: Int)
 
     var errorDescription: String? {
         switch self {
@@ -19,6 +20,7 @@ enum SMCError: LocalizedError {
             return code == 0x84 ? "SMC key \(key) not found." : "SMC returned error 0x\(String(code, radix: 16)) for \(key)."
         case .unsupportedType(let key, let type): return "SMC key \(key) has unsupported type '\(type)'."
         case .sizeMismatch(let key): return "Encoded value has the wrong size for SMC key \(key)."
+        case .noFanRange(let fan): return "Could not read the speed range of fan \(fan + 1), so its speed was left alone."
         }
     }
 }

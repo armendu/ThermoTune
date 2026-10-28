@@ -1,6 +1,6 @@
 import SwiftUI
 
-/// Chooses the active fan profile. "None" leaves fans as they are.
+/// Chooses the active fan profile. "None" hands the fans back to macOS.
 struct ProfilePicker: View {
     @Environment(HardwareMonitor.self) private var monitor
 
