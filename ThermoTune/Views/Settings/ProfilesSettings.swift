@@ -41,7 +41,11 @@ struct ProfilesSettings: View {
                     }
                     .help("New profile")
                     Button {
-                        if let selection { store.delete(selection) }
+                        if let selection {
+                            store.delete(selection)
+                            monitor.rules.profileDeleted(selection)
+                            monitor.hotKeys.prune(profileIDs: Set(store.profiles.map(\.id)))
+                        }
                         selection = store.profiles.first?.id
                     } label: {
                         Image(systemName: "minus").frame(width: 22, height: 18)
@@ -61,7 +65,10 @@ struct ProfilesSettings: View {
                         Button("Import Profiles…") { isImporting = true }
                         Divider()
                         Button("Restore Default Profiles") {
+                            let old = store.profiles.map(\.id)
                             store.restoreDefaults()
+                            old.forEach(monitor.rules.profileDeleted)
+                            monitor.hotKeys.prune(profileIDs: Set(store.profiles.map(\.id)))
                             selection = store.profiles.first?.id
                         }
                     } label: {

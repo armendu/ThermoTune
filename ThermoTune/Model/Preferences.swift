@@ -22,6 +22,10 @@ enum PreferenceKey {
     static let alertFanStall = "alertFanStall"
     static let alertThermalPressure = "alertThermalPressure"
     static let alertHelper = "alertHelper"
+    static let rulesEnabled = "rulesEnabled"
+    static let rules = "profileRules"
+    static let rulesFallbackProfileID = "rulesFallbackProfileID"
+    static let shortcuts = "shortcuts"
 
     static func registerDefaults() {
         UserDefaults.standard.register(defaults: [

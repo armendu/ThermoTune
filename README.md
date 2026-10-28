@@ -41,6 +41,10 @@ no background daemons, no third-party code.
   create your own. If the temperatures can't be read at all, macOS gets the fans until they
   can. Choosing **None**, or a profile stopping because of an error, also hands the fans back to
   macOS.
+- **Automation:** rules switch profiles for you: on battery, on the power adapter, while an app
+  is running, or when a temperature is high. The first matching rule wins, and a profile you pick
+  by hand stays until the conditions change. Global keyboard shortcuts switch profiles, or set
+  every fan to Max or back to macOS, from any app.
 - **Safety net:** while ThermoTune controls the fans, a reading that stays at your limit (95 °C
   by default, for 10 seconds) hands the fans back to macOS and switches the profile off, or, if
   you prefer, runs every fan at full speed until it cools down.

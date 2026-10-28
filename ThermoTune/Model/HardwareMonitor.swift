@@ -60,6 +60,8 @@ final class HardwareMonitor {
 
     let profiles: ProfileStore
     let alerts = Alerts()
+    let rules = ProfileRules()
+    let hotKeys = HotKeys()
     private(set) var thermalState = ProcessInfo.processInfo.thermalState
     private(set) var safetyTrip: SafetyTrip?
 
@@ -88,6 +90,20 @@ final class HardwareMonitor {
         refresh()
         discoverSensors()
         scheduleRefresh()
+        hotKeys.perform = { [weak self] key in self?.performShortcut(key) }
+        hotKeys.prune(profileIDs: Set(profiles.profiles.map(\.id)))
+        hotKeys.registerAll()
+    }
+
+    private func performShortcut(_ key: String) {
+        switch key {
+        case ShortcutAction.allMax.storageKey: setAllMax()
+        case ShortcutAction.allAutomatic.storageKey: setAllAutomatic()
+        default:
+            if let profile = profiles.profiles.first(where: { ShortcutAction.profile($0.id).storageKey == key }) {
+                activate(profile)
+            }
+        }
     }
 
     /// (Re)starts polling at the interval chosen in Preferences.
@@ -130,12 +146,24 @@ final class HardwareMonitor {
             history.removeAll { $0.date.timeIntervalSinceNow < -Self.historyDuration }
         }
         thermalState = ProcessInfo.processInfo.thermalState
+        applyRules()
         // Even with no readings: a profile that has lost its sensors must let go
         // of the fans rather than hold its last speed.
         if !checkSafetyNet() {
             applyActiveProfile()
         }
         alerts.evaluate(self)
+    }
+
+    // MARK: Rules
+
+    private func applyRules() {
+        guard !WindowSnapshot.isActive, !isDiscoveringSensors, helperState == .ready else { return }
+        guard case .use(let id) = rules.decide(temperature: temperature) else { return }
+        let profile = id.flatMap { id in profiles.profiles.first { $0.id == id } }
+        if profile?.id != profiles.activeProfileID {
+            profiles.activeProfileID = profile?.id
+        }
     }
 
     // MARK: Safety net

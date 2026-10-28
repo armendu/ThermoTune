@@ -72,7 +72,7 @@ make build          # Debug build, a compile check
 make release        # Release build, what CI builds and what users run
 make run            # Release build, then launch it
 make shot           # Release build, launch, PNGs of its windows in build/screenshots
-make shot TAB=profiles   # …plus Preferences on that tab (general | profiles | safety | menuBar | advanced | about)
+make shot TAB=profiles   # …plus Preferences on that tab (general | profiles | automation | safety | menuBar | advanced | about)
 make helper-status  # what the installed helper reports for each fan
 make fans-auto      # hand every fan back to macOS, whatever state they were left in
 ```
@@ -218,6 +218,15 @@ The ramp state resets whenever a profile ends or the user takes a fan over.
 **Saved profiles are migrated on read.** Before per-fan settings, a profile's fields sat at the
 top level with a two-point curve as `lowTemperature`/`highTemperature`; `FanProfile.init(from:)`
 still reads that shape, from UserDefaults and from version 1 export files.
+
+**Rules act on changes, not every refresh.** `ProfileRules.decide` only switches when the
+matching rule changes, so a profile picked by hand, or switched off by the safety net, holds
+until the conditions change; re-applying every refresh would undo both. Temperature rules
+keep matching until 5° under their limit.
+
+**Global shortcuts use Carbon's `RegisterEventHotKey`** (`HotKeys.swift`): no Accessibility
+permission and no dependency. Registration can fail silently for combinations the system or
+another app owns; the Automation tab marks those.
 
 **Default profiles are saved on first launch.** `FanProfile.defaults` mints fresh UUIDs per
 process, so unsaved defaults had new IDs every launch and an active default profile was
