@@ -10,6 +10,8 @@ struct ThermoTuneApp: App {
 
     init() {
         PreferenceKey.registerDefaults()
+        // A tab left over from a quit with Settings open, or from `make shot TAB=…`.
+        SettingsTab.reset()
         _monitor = State(initialValue: HardwareMonitor(profiles: ProfileStore()))
     }
 
