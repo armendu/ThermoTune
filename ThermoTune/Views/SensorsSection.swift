@@ -123,6 +123,7 @@ private struct AllSensorsView: View {
 
 private struct SensorGrid: View {
     let sensors: [TemperatureSensor]
+    @Environment(HardwareMonitor.self) private var monitor
 
     var body: some View {
         LazyVGrid(columns: [GridItem(.adaptive(minimum: 120), spacing: 8)], spacing: 8) {
@@ -130,7 +131,7 @@ private struct SensorGrid: View {
                 HStack(spacing: 6) {
                     TemperatureDot(value: sensor.value)
                     VStack(alignment: .leading, spacing: 0) {
-                        Text(sensor.label)
+                        Text(monitor.name(of: sensor.key))
                             .font(.caption)
                             .lineLimit(1)
                         Text(sensor.key)

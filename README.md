@@ -25,27 +25,45 @@ no background daemons, no third-party code.
   reading for the CPU (performance and efficiency cores separately on Apple silicon) and the
   GPU, plus a chart of the average CPU and GPU temperature over the last 1 to 60 minutes. Hover
   over a group's sensor count to see every sensor behind it, or open **All Sensors…** for the
-  full list.
+  full list. Sensors get readable names (Performance cores 3, Battery, SSD…): best guesses from
+  their SMC keys, since Apple doesn't publish them.
+- **History:** export the last hour as CSV, or keep a daily log file in
+  `~/Library/Logs/ThermoTune` with CPU and GPU average and hottest, fan speeds, thermal pressure
+  and the active profile.
 - **Fan control:** see each fan's current and maximum speed, and set it to **Auto** (macOS
   decides), **Manual** (pick a speed with a slider) or **Max**. **All Max** and **All Auto**
   switch every fan at once.
-- **Profiles:** reusable fan behaviours for every fan:
+- **Profiles:** reusable fan behaviours, the same for every fan or set per fan:
   - *System Automatic*: macOS manages the fans.
   - *Fixed Speed*: a set share of each fan's speed range.
-  - *Temperature Curve*: fans ramp up from minimum to full speed between two temperatures of
-    the CPU, the GPU, or whichever is hotter.
+  - *Temperature Curve*: a curve you draw, with as many points as you like, following the CPU,
+    the GPU, whichever is hotter, or any single sensor. Fans speed up quickly and slow down
+    gently, and only once the temperature has dropped a few degrees, so they don't hunt.
   - *Full Speed*: every fan at maximum.
 
   ThermoTune comes with **Automatic**, **Balanced**, **Cool** and **Full Speed**, and you can
-  create your own. Whatever a Fixed Speed or Temperature Curve profile says, every fan goes to
-  full speed once the hottest sensor reaches 95 °C, until it is back under 85 °C. If the
-  temperatures can't be read at all, macOS gets the fans until they can. Choosing **None**, or
-  a profile stopping because of an error, also hands the fans back to macOS.
-- **Menu bar:** a live temperature in the menu bar, with a quick panel for profiles and fan
-  actions. ThermoTune keeps running there after you close its window.
+  create your own. If the temperatures can't be read at all, macOS gets the fans until they
+  can. Choosing **None**, or a profile stopping because of an error, also hands the fans back to
+  macOS.
+- **Automation:** rules switch profiles for you: on battery, on the power adapter, while an app
+  is running, or when a temperature is high. The first matching rule wins, and a profile you pick
+  by hand stays until the conditions change. Global keyboard shortcuts switch profiles, or set
+  every fan to Max or back to macOS, from any app.
+- **Safety net:** while ThermoTune controls the fans, a reading that stays at your limit (95 °C
+  by default, for 10 seconds) hands the fans back to macOS and switches the profile off, or, if
+  you prefer, runs every fan at full speed until it cools down.
+- **Notifications:** when the safety net steps in, a fan isn't spinning, macOS starts slowing
+  the Mac to cool it, the helper needs updating, or a temperature stays above a limit you set.
+  The main window and the menu bar also show macOS's thermal pressure.
+- **Menu bar:** a live temperature, fan speed or both in the menu bar, optionally coloured by
+  temperature and with a graph of the last 10 minutes, plus a quick panel for profiles and fan
+  actions. ThermoTune keeps running there after you close its window, and can hide its Dock icon
+  to run from the menu bar only.
 - **Preferences (⌘,):** launch at login, °C or °F, refresh rate, which temperature the menu bar
   shows, and what happens to the fans when you quit. The About tab has the version, license
   and links to the source.
+
+- **Languages:** English and German.
 
 ## Requirements
 
@@ -100,7 +118,7 @@ mode, run:
 
 ## Uninstall
 
-1. In ThermoTune, open **Preferences › Helper** and click **Uninstall Helper…**. This also hands
+1. In ThermoTune, open **Settings › Advanced** and click **Uninstall Helper…**. This also hands
    the fans back to macOS, and leaves the helper installed if it can't.
 2. Quit ThermoTune and delete the app.
 

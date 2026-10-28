@@ -50,6 +50,11 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
 
     func applicationDidFinishLaunching(_ notification: Notification) {
         WindowSnapshot.scheduleIfRequested()
+        if UserDefaults.standard.bool(forKey: PreferenceKey.hideDockIcon), !WindowSnapshot.isActive {
+            // With neither a Dock icon nor a menu bar item, there'd be no way back in.
+            UserDefaults.standard.set(true, forKey: PreferenceKey.showMenuBarExtra)
+            DockIcon.apply()
+        }
         // `kill`/`pkill` send SIGTERM, which would otherwise skip
         // applicationWillTerminate and leave fans under manual control.
         signal(SIGTERM, SIG_IGN)

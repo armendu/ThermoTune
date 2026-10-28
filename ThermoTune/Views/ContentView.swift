@@ -53,6 +53,9 @@ private struct FansPanel: View {
 
     var body: some View {
         Panel {
+            if let trip = monitor.safetyTrip {
+                SafetyBanner(trip: trip)
+            }
             if monitor.fans.isEmpty {
                 Text("No fans detected on this Mac.")
                     .foregroundStyle(.secondary)
@@ -91,6 +94,56 @@ private struct FansPanel: View {
     }
 }
 
+/// Shown at the top of the Fans panel after the safety net has stepped in.
+private struct SafetyBanner: View {
+    let trip: HardwareMonitor.SafetyTrip
+    @Environment(HardwareMonitor.self) private var monitor
+
+    var body: some View {
+        HStack(alignment: .firstTextBaseline, spacing: 8) {
+            Image(systemName: "exclamationmark.shield.fill")
+                .foregroundStyle(.orange)
+            VStack(alignment: .leading, spacing: 2) {
+                Text("The safety net stepped in at \(trip.temperature.degrees)")
+                    .fontWeight(.semibold)
+                Text(trip.action == .automatic
+                     ? "macOS is managing the fans again, and the profile was switched off. \(trip.date.formatted(date: .omitted, time: .shortened))"
+                     : "Every fan runs at full speed until it cools down. \(trip.date.formatted(date: .omitted, time: .shortened))")
+                    .font(.callout)
+                    .foregroundStyle(.secondary)
+            }
+            Spacer()
+            Button("Dismiss") { monitor.dismissSafetyTrip() }
+                .controlSize(.small)
+        }
+    }
+}
+
+/// macOS's own measure of how hard it is working to stay cool. From Serious up,
+/// it slows the Mac down.
+struct ThermalStateBadge: View {
+    let state: ProcessInfo.ThermalState
+
+    private var color: Color {
+        switch state {
+        case .nominal: return .green
+        case .fair: return .yellow
+        case .serious: return .orange
+        default: return .red
+        }
+    }
+
+    var body: some View {
+        HStack(spacing: 5) {
+            Circle().fill(color).frame(width: 7, height: 7)
+            Text("Thermal pressure: \(state.title)")
+        }
+        .font(.caption)
+        .foregroundStyle(.secondary)
+        .help("How hard macOS is working to keep the Mac cool. At Serious and Critical it slows the Mac down.")
+    }
+}
+
 // MARK: - Overview
 
 private struct OverviewTiles: View {
@@ -115,9 +168,9 @@ private struct StatTile: View {
             Tile(title: source.title, symbol: source.symbol,
                  value: summary.average.degreesNumber,
                  unit: TemperatureUnit.current.symbol,
-                 valueColor: .temperature(summary.average), caption: "average · hottest \(summary.maximum.degrees)")
+                 valueColor: .temperature(summary.average), caption: String(localized: "average · hottest \(summary.maximum.degrees)"))
         } else {
-            Tile(title: source.title, symbol: source.symbol, value: "–", caption: "reading…")
+            Tile(title: source.title, symbol: source.symbol, value: "–", caption: String(localized: "reading…"))
         }
     }
 }
@@ -127,11 +180,11 @@ private struct FanTile: View {
 
     var body: some View {
         let fastest = monitor.fans.map(\.actual).max() ?? 0
-        let mode = monitor.fansAreSystemControlled ? "automatic" : "manual"
-        Tile(title: "Fans", symbol: "fan",
-             value: fastest < 1 ? "Off" : Int(fastest).formatted(),
+        let mode = monitor.fansAreSystemControlled ? String(localized: "automatic") : String(localized: "manual")
+        Tile(title: String(localized: "Fans"), symbol: "fan",
+             value: fastest < 1 ? String(localized: "Off") : Int(fastest).formatted(),
              unit: fastest < 1 ? nil : "RPM",
-             caption: fastest < 1 || monitor.fans.count < 2 ? mode : "fastest · \(mode)")
+             caption: fastest < 1 || monitor.fans.count < 2 ? mode : String(localized: "fastest · \(mode)"))
     }
 }
 
@@ -179,9 +232,9 @@ private struct TemperatureChart: View {
 
     private static func title(minutes: Int) -> String {
         switch minutes {
-        case 1: return "Last minute"
-        case 60: return "Last hour"
-        default: return "Last \(minutes) minutes"
+        case 1: return String(localized: "Last minute")
+        case 60: return String(localized: "Last hour")
+        default: return String(localized: "Last \(minutes) minutes")
         }
     }
 
@@ -248,6 +301,7 @@ private struct TemperatureChart: View {
                     .font(.caption)
                     .foregroundStyle(.secondary)
                 Spacer()
+                ThermalStateBadge(state: monitor.thermalState)
                 Picker("Time range", selection: $windowMinutes) {
                     ForEach(Self.windows, id: \.self) { Text(Self.title(minutes: $0)).tag($0) }
                 }

@@ -20,7 +20,7 @@ struct FanRow: View {
     var body: some View {
         VStack(alignment: .leading, spacing: 8) {
             HStack(spacing: 10) {
-                Label(fan.name, systemImage: "fan")
+                Label(fan.title, systemImage: "fan")
                     .symbolEffect(.rotate, options: .repeat(.continuous), isActive: fan.actual > 0)
                     .font(.headline)
                 speedText
@@ -32,7 +32,7 @@ struct FanRow: View {
                         .help("Switching modes can take about 10 seconds while macOS hands over fan control.")
                 }
                 Picker("Mode", selection: modeBinding) {
-                    ForEach(FanMode.allCases) { Text($0.rawValue).tag($0) }
+                    ForEach(FanMode.allCases) { Text($0.title).tag($0) }
                 }
                 .pickerStyle(.segmented)
                 .labelsHidden()

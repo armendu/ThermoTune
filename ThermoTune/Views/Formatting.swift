@@ -7,7 +7,7 @@ extension Double {
     }
     /// A Celsius reading formatted in the unit chosen in Preferences, unit included.
     var degrees: String { degreesNumber + TemperatureUnit.current.symbol }
-    var rpm: String { self < 1 ? "Off" : "\(Int(rounded()).formatted()) RPM" }
+    var rpm: String { self < 1 ? String(localized: "Off") : "\(Int(rounded()).formatted()) RPM" }
 }
 
 extension Color {
