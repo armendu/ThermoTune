@@ -4,7 +4,7 @@ import SwiftUI
 /// Edit Profiles…) can pick the tab before opening Settings; it is reset to
 /// General whenever Settings closes, so plain ⌘, always lands on General.
 enum SettingsTab: String {
-    case general, profiles, menuBar, advanced, about
+    case general, profiles, automation, safety, menuBar, advanced, about
     static let storageKey = "settingsTab"
 
     static func reset() {
@@ -37,6 +37,12 @@ struct SettingsView: View {
             ProfilesSettings()
                 .tabItem { Label("Profiles", systemImage: "slider.horizontal.3") }
                 .tag(SettingsTab.profiles)
+            AutomationSettings()
+                .tabItem { Label("Automation", systemImage: "wand.and.stars") }
+                .tag(SettingsTab.automation)
+            SafetySettings()
+                .tabItem { Label("Safety", systemImage: "exclamationmark.shield") }
+                .tag(SettingsTab.safety)
             MenuBarSettings()
                 .tabItem { Label("Menu Bar", systemImage: "menubar.rectangle") }
                 .tag(SettingsTab.menuBar)

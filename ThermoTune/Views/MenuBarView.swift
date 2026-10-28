@@ -22,6 +22,7 @@ struct MenuBarView: View {
         VStack(alignment: .leading, spacing: 8) {
             row("CPU", symbol: "cpu", summary: monitor.cpuSummary)
             row("GPU", symbol: "square.stack.3d.up", summary: monitor.gpuSummary)
+            ThermalStateBadge(state: monitor.thermalState)
             ForEach(monitor.fans) { fan in
                 LabeledContent {
                     Text(fan.isManual ? "\(fan.actual.rpm) · manual" : fan.actual.rpm)
