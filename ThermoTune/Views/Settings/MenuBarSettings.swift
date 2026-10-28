@@ -9,7 +9,7 @@ struct MenuBarSettings: View {
             Section {
                 Toggle("Show ThermoTune in the menu bar", isOn: $showMenuBar)
                 Picker("Temperature shown", selection: $menuBarSource) {
-                    ForEach(SensorSource.allCases) { Text($0.title).tag($0) }
+                    ForEach(SensorSource.groups) { Text($0.title).tag($0) }
                 }
                 .disabled(!showMenuBar)
             }

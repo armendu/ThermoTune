@@ -29,11 +29,12 @@ no background daemons, no third-party code.
 - **Fan control:** see each fan's current and maximum speed, and set it to **Auto** (macOS
   decides), **Manual** (pick a speed with a slider) or **Max**. **All Max** and **All Auto**
   switch every fan at once.
-- **Profiles:** reusable fan behaviours for every fan:
+- **Profiles:** reusable fan behaviours, the same for every fan or set per fan:
   - *System Automatic*: macOS manages the fans.
   - *Fixed Speed*: a set share of each fan's speed range.
-  - *Temperature Curve*: fans ramp up from minimum to full speed between two temperatures of
-    the CPU, the GPU, or whichever is hotter.
+  - *Temperature Curve*: a curve you draw, with as many points as you like, following the CPU,
+    the GPU, whichever is hotter, or any single sensor. Fans speed up quickly and slow down
+    gently, and only once the temperature has dropped a few degrees, so they don't hunt.
   - *Full Speed*: every fan at maximum.
 
   ThermoTune comes with **Automatic**, **Balanced**, **Cool** and **Full Speed**, and you can
