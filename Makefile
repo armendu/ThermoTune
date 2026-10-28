@@ -42,7 +42,7 @@ run: release ## build Release, then launch it (quits a running copy first)
 # shot starts a second copy beside any ThermoTune already running and stops only that copy:
 # a pkill here once quit the app someone was using. In snapshot mode the app never touches the
 # fans, so the two copies don't fight over them.
-shot: release ## save the app's windows to build/screenshots (TAB=general|profiles|helper|about adds Preferences)
+shot: release ## save the app's windows to build/screenshots (TAB=general|profiles|menuBar|advanced|about adds Preferences)
 	@rm -rf "$(SHOTS)"
 	@THERMOTUNE_SNAPSHOT_DIR="$(CURDIR)/$(SHOTS)" THERMOTUNE_SETTINGS_TAB="$(TAB)" \
 		"$(RELEASE_APP)/Contents/MacOS/ThermoTune" >/dev/null 2>&1 & pid=$$!; sleep 9; kill -TERM $$pid; sleep 1

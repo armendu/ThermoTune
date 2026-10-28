@@ -1,133 +1,13 @@
 import Charts
-import ServiceManagement
 import SwiftUI
+import UniformTypeIdentifiers
 
-/// Which tab Settings shows. Stored only so menu items in other scenes (About,
-/// Edit Profiles…) can pick the tab before opening Settings; it is reset to
-/// General whenever Settings closes, so plain ⌘, always lands on General.
-enum SettingsTab: String {
-    case general, profiles, helper, about
-    static let storageKey = "settingsTab"
-
-    static func reset() {
-        UserDefaults.standard.removeObject(forKey: storageKey)
-    }
-}
-
-/// The app menu's "About ThermoTune", pointed at the About tab so there is one
-/// About screen rather than the standard panel and a tab that drift apart.
-struct AboutMenuButton: View {
-    @AppStorage(SettingsTab.storageKey) private var tab: SettingsTab = .general
-    @Environment(\.openSettings) private var openSettings
-
-    var body: some View {
-        Button("About \(AppInfo.name)") {
-            tab = .about
-            openSettings()
-        }
-    }
-}
-
-struct SettingsView: View {
-    @AppStorage(SettingsTab.storageKey) private var tab: SettingsTab = .general
-
-    var body: some View {
-        TabView(selection: $tab) {
-            GeneralSettings()
-                .tabItem { Label("General", systemImage: "gearshape") }
-                .tag(SettingsTab.general)
-            ProfilesSettings()
-                .tabItem { Label("Profiles", systemImage: "slider.horizontal.3") }
-                .tag(SettingsTab.profiles)
-            HelperSettings()
-                .tabItem { Label("Helper", systemImage: "lock.shield") }
-                .tag(SettingsTab.helper)
-            AboutSettings()
-                .tabItem { Label("About", systemImage: "info.circle") }
-                .tag(SettingsTab.about)
-        }
-        .frame(width: 640)
-        .onDisappear(perform: SettingsTab.reset)
-    }
-}
-
-// MARK: - General
-
-private struct GeneralSettings: View {
-    @Environment(HardwareMonitor.self) private var monitor
-    @AppStorage(PreferenceKey.temperatureUnit) private var unit: TemperatureUnit = .celsius
-    @AppStorage(PreferenceKey.refreshInterval) private var refreshInterval = 2.0
-    @AppStorage(PreferenceKey.restoreAutomaticOnQuit) private var restoreOnQuit = true
-    @AppStorage(PreferenceKey.showMenuBarExtra) private var showMenuBar = true
-    @AppStorage(PreferenceKey.menuBarSource) private var menuBarSource: SensorSource = .cpu
-    @State private var launchAtLogin = SMAppService.mainApp.status == .enabled
-    @State private var loginItemError: String?
-
-    var body: some View {
-        Form {
-            Section {
-                Toggle("Launch at login", isOn: launchAtLoginBinding)
-                Toggle("Restore automatic fan control when quitting", isOn: $restoreOnQuit)
-            } footer: {
-                if !restoreOnQuit {
-                    Text("Manual speeds and profiles keep running after ThermoTune quits, and macOS won't manage the fans until you switch them back to Automatic.")
-                        .foregroundStyle(.orange)
-                }
-            }
-
-            Section("Menu Bar") {
-                Toggle("Show ThermoTune in the menu bar", isOn: $showMenuBar)
-                Picker("Temperature shown", selection: $menuBarSource) {
-                    ForEach(SensorSource.allCases) { Text($0.title).tag($0) }
-                }
-                .disabled(!showMenuBar)
-            }
-
-            Section("Display") {
-                Picker("Temperature unit", selection: $unit) {
-                    ForEach(TemperatureUnit.allCases) { Text($0.title).tag($0) }
-                }
-                Picker("Update readings every", selection: $refreshInterval) {
-                    Text("1 second").tag(1.0)
-                    Text("2 seconds").tag(2.0)
-                    Text("5 seconds").tag(5.0)
-                }
-            }
-        }
-        .formStyle(.grouped)
-        .frame(height: 400)
-        .onChange(of: refreshInterval) { monitor.scheduleRefresh() }
-        .alert("Launch at Login", isPresented: Binding(get: { loginItemError != nil }, set: { if !$0 { loginItemError = nil } })) {
-            Button("OK") {}
-        } message: {
-            Text(loginItemError ?? "")
-        }
-    }
-
-    private var launchAtLoginBinding: Binding<Bool> {
-        Binding(
-            get: { launchAtLogin },
-            set: { enabled in
-                do {
-                    if enabled {
-                        try SMAppService.mainApp.register()
-                    } else {
-                        try SMAppService.mainApp.unregister()
-                    }
-                } catch {
-                    loginItemError = error.localizedDescription
-                }
-                launchAtLogin = SMAppService.mainApp.status == .enabled
-            }
-        )
-    }
-}
-
-// MARK: - Profiles
-
-private struct ProfilesSettings: View {
+struct ProfilesSettings: View {
     @Environment(HardwareMonitor.self) private var monitor
     @State private var selection: UUID?
+    @State private var isExporting = false
+    @State private var isImporting = false
+    @State private var transferError: String?
 
     private var store: ProfileStore { monitor.profiles }
 
@@ -177,6 +57,9 @@ private struct ProfilesSettings: View {
                         }
                         .disabled(selection == nil)
                         Divider()
+                        Button("Export Profiles…") { isExporting = true }
+                        Button("Import Profiles…") { isImporting = true }
+                        Divider()
                         Button("Restore Default Profiles") {
                             store.restoreDefaults()
                             selection = store.profiles.first?.id
@@ -207,6 +90,72 @@ private struct ProfilesSettings: View {
         .onAppear {
             selection = selection ?? store.activeProfileID ?? store.profiles.first?.id
         }
+        .fileExporter(isPresented: $isExporting, document: ProfilesDocument(profiles: store.profiles),
+                      contentType: .json, defaultFilename: "\(AppInfo.name) Profiles") { result in
+            if case .failure(let error) = result { transferError = error.localizedDescription }
+        }
+        .fileImporter(isPresented: $isImporting, allowedContentTypes: [.json]) { result in
+            do {
+                let url = try result.get()
+                let didAccess = url.startAccessingSecurityScopedResource()
+                defer { if didAccess { url.stopAccessingSecurityScopedResource() } }
+                let added = store.importProfiles(try ProfilesDocument(data: Data(contentsOf: url)).profiles)
+                selection = added.first?.id ?? selection
+            } catch {
+                transferError = error.localizedDescription
+            }
+        }
+        .alert("Profiles", isPresented: Binding(get: { transferError != nil },
+                                                set: { if !$0 { transferError = nil } })) {
+            Button("OK") {}
+        } message: {
+            Text(transferError ?? "")
+        }
+    }
+}
+
+/// Every profile as one JSON file, to back up or move to another Mac.
+private struct ProfilesDocument: FileDocument {
+    static var readableContentTypes: [UTType] { [.json] }
+
+    enum ReadError: LocalizedError {
+        case unsupported(version: Int)
+        case empty
+
+        var errorDescription: String? {
+            switch self {
+            case .unsupported(let version):
+                return "This file was made by a newer version of \(AppInfo.name) (format \(version)). Update \(AppInfo.name) to import it."
+            case .empty:
+                return "This file has no profiles in it."
+            }
+        }
+    }
+
+    let profiles: [FanProfile]
+
+    init(profiles: [FanProfile]) {
+        self.profiles = profiles
+    }
+
+    init(data: Data) throws {
+        let archive = try JSONDecoder().decode(ProfileArchive.self, from: data)
+        guard archive.version <= ProfileArchive.currentVersion else {
+            throw ReadError.unsupported(version: archive.version)
+        }
+        guard !archive.profiles.isEmpty else { throw ReadError.empty }
+        profiles = archive.profiles
+    }
+
+    init(configuration: ReadConfiguration) throws {
+        guard let data = configuration.file.regularFileContents else { throw CocoaError(.fileReadCorruptFile) }
+        try self.init(data: data)
+    }
+
+    func fileWrapper(configuration: WriteConfiguration) throws -> FileWrapper {
+        let encoder = JSONEncoder()
+        encoder.outputFormatting = [.prettyPrinted, .sortedKeys]
+        return FileWrapper(regularFileWithContents: try encoder.encode(ProfileArchive(profiles: profiles)))
     }
 }
 
@@ -271,7 +220,7 @@ private struct ProfileEditor: View {
             Section {
                 HStack {
                     if monitor.helperState != .ready, profile.kind != .automatic {
-                        Text("Install the helper (Helper tab) to use profiles.")
+                        Text("Install the helper (Advanced tab) to use profiles.")
                             .font(.callout)
                             .foregroundStyle(.secondary)
                     }
@@ -373,110 +322,5 @@ private struct CurvePreview: View {
             }
         }
         .padding(.vertical, 4)
-    }
-}
-
-// MARK: - Helper
-
-private struct HelperSettings: View {
-    @Environment(HardwareMonitor.self) private var monitor
-
-    var body: some View {
-        Form {
-            Section {
-                LabeledContent("Status") {
-                    switch monitor.helperState {
-                    case .ready:
-                        Label("Installed", systemImage: "checkmark.circle.fill").foregroundStyle(.green)
-                    case .needsUpdate:
-                        Label("Out of date", systemImage: "exclamationmark.triangle.fill").foregroundStyle(.orange)
-                    case .notInstalled:
-                        Label("Not installed", systemImage: "xmark.circle").foregroundStyle(.secondary)
-                    }
-                }
-                LabeledContent("Location") {
-                    Text(HelperInstaller.installURL.path)
-                        .font(.callout.monospaced())
-                        .textSelection(.enabled)
-                }
-            } footer: {
-                Text("Reading temperatures needs no special access, but changing fan speed does. The helper is a small tool that only changes fan settings. Installing it asks for your administrator password once.")
-            }
-
-            Section {
-                HStack {
-                    Spacer()
-                    if monitor.helperState != .ready {
-                        Button(monitor.helperState == .notInstalled ? "Install Helper…" : "Update Helper…") {
-                            monitor.installHelper()
-                        }
-                    }
-                    Button("Uninstall Helper…", role: .destructive) {
-                        monitor.uninstallHelper()
-                    }
-                    .disabled(monitor.helperState == .notInstalled)
-                }
-            }
-        }
-        .formStyle(.grouped)
-        .frame(height: 300)
-    }
-}
-
-// MARK: - About
-
-private struct AboutSettings: View {
-    var body: some View {
-        Form {
-            Section {
-                HStack(spacing: 16) {
-                    RoundedRectangle(cornerRadius: 14, style: .continuous)
-                        .fill(LinearGradient(colors: [.cyan, .blue], startPoint: .top, endPoint: .bottom))
-                        .frame(width: 64, height: 64)
-                        .overlay {
-                            Image(systemName: "fan.fill")
-                                .font(.system(size: 30, weight: .medium))
-                                .foregroundStyle(.white)
-                        }
-                        .accessibilityHidden(true)
-                    VStack(alignment: .leading, spacing: 3) {
-                        Text(AppInfo.name)
-                            .font(.title2.weight(.semibold))
-                        Text(AppInfo.version)
-                            .foregroundStyle(.secondary)
-                            .textSelection(.enabled)
-                        Text("See your Mac's temperatures and control its fans.")
-                            .foregroundStyle(.secondary)
-                    }
-                }
-                .padding(.vertical, 4)
-            }
-
-            Section {
-                LabeledContent("Created by") {
-                    Link(AppInfo.creator, destination: AppInfo.creatorURL)
-                }
-                LabeledContent("License") {
-                    Link(AppInfo.licenseName, destination: AppInfo.licenseURL)
-                }
-                LabeledContent("Source code") {
-                    Link("github.com/armendu/ThermoTune", destination: AppInfo.repositoryURL)
-                }
-            } footer: {
-                Text("ThermoTune is free and open source. Bug reports, pull requests and reports of which Macs it works on are all welcome.")
-            }
-
-            Section {
-                HStack {
-                    Link("Report an Issue…", destination: AppInfo.issuesURL)
-                    Spacer()
-                    Link("Security Policy", destination: AppInfo.securityURL)
-                }
-            } footer: {
-                Text("\(AppInfo.copyright) Not affiliated with Apple.")
-            }
-        }
-        .formStyle(.grouped)
-        .frame(height: 440)
     }
 }
