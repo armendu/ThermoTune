@@ -16,7 +16,7 @@ struct ThermoTuneApp: App {
     }
 
     var body: some Scene {
-        Window("ThermoTune", id: Self.mainWindowID) {
+        Window(AppInfo.windowTitle, id: Self.mainWindowID) {
             ContentView()
                 .environment(monitor)
         }
@@ -50,7 +50,7 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
 
     func applicationDidFinishLaunching(_ notification: Notification) {
         WindowSnapshot.scheduleIfRequested()
-        if UserDefaults.standard.bool(forKey: PreferenceKey.hideDockIcon), !WindowSnapshot.isActive {
+        if UserDefaults.standard.bool(forKey: PreferenceKey.hideDockIcon), !RunMode.isReadOnly {
             // With neither a Dock icon nor a menu bar item, there'd be no way back in.
             UserDefaults.standard.set(true, forKey: PreferenceKey.showMenuBarExtra)
             DockIcon.apply()
