@@ -25,7 +25,11 @@ no background daemons, no third-party code.
   reading for the CPU (performance and efficiency cores separately on Apple silicon) and the
   GPU, plus a chart of the average CPU and GPU temperature over the last 1 to 60 minutes. Hover
   over a group's sensor count to see every sensor behind it, or open **All Sensors…** for the
-  full list.
+  full list. Sensors get readable names (Performance cores 3, Battery, SSD…): best guesses from
+  their SMC keys, since Apple doesn't publish them.
+- **History:** export the last hour as CSV, or keep a daily log file in
+  `~/Library/Logs/ThermoTune` with CPU and GPU average and hottest, fan speeds, thermal pressure
+  and the active profile.
 - **Fan control:** see each fan's current and maximum speed, and set it to **Auto** (macOS
   decides), **Manual** (pick a speed with a slider) or **Max**. **All Max** and **All Auto**
   switch every fan at once.

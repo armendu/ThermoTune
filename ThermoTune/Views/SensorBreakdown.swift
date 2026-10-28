@@ -5,6 +5,7 @@ import SwiftUI
 struct SensorBreakdown: View {
     let title: String
     let sensors: [TemperatureSensor]
+    @Environment(HardwareMonitor.self) private var monitor
 
     private static let rowHeight: CGFloat = 22
     private static let maxListHeight: CGFloat = 380
@@ -15,8 +16,8 @@ struct SensorBreakdown: View {
 
     private var columnCount: Int {
         switch sensors.count {
-        case ...6: return 1
-        case ...16: return 2
+        case ...8: return 1
+        case ...20: return 2
         default: return 3
         }
     }
@@ -43,9 +44,12 @@ struct SensorBreakdown: View {
             Circle()
                 .fill(Color.temperature(sensor.value))
                 .frame(width: 6, height: 6)
+            Text(monitor.name(of: sensor.key))
+                .font(.caption)
+                .lineLimit(1)
             Text(sensor.key)
-                .font(.caption.monospaced())
-                .foregroundStyle(.secondary)
+                .font(.caption2.monospaced())
+                .foregroundStyle(.tertiary)
             Spacer(minLength: 6)
             Text(sensor.value.degrees)
                 .font(.callout.monospacedDigit())
@@ -82,13 +86,13 @@ struct SensorBreakdown: View {
                 list
             }
 
-            Text("Hottest first. Names are SMC keys; Apple doesn't publish where each sensor sits. Click the count to keep this open.")
+            Text("Hottest first. Names are best guesses from each sensor's SMC key; Apple doesn't publish where they sit. Click the count to keep this open.")
                 .font(.caption2)
                 .foregroundStyle(.tertiary)
                 .fixedSize(horizontal: false, vertical: true)
         }
         .padding(14)
-        .frame(width: columnCount == 1 ? 230 : CGFloat(columnCount) * 140 + 28)
+        .frame(width: columnCount == 1 ? 270 : CGFloat(columnCount) * 210 + 28)
     }
 
     private func stat(_ label: String, _ value: Double) -> some View {

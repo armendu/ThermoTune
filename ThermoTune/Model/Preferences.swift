@@ -32,6 +32,7 @@ enum PreferenceKey {
     static let menuBarGraph = "menuBarGraph"
     static let menuBarCompact = "menuBarCompact"
     static let hideDockIcon = "hideDockIcon"
+    static let keepsLog = "keepsLog"
 
     static func registerDefaults() {
         UserDefaults.standard.register(defaults: [
@@ -46,6 +47,7 @@ enum PreferenceKey {
             menuBarGraph: false,
             menuBarCompact: false,
             hideDockIcon: false,
+            keepsLog: false,
             chartWindowMinutes: 5,
             safetyNetEnabled: true,
             safetyLimit: 95.0,
