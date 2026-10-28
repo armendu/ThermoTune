@@ -224,13 +224,18 @@ private struct TemperatureChart: View {
         return points
     }
 
-    /// Rounded out to tens around the readings, so the lines sit in the middle
-    /// of the chart instead of hugging an axis Swift Charts padded out on its own.
-    private func yDomain(_ points: [Point]) -> ClosedRange<Double> {
-        guard let low = points.map(\.value).min(), let high = points.map(\.value).max() else {
-            return unit.convert(20)...unit.convert(80)
-        }
-        return max(((low - 5) / 10).rounded(.down) * 10, 0)...((high + 5) / 10).rounded(.up) * 10
+    /// The y-axis range and the values labelled on it. The range is rounded out
+    /// around the readings so the lines sit inside the chart, and stretched to a
+    /// whole number of steps so both ends get a label: left to Swift Charts, the
+    /// bottom gridline was often unlabelled and the lines couldn't be read off.
+    private func yAxis(_ points: [Point]) -> (domain: ClosedRange<Double>, ticks: [Double]) {
+        let values = points.map(\.value)
+        var low = max((((values.min() ?? unit.convert(30)) - 5) / 10).rounded(.down) * 10, 0)
+        var high = (((values.max() ?? unit.convert(70)) + 5) / 10).rounded(.up) * 10
+        let step: Double = high - low > 60 ? 20 : 10
+        low = (low / step).rounded(.down) * step
+        high = (high / step).rounded(.up) * step
+        return (low...high, Array(stride(from: low, through: high, by: step)))
     }
 
     var body: some View {
@@ -249,6 +254,7 @@ private struct TemperatureChart: View {
                 .controlSize(.small)
             }
             let points = points
+            let yAxis = yAxis(points)
             Chart(points) { point in
                 LineMark(x: .value("Time", point.date),
                          y: .value("Temperature", point.value),
@@ -258,7 +264,7 @@ private struct TemperatureChart: View {
             }
             .chartForegroundStyleScale(["CPU": Color.accentColor, "GPU": Color.purple])
             .chartYAxis {
-                AxisMarks(position: .leading, values: .automatic(desiredCount: 4)) { value in
+                AxisMarks(position: .leading, values: yAxis.ticks) { value in
                     AxisGridLine()
                     AxisValueLabel {
                         if let degrees = value.as(Double.self) {
@@ -267,7 +273,7 @@ private struct TemperatureChart: View {
                     }
                 }
             }
-            .chartYScale(domain: yDomain(points))
+            .chartYScale(domain: yAxis.domain)
             .frame(height: 110)
         }
         .padding(.vertical, 4)
