@@ -4,49 +4,28 @@ import SwiftUI
 struct ContentView: View {
     @Environment(HardwareMonitor.self) private var monitor
 
+    /// Wide enough for a fan row's name, speed and mode picker on one line.
+    static let fansMinWidth: CGFloat = 450
+    static let sensorsWidth: CGFloat = 340
+
     var body: some View {
-        Form {
-            Section {
-                OverviewTiles()
-                TemperatureChart()
-            }
+        ScrollView {
+            VStack(spacing: 20) {
+                Panel {
+                    OverviewTiles()
+                    TemperatureChart()
+                }
 
-            Section {
-                if monitor.fans.isEmpty {
-                    Text("No fans detected on this Mac.")
-                        .foregroundStyle(.secondary)
+                HStack(alignment: .top, spacing: 20) {
+                    FansPanel()
+                        .frame(minWidth: Self.fansMinWidth, maxWidth: .infinity)
+                    SensorsSection()
+                        .frame(width: Self.sensorsWidth)
                 }
-                ForEach(monitor.fans) { fan in
-                    FanRow(fan: fan)
-                }
-            } header: {
-                HStack(spacing: 12) {
-                    Text("Fans")
-                    Spacer()
-                    if monitor.helperState == .ready {
-                        ProfilePicker()
-                            .fixedSize()
-                        EditProfilesButton()
-                            .buttonStyle(.link)
-                        if monitor.fans.count > 1 {
-                            Button("All Max") { monitor.setAllMax() }
-                                .buttonStyle(.link)
-                                .disabled(monitor.fans.allSatisfy { monitor.mode(of: $0) == .max })
-                        }
-                        Button("All Auto") { monitor.setAllAutomatic() }
-                            .buttonStyle(.link)
-                            .disabled(monitor.fans.allSatisfy(\.isSystemControlled))
-                            .help("Hand every fan back to macOS")
-                    }
-                }
-            } footer: {
-                HelperFooter()
             }
-
-            SensorsSection()
+            .padding(20)
         }
-        .formStyle(.grouped)
-        .frame(minWidth: 560, idealWidth: 620, minHeight: 600, idealHeight: 800)
+        .frame(minWidth: Self.fansMinWidth + Self.sensorsWidth + 60, minHeight: 480)
         .alert("ThermoTune", isPresented: errorBinding) {
             Button("OK") { monitor.errorMessage = nil }
         } message: {
@@ -57,6 +36,46 @@ struct ContentView: View {
     private var errorBinding: Binding<Bool> {
         Binding(get: { monitor.errorMessage != nil },
                 set: { if !$0 { monitor.errorMessage = nil } })
+    }
+}
+
+// MARK: - Fans
+
+private struct FansPanel: View {
+    @Environment(HardwareMonitor.self) private var monitor
+
+    var body: some View {
+        Panel {
+            if monitor.fans.isEmpty {
+                Text("No fans detected on this Mac.")
+                    .foregroundStyle(.secondary)
+            }
+            ForEach(monitor.fans) { fan in
+                FanRow(fan: fan)
+            }
+        } header: {
+            HStack(spacing: 12) {
+                Text("Fans").font(.headline)
+                Spacer()
+                if monitor.helperState == .ready {
+                    ProfilePicker()
+                        .fixedSize()
+                    EditProfilesButton()
+                        .buttonStyle(.link)
+                    if monitor.fans.count > 1 {
+                        Button("All Max") { monitor.setAllMax() }
+                            .buttonStyle(.link)
+                            .disabled(monitor.fans.allSatisfy { monitor.mode(of: $0) == .max })
+                    }
+                    Button("All Auto") { monitor.setAllAutomatic() }
+                        .buttonStyle(.link)
+                        .disabled(monitor.fans.allSatisfy(\.isSystemControlled))
+                        .help("Hand every fan back to macOS")
+                }
+            }
+        } footer: {
+            HelperFooter()
+        }
     }
 }
 
@@ -82,8 +101,10 @@ private struct StatTile: View {
 
     var body: some View {
         if let summary {
-            Tile(title: title, symbol: symbol, value: summary.maximum.degrees,
-                 valueColor: .temperature(summary.maximum), caption: "max · avg \(summary.average.degrees)")
+            Tile(title: title, symbol: symbol,
+                 value: "\(Int(TemperatureUnit.current.convert(summary.maximum).rounded()))",
+                 unit: TemperatureUnit.current.symbol,
+                 valueColor: .temperature(summary.maximum), caption: "hottest · avg \(summary.average.degrees)")
         } else {
             Tile(title: title, symbol: symbol, value: "–", caption: "reading…")
         }
@@ -97,8 +118,9 @@ private struct FanTile: View {
         let fastest = fans.map(\.actual).max() ?? 0
         let mode = fans.allSatisfy(\.isSystemControlled) ? "automatic" : "manual"
         Tile(title: "Fans", symbol: "fan",
-             value: fastest < 1 ? "Off" : "\(Int(fastest))",
-             caption: fastest < 1 ? mode : "RPM · \(mode)")
+             value: fastest < 1 ? "Off" : Int(fastest).formatted(),
+             unit: fastest < 1 ? nil : "RPM",
+             caption: fastest < 1 || fans.count < 2 ? mode : "fastest · \(mode)")
     }
 }
 
@@ -106,6 +128,7 @@ private struct Tile: View {
     let title: String
     let symbol: String
     let value: String
+    var unit: String?
     var valueColor: Color = .primary
     let caption: String
 
@@ -114,11 +137,18 @@ private struct Tile: View {
             Label(title, systemImage: symbol)
                 .font(.subheadline.weight(.medium))
                 .foregroundStyle(.secondary)
-            Text(value)
-                .font(.system(size: 24, weight: .semibold, design: .rounded))
-                .monospacedDigit()
-                .foregroundStyle(valueColor)
-                .contentTransition(.numericText())
+            HStack(alignment: .firstTextBaseline, spacing: 3) {
+                Text(value)
+                    .font(.system(size: 24, weight: .semibold, design: .rounded))
+                    .foregroundStyle(valueColor)
+                    .contentTransition(.numericText())
+                if let unit {
+                    Text(unit)
+                        .font(.system(size: 14, weight: .medium, design: .rounded))
+                        .foregroundStyle(.secondary)
+                }
+            }
+            .monospacedDigit()
             Text(caption)
                 .font(.caption)
                 .foregroundStyle(.secondary)
@@ -148,21 +178,51 @@ private struct TemperatureChart: View {
         Date.now.addingTimeInterval(-Double(windowMinutes) * 60)
     }
 
+    @AppStorage(PreferenceKey.temperatureUnit) private var unit = TemperatureUnit.celsius
+    @AppStorage(PreferenceKey.refreshInterval) private var refreshInterval = 2.0
+
     private struct Point: Identifiable {
         let id: String
         let date: Date
         let series: String
+        /// A run of readings with no gap; each is drawn as its own line.
+        let segment: String
         let value: Double
     }
 
+    /// Readings further apart than this (the Mac slept, or the series had no
+    /// reading) start a new line, rather than one drawn straight across the gap.
+    private var maximumGap: TimeInterval { max(refreshInterval * 3, 10) }
+
     private var points: [Point] {
-        let unit = TemperatureUnit.current
-        let start = windowStart
-        return monitor.history.filter { $0.date >= start }.flatMap { sample in
-            [("CPU", sample.cpu), ("GPU", sample.gpu)].compactMap { series, value in
-                value.map { Point(id: "\(sample.id)-\(series)", date: sample.date, series: series, value: unit.convert($0)) }
+        let samples = monitor.history.filter { $0.date >= windowStart }
+        var points: [Point] = []
+        for (series, value) in [("CPU", \HardwareMonitor.Sample.cpu), ("GPU", \.gpu)] {
+            var segment = 0
+            var previous: Date?
+            for sample in samples {
+                guard let reading = sample[keyPath: value] else {
+                    previous = nil
+                    continue
+                }
+                if previous.map({ sample.date.timeIntervalSince($0) > maximumGap }) ?? true {
+                    segment += 1
+                }
+                previous = sample.date
+                points.append(Point(id: "\(sample.id)-\(series)", date: sample.date, series: series,
+                                    segment: "\(series)-\(segment)", value: unit.convert(reading)))
             }
         }
+        return points
+    }
+
+    /// Rounded out to tens around the readings, so the lines sit in the middle
+    /// of the chart instead of hugging an axis Swift Charts padded out on its own.
+    private func yDomain(_ points: [Point]) -> ClosedRange<Double> {
+        guard let low = points.map(\.value).min(), let high = points.map(\.value).max() else {
+            return unit.convert(20)...unit.convert(80)
+        }
+        return max(((low - 5) / 10).rounded(.down) * 10, 0)...((high + 5) / 10).rounded(.up) * 10
     }
 
     var body: some View {
@@ -180,16 +240,27 @@ private struct TemperatureChart: View {
                 .fixedSize()
                 .controlSize(.small)
             }
+            let points = points
             Chart(points) { point in
                 LineMark(x: .value("Time", point.date),
-                         y: .value("Temperature", point.value))
+                         y: .value("Temperature", point.value),
+                         series: .value("Segment", point.segment))
                     .foregroundStyle(by: .value("Sensor", point.series))
                     .interpolationMethod(.monotone)
             }
             .chartForegroundStyleScale(["CPU": Color.accentColor, "GPU": Color.purple])
-            .chartYAxis { AxisMarks(position: .leading) }
-            .chartYScale(domain: .automatic(includesZero: false))
-            .frame(height: 80)
+            .chartYAxis {
+                AxisMarks(position: .leading, values: .automatic(desiredCount: 4)) { value in
+                    AxisGridLine()
+                    AxisValueLabel {
+                        if let degrees = value.as(Double.self) {
+                            Text("\(Int(degrees))\(unit.symbol)")
+                        }
+                    }
+                }
+            }
+            .chartYScale(domain: yDomain(points))
+            .frame(height: 110)
         }
         .padding(.vertical, 4)
     }

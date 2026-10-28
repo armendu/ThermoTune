@@ -93,8 +93,12 @@ final class HardwareMonitor {
         for fan in fans where pendingModes[fan.id] == fan.mode && !busyFans.contains(fan.id) {
             pendingModes[fan.id] = nil
         }
+        // Sensors can read 0 (or below) instead of failing, most likely while
+        // powered down. That is no reading, not a temperature: averaged in, it
+        // dragged the GPU line on the chart to 0° and the axis down to -25°.
         sensors = sensorKeys.compactMap { key in
-            (try? smc.read(key)).map { TemperatureSensor(key: key, value: $0) }
+            guard let value = try? smc.read(key), value > 1 else { return nil }
+            return TemperatureSensor(key: key, value: value)
         }
         guard !sensors.isEmpty else { return }
         history.append(Sample(date: .now, cpu: cpuSummary?.average, gpu: gpuSummary?.average))
