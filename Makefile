@@ -15,7 +15,7 @@ HELPER      := /Library/PrivilegedHelperTools/com.armend.ThermoTune.Helper
 XCODEBUILD  := xcodebuild -project $(PROJECT) -scheme $(SCHEME) -derivedDataPath $(DERIVED) -destination "generic/platform=macOS" -quiet
 
 .DEFAULT_GOAL := help
-.PHONY: help build release test run shot open version bump helper-status fans-auto clean
+.PHONY: help build release test dmg run shot open version bump helper-status fans-auto clean
 
 help: ## list every target
 	@grep -E '^[a-z-]+:.*## ' $(MAKEFILE_LIST) | awk 'BEGIN {FS = ":.*## "}; {printf "  make %-14s %s\n", $$1, $$2}'
@@ -25,6 +25,11 @@ build: ## Debug build into build/
 
 release: ## Release build into build/
 	$(XCODEBUILD) -configuration Release build
+
+# Release builds are universal (arm64 and x86_64) and signed ad hoc by Xcode already, so this
+# only checks the app and packages it. The release workflow runs exactly this.
+dmg: release ## Release build packaged as build/ThermoTune-<version>.dmg
+	@Scripts/make_dmg.sh "$(RELEASE_APP)" "$(DERIVED)"
 
 # The tests run inside the app as their host. RunMode keeps that copy read-only, so testing
 # beside a ThermoTune someone is using never touches the fans.
