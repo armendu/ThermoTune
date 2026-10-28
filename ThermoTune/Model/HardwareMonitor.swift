@@ -123,7 +123,7 @@ final class HardwareMonitor {
     /// so curves follow temperature and the profile is re-applied if macOS takes
     /// control back.
     private func applyActiveProfile() {
-        guard let profile = profiles.activeProfile, helperState == .ready,
+        guard !WindowSnapshot.isActive, let profile = profiles.activeProfile, helperState == .ready,
               busyFans.isEmpty, pendingModes.isEmpty, !fans.isEmpty else { return }
 
         switch profile.kind {
@@ -256,7 +256,8 @@ final class HardwareMonitor {
     /// Hands fans back to the system. Called synchronously when the app quits
     /// so a manual speed never outlives the app.
     nonisolated static func restoreAutomaticFans() {
-        guard UserDefaults.standard.bool(forKey: PreferenceKey.restoreAutomaticOnQuit),
+        guard !WindowSnapshot.isActive,
+              UserDefaults.standard.bool(forKey: PreferenceKey.restoreAutomaticOnQuit),
               HelperInstaller.state() == .ready,
               let smc = try? SMC(),
               !smc.fans().allSatisfy(\.isSystemControlled) else { return }
