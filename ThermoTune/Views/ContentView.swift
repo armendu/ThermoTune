@@ -110,9 +110,9 @@ private struct StatTile: View {
     var body: some View {
         if let summary {
             Tile(title: title, symbol: symbol,
-                 value: "\(Int(TemperatureUnit.current.convert(summary.maximum).rounded()))",
+                 value: "\(Int(TemperatureUnit.current.convert(summary.average).rounded()))",
                  unit: TemperatureUnit.current.symbol,
-                 valueColor: .temperature(summary.maximum), caption: "hottest · avg \(summary.average.degrees)")
+                 valueColor: .temperature(summary.average), caption: "average · hottest \(summary.maximum.degrees)")
         } else {
             Tile(title: title, symbol: symbol, value: "–", caption: "reading…")
         }
