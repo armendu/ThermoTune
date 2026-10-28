@@ -236,7 +236,7 @@ private struct TemperatureChart: View {
     var body: some View {
         VStack(alignment: .leading, spacing: 6) {
             HStack {
-                Text("Average temperature")
+                Text("Average temperature (\(unit.symbol))")
                     .font(.caption)
                     .foregroundStyle(.secondary)
                 Spacer()
@@ -262,7 +262,7 @@ private struct TemperatureChart: View {
                     AxisGridLine()
                     AxisValueLabel {
                         if let degrees = value.as(Double.self) {
-                            Text("\(Int(degrees))\(unit.symbol)")
+                            Text("\(Int(degrees))")
                         }
                     }
                 }
