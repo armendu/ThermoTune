@@ -54,14 +54,12 @@ struct AdvancedSettings: View {
                 HStack {
                     Spacer()
                     if monitor.helperState != .ready {
-                        Button(monitor.helperState == .notInstalled ? "Install Helper…" : "Update Helper…") {
-                            monitor.installHelper()
-                        }
+                        HelperInstallButton()
                     }
                     Button("Uninstall Helper…", role: .destructive) {
                         monitor.uninstallHelper()
                     }
-                    .disabled(monitor.helperState == .notInstalled)
+                    .disabled(monitor.helperState == .notInstalled || monitor.isChangingHelper)
                 }
             }
         }
@@ -88,5 +86,17 @@ private struct CSVDocument: FileDocument {
 
     func fileWrapper(configuration: WriteConfiguration) throws -> FileWrapper {
         FileWrapper(regularFileWithContents: Data(text.utf8))
+    }
+}
+
+/// Install or Update, whichever the helper needs.
+struct HelperInstallButton: View {
+    @Environment(HardwareMonitor.self) private var monitor
+
+    var body: some View {
+        Button(monitor.helperState == .notInstalled ? "Install Helper…" : "Update Helper…") {
+            monitor.installHelper()
+        }
+        .disabled(monitor.isChangingHelper)
     }
 }

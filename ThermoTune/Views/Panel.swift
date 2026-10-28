@@ -58,12 +58,6 @@ struct Panel<Header: View, Content: View, Footer: View>: View {
     }
 }
 
-extension Panel where Footer == EmptyView {
-    init(@ViewBuilder content: () -> Content, @ViewBuilder header: () -> Header) {
-        self.init(content: content, header: header, footer: { EmptyView() })
-    }
-}
-
 extension Panel where Header == EmptyView, Footer == EmptyView {
     init(@ViewBuilder content: () -> Content) {
         self.init(content: content, header: { EmptyView() }, footer: { EmptyView() })

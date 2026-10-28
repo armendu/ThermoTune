@@ -12,15 +12,16 @@ enum SettingsTab: String {
     }
 }
 
-/// The app menu's "About ThermoTune", pointed at the About tab so there is one
-/// About screen rather than the standard panel and a tab that drift apart.
-struct AboutMenuButton: View {
-    @AppStorage(SettingsTab.storageKey) private var tab: SettingsTab = .general
+/// Opens Settings on a given tab, for menu items and buttons outside Settings.
+struct SettingsTabButton: View {
+    let title: LocalizedStringKey
+    let tab: SettingsTab
+    @AppStorage(SettingsTab.storageKey) private var selectedTab: SettingsTab = .general
     @Environment(\.openSettings) private var openSettings
 
     var body: some View {
-        Button("About \(AppInfo.name)") {
-            tab = .about
+        Button(title) {
+            selectedTab = tab
             openSettings()
         }
     }

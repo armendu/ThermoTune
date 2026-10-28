@@ -12,7 +12,8 @@ struct TemperatureSensor: Identifiable, Equatable {
             switch self {
             case .cpuPerformance: return String(localized: "Performance Cores")
             case .cpuEfficiency: return String(localized: "Efficiency Cores")
-            case .cpu: return String(localized: "CPU")
+            // The whole package, as opposed to the per-core groups.
+            case .cpu: return String(localized: "CPU Package")
             case .gpu: return String(localized: "GPU")
             case .other: return String(localized: "Other")
             }

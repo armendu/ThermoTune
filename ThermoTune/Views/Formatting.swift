@@ -1,12 +1,13 @@
 import SwiftUI
 
 extension Double {
-    /// A Celsius reading formatted in the unit chosen in Preferences, unit included.
-    var degrees: String {
-        let unit = TemperatureUnit.current
-        return "\(Int(unit.convert(self).rounded()))\(unit.symbol)"
+    /// A Celsius reading as a whole number in the unit chosen in Preferences, without the unit.
+    var degreesNumber: String {
+        "\(Int(TemperatureUnit.current.convert(self).rounded()))"
     }
-    var rpm: String { self < 1 ? String(localized: "Off") : "\(Int(rounded())) RPM" }
+    /// A Celsius reading formatted in the unit chosen in Preferences, unit included.
+    var degrees: String { degreesNumber + TemperatureUnit.current.symbol }
+    var rpm: String { self < 1 ? String(localized: "Off") : "\(Int(rounded()).formatted()) RPM" }
 }
 
 extension Color {
@@ -16,5 +17,16 @@ extension Color {
         case ..<80: return .orange
         default: return .red
         }
+    }
+}
+
+/// The colour-coded dot beside a single sensor's reading.
+struct TemperatureDot: View {
+    let value: Double
+
+    var body: some View {
+        Circle()
+            .fill(Color.temperature(value))
+            .frame(width: 6, height: 6)
     }
 }

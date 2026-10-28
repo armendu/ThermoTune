@@ -31,32 +31,35 @@ extension SMC {
     }
 
     func fans() -> [FanInfo] {
-        (0..<fanCount()).compactMap { fan($0) }
+        let isControlUnlocked = isFanControlUnlocked
+        return (0..<fanCount()).compactMap { index in
+            guard let actual = try? read("F\(index)Ac") else { return nil }
+            return FanInfo(
+                id: index,
+                actual: max(actual, 0),
+                minimum: (try? read("F\(index)Mn")) ?? 0,
+                maximum: (try? read("F\(index)Mx")) ?? 0,
+                target: (try? read("F\(index)Tg")) ?? 0,
+                isManual: hasManualMode(index),
+                isControlUnlocked: isControlUnlocked
+            )
+        }
     }
 
-    func fan(_ index: Int) -> FanInfo? {
-        guard let actual = try? read("F\(index)Ac") else { return nil }
-        return FanInfo(
-            id: index,
-            actual: max(actual, 0),
-            minimum: (try? read("F\(index)Mn")) ?? 0,
-            maximum: (try? read("F\(index)Mx")) ?? 0,
-            target: (try? read("F\(index)Tg")) ?? 0,
-            isManual: hasManualMode(index),
-            isControlUnlocked: isFanControlUnlocked
-        )
-    }
-
-    var isFanControlUnlocked: Bool {
+    private var isFanControlUnlocked: Bool {
         (try? read("Ftst")) == 1
+    }
+
+    /// Intel's `FS! `: one manual-mode bit per fan.
+    private var manualModeMask: Int {
+        Int((try? read("FS! ")) ?? 0)
     }
 
     private func hasManualMode(_ index: Int) -> Bool {
         if let mode = try? read("F\(index)Md") {
             return mode == Self.manualMode
         }
-        let mask = Int((try? read("FS! ")) ?? 0)
-        return mask & (1 << index) != 0
+        return manualModeMask & (1 << index) != 0
     }
 
     // MARK: Writes (require root)
@@ -80,10 +83,8 @@ extension SMC {
         }
     }
 
-    /// Puts every fan in manual mode at its maximum speed.
     func setAllFansMax() throws {
-        let fans = try (0..<fanCount()).map { (index: $0, maximum: try speedRange($0).upperBound) }
-        guard !fans.isEmpty else { throw SMCError.smcResult(key: "FNum", code: 0x84) }
+        let fans = try (0..<writableFanCount()).map { (index: $0, maximum: try speedRange($0).upperBound) }
 
         try unlockManualControl()
         do {
@@ -107,7 +108,9 @@ extension SMC {
     /// tried and `Ftst` is always cleared, then the first error is reported.
     func setAllFansAuto() throws {
         var firstError: Error?
-        for index in 0..<fanCount() {
+        let count: Int
+        do { count = try writableFanCount() } catch { count = 0; firstError = error }
+        for index in 0..<count {
             do { try setMode(index, manual: false) } catch { firstError = firstError ?? error }
         }
         if hasKey("Ftst") {
@@ -127,8 +130,16 @@ extension SMC {
         return minimum...maximum
     }
 
+    /// `fanCount()` reads a failed `FNum` as no fans, which suits display. A write
+    /// over every fan would then touch none and still report success.
+    private func writableFanCount() throws -> Int {
+        let count = Int(try read("FNum"))
+        guard count > 0 else { throw SMCError.noFans }
+        return count
+    }
+
     private func unlockManualControl() throws {
-        if hasKey("Ftst"), (try? read("Ftst")) != 1 {
+        if hasKey("Ftst"), !isFanControlUnlocked {
             try write("Ftst", 1)
         }
     }
@@ -145,9 +156,8 @@ extension SMC {
     private func setMode(_ index: Int, manual: Bool) throws {
         let key = "F\(index)Md"
         guard hasKey(key) else {
-            var mask = Int((try? read("FS! ")) ?? 0)
-            mask = manual ? mask | (1 << index) : mask & ~(1 << index)
-            try write("FS! ", Double(mask))
+            let mask = manualModeMask
+            try write("FS! ", Double(manual ? mask | (1 << index) : mask & ~(1 << index)))
             return
         }
         // After `Ftst` is set, Apple Silicon SMCs reject manual mode with 0x82
@@ -166,7 +176,9 @@ extension SMC {
 
     // MARK: Temperatures
 
-    /// Returns every temperature key that currently reports a plausible value.
+    /// Most `T*` keys are junk (constant zeros, negatives, `ioft` types). This runs
+    /// once at launch, so a real sensor that happens to read outside 5…130 °C then
+    /// is never found; that trade-off is deliberate.
     func discoverTemperatureKeys() -> [String] {
         allKeys().filter { key in
             guard key.hasPrefix("T"),

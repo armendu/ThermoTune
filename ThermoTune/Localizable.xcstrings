@@ -150,16 +150,6 @@
     "%lld" : {
       "shouldTranslate" : false
     },
-    "%lld RPM" : {
-      "localizations" : {
-        "de" : {
-          "stringUnit" : {
-            "state" : "needs_review",
-            "value" : "%lld U/min"
-          }
-        }
-      }
-    },
     "%lld sensors" : {
       "localizations" : {
         "de" : {
@@ -512,6 +502,16 @@
         }
       }
     },
+    "Cancelled." : {
+      "localizations" : {
+        "de" : {
+          "stringUnit" : {
+            "state" : "needs_review",
+            "value" : "Abgebrochen."
+          }
+        }
+      }
+    },
     "Celsius (°C)" : {
       "localizations" : {
         "de" : {
@@ -828,6 +828,16 @@
           "stringUnit" : {
             "state" : "needs_review",
             "value" : "Lüfter"
+          }
+        }
+      }
+    },
+    "Fans keep their speeds when ThermoTune quits." : {
+      "localizations" : {
+        "de" : {
+          "stringUnit" : {
+            "state" : "needs_review",
+            "value" : "Die Lüfter behalten ihre Drehzahl, wenn ThermoTune beendet wird."
           }
         }
       }
@@ -1448,18 +1458,18 @@
         }
       }
     },
-    "Now %@ → %lld RPM" : {
+    "Now %@ → %@" : {
       "localizations" : {
         "de" : {
           "stringUnit" : {
             "state" : "needs_review",
-            "value" : "Jetzt %@ → %lld U/min"
+            "value" : "Jetzt %1$@ → %2$@"
           }
         },
         "en" : {
           "stringUnit" : {
             "state" : "new",
-            "value" : "Now %1$@ → %2$lld RPM"
+            "value" : "Now %1$@ → %2$@"
           }
         }
       }

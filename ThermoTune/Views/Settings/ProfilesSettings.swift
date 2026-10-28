@@ -215,7 +215,7 @@ private struct ProfileEditor: View {
                             .foregroundStyle(.tint)
                     } else {
                         Button("Use This Profile") { monitor.activate(profile) }
-                            .disabled(monitor.helperState != .ready)
+                            .disabled(!monitor.canControlFans)
                     }
                 }
             }
@@ -289,7 +289,7 @@ private struct BehaviorEditor: View {
                     }
                 }
                 if let fan, let rpm = behavior.targetRPM(for: fan, temperature: nil) {
-                    LabeledContent("Fan speed", value: "\(Int(rpm)) RPM")
+                    LabeledContent("Fan speed", value: rpm.rpm)
                 }
             }
         case .curve:
@@ -362,7 +362,7 @@ private struct CurveEditor: View {
                 .disabled(selected == nil || curve.count <= 2)
                 Spacer()
                 if let current, let fan, let rpm = behavior.targetRPM(for: fan, temperature: current) {
-                    Text("Now \(current.degrees) → \(Int(rpm)) RPM")
+                    Text("Now \(current.degrees) → \(rpm.rpm)")
                         .font(.caption)
                         .foregroundStyle(.secondary)
                 }

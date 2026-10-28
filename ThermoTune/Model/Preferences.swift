@@ -108,6 +108,15 @@ enum SensorSource: Hashable, Identifiable {
         case .sensor(let key): return String(localized: "Sensor \(key)")
         }
     }
+
+    var symbol: String {
+        switch self {
+        case .cpu: return "cpu"
+        case .gpu: return "square.stack.3d.up"
+        case .hottest: return "thermometer.medium"
+        case .sensor: return "thermometer"
+        }
+    }
 }
 
 // A string raw value, so `@AppStorage` and saved profiles keep reading the

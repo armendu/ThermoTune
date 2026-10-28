@@ -130,12 +130,12 @@ struct MenuBarView: View {
 
     var body: some View {
         VStack(alignment: .leading, spacing: 8) {
-            row("CPU", symbol: "cpu", summary: monitor.cpuSummary)
-            row("GPU", symbol: "square.stack.3d.up", summary: monitor.gpuSummary)
+            row(.cpu)
+            row(.gpu)
             ThermalStateBadge(state: monitor.thermalState)
             ForEach(monitor.fans) { fan in
                 LabeledContent {
-                    Text(fan.isManual ? "\(fan.actual.rpm) · manual" : fan.actual.rpm)
+                    Text(fan.isSystemControlled ? fan.actual.rpm : "\(fan.actual.rpm) · manual")
                         .monospacedDigit()
                 } label: {
                     Label(fan.title, systemImage: "fan")
@@ -145,12 +145,16 @@ struct MenuBarView: View {
             Divider()
 
             if monitor.helperState == .ready {
-                ProfilePicker()
-                Divider()
-                Button("Set All Fans to Max") { monitor.setAllMax() }
-                if !monitor.fans.allSatisfy(\.isSystemControlled) {
-                    Button("Reset Fans to Automatic") { monitor.setAllAutomatic() }
+                Group {
+                    ProfilePicker()
+                    Divider()
+                    Button("Set All Fans to Max") { monitor.setAllMax() }
+                        .disabled(monitor.fans.allSatisfy { monitor.mode(of: $0) == .max })
+                    if !monitor.fansAreSystemControlled {
+                        Button("Reset Fans to Automatic") { monitor.setAllAutomatic() }
+                    }
                 }
+                .disabled(!monitor.canControlFans)
             }
             Button("Open ThermoTune…") {
                 openWindow(id: ThermoTuneApp.mainWindowID)
@@ -166,9 +170,9 @@ struct MenuBarView: View {
         .frame(width: 260)
     }
 
-    private func row(_ title: String, symbol: String, summary: TemperatureSummary?) -> some View {
+    private func row(_ source: SensorSource) -> some View {
         LabeledContent {
-            if let summary {
+            if let summary = monitor.summary(source) {
                 Text("\(summary.maximum.degrees) max · \(summary.average.degrees) avg")
                     .monospacedDigit()
                     .foregroundStyle(Color.temperature(summary.maximum))
@@ -176,7 +180,7 @@ struct MenuBarView: View {
                 Text("–")
             }
         } label: {
-            Label(title, systemImage: symbol)
+            Label(source.title, systemImage: source.symbol)
         }
     }
 }
