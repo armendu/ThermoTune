@@ -4,6 +4,18 @@ Every pull request raises the version (`make bump`) and adds a section here for 
 `development` is merged into `main`, the release takes every section since the last release as
 its notes.
 
+## 0.1.2 (2026-10-28)
+
+* A **Fans** menu in the menu bar with Set All Fans to Max, Hand All Fans to macOS and the
+  profile picker, and **Help › ThermoTune Help**, which opens the README.
+* Deleting a profile, or restoring the default profiles, asks first: neither can be undone.
+* The buttons above the fans and temperatures are regular buttons rather than links.
+* The menu bar panel says **Settings…** rather than Preferences…, as macOS does, and uses the
+  same name for handing the fans back as everywhere else.
+* VoiceOver reads each tile at the top of the window as one item, and can open a sensor
+  group's breakdown from its count.
+* Fixed "Colour by temperature", the one British spelling left in English.
+
 ## 0.1.1 (2026-10-28)
 
 The first release, as a universal DMG for macOS 15 and later. It's tested on an M3 Pro MacBook
