@@ -1,7 +1,7 @@
 import SwiftUI
 
 /// Every sensor behind one temperature group, hottest first. Shown when hovering
-/// a group's numbers in the Temperatures section.
+/// a group's sensor count in the Temperatures section.
 struct SensorBreakdown: View {
     let title: String
     let sensors: [TemperatureSensor]
@@ -82,7 +82,7 @@ struct SensorBreakdown: View {
                 list
             }
 
-            Text("Hottest first. Names are SMC keys; Apple doesn't publish where each sensor sits. Click the numbers to keep this open.")
+            Text("Hottest first. Names are SMC keys; Apple doesn't publish where each sensor sits. Click the count to keep this open.")
                 .font(.caption2)
                 .foregroundStyle(.tertiary)
                 .fixedSize(horizontal: false, vertical: true)
