@@ -62,26 +62,34 @@ extension SMC {
     // MARK: Writes (require root)
 
     func setFanManual(_ index: Int, rpm: Double) throws {
-        guard let fan = fan(index) else { throw SMCError.smcResult(key: "F\(index)Ac", code: 0x84) }
-        let rpm = min(max(rpm, fan.minimum), fan.maximum)
+        let range = try speedRange(index)
+        let rpm = min(max(rpm, range.lowerBound), range.upperBound)
 
         try unlockManualControl()
+        var isManual = false
         do {
             try setMode(index, manual: true)
+            isManual = true
+            try write("F\(index)Tg", rpm)
         } catch {
+            // A fan left manual at whatever target it had, or `Ftst` left set
+            // with no fan manual, is a fan nobody is managing.
+            if isManual { try? setMode(index, manual: false) }
             try? relockIfAllAutomatic(except: index)
             throw error
         }
-        try write("F\(index)Tg", rpm)
     }
 
     /// Puts every fan in manual mode at its maximum speed.
     func setAllFansMax() throws {
+        let fans = try (0..<fanCount()).map { (index: $0, maximum: try speedRange($0).upperBound) }
+        guard !fans.isEmpty else { throw SMCError.smcResult(key: "FNum", code: 0x84) }
+
         try unlockManualControl()
         do {
-            for fan in fans() {
-                try setMode(fan.id, manual: true)
-                try write("F\(fan.id)Tg", fan.maximum)
+            for fan in fans {
+                try setMode(fan.index, manual: true)
+                try write("F\(fan.index)Tg", fan.maximum)
             }
         } catch {
             try? setAllFansAuto()
@@ -94,13 +102,29 @@ extension SMC {
         try relockIfAllAutomatic(except: index)
     }
 
+    /// The way back to macOS control, used by All Auto, quitting and `make
+    /// fans-auto`, so one failed write must not stop the rest: every fan is
+    /// tried and `Ftst` is always cleared, then the first error is reported.
     func setAllFansAuto() throws {
+        var firstError: Error?
         for index in 0..<fanCount() {
-            try setMode(index, manual: false)
+            do { try setMode(index, manual: false) } catch { firstError = firstError ?? error }
         }
         if hasKey("Ftst") {
-            try write("Ftst", 0)
+            do { try write("Ftst", 0) } catch { firstError = firstError ?? error }
         }
+        if let firstError { throw firstError }
+    }
+
+    /// A fan's speed range, read fresh for a write. `fan(_:)` shows a failed read
+    /// as 0, but clamping to 0...0 would park the fan at 0 RPM with thermal
+    /// control suspended.
+    private func speedRange(_ index: Int) throws -> ClosedRange<Double> {
+        guard let minimum = try? read("F\(index)Mn"), let maximum = try? read("F\(index)Mx"),
+              minimum >= 0, maximum > 0, minimum <= maximum else {
+            throw SMCError.noFanRange(fan: index)
+        }
+        return minimum...maximum
     }
 
     private func unlockManualControl() throws {
