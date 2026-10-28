@@ -33,7 +33,7 @@ struct GeneralSettings: View {
             }
         }
         .formStyle(.grouped)
-        .frame(height: 400)
+        .frame(height: 340)
         .onChange(of: refreshInterval) { monitor.scheduleRefresh() }
         .alert("Launch at Login", isPresented: Binding(get: { loginItemError != nil }, set: { if !$0 { loginItemError = nil } })) {
             Button("OK") {}

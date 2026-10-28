@@ -69,6 +69,16 @@
         }
       }
     },
+    "%@ Help" : {
+      "localizations" : {
+        "de" : {
+          "stringUnit" : {
+            "state" : "needs_review",
+            "value" : "%@-Hilfe"
+          }
+        }
+      }
+    },
     "%@ Not affiliated with Apple." : {
       "localizations" : {
         "de" : {
@@ -532,7 +542,7 @@
         }
       }
     },
-    "Colour by temperature" : {
+    "Color by temperature" : {
       "localizations" : {
         "de" : {
           "stringUnit" : {
@@ -602,6 +612,16 @@
         }
       }
     },
+    "Delete" : {
+      "localizations" : {
+        "de" : {
+          "stringUnit" : {
+            "state" : "needs_review",
+            "value" : "Löschen"
+          }
+        }
+      }
+    },
     "Delete Rule" : {
       "localizations" : {
         "de" : {
@@ -618,6 +638,16 @@
           "stringUnit" : {
             "state" : "needs_review",
             "value" : "Profil löschen"
+          }
+        }
+      }
+    },
+    "Delete “%@”?" : {
+      "localizations" : {
+        "de" : {
+          "stringUnit" : {
+            "state" : "needs_review",
+            "value" : "„%@“ löschen?"
           }
         }
       }
@@ -1564,12 +1594,12 @@
         }
       }
     },
-    "Open ThermoTune…" : {
+    "Open ThermoTune" : {
       "localizations" : {
         "de" : {
           "stringUnit" : {
             "state" : "needs_review",
-            "value" : "ThermoTune öffnen …"
+            "value" : "ThermoTune öffnen"
           }
         }
       }
@@ -1620,16 +1650,6 @@
           "stringUnit" : {
             "state" : "needs_review",
             "value" : "Leistungskerne"
-          }
-        }
-      }
-    },
-    "Preferences…" : {
-      "localizations" : {
-        "de" : {
-          "stringUnit" : {
-            "state" : "needs_review",
-            "value" : "Einstellungen …"
           }
         }
       }
@@ -1744,22 +1764,22 @@
         }
       }
     },
-    "Reset Fans to Automatic" : {
+    "Restore Default Profiles…" : {
       "localizations" : {
         "de" : {
           "stringUnit" : {
             "state" : "needs_review",
-            "value" : "Lüfter auf Automatisch zurücksetzen"
+            "value" : "Standardprofile wiederherstellen …"
           }
         }
       }
     },
-    "Restore Default Profiles" : {
+    "Restore Defaults" : {
       "localizations" : {
         "de" : {
           "stringUnit" : {
             "state" : "needs_review",
-            "value" : "Standardprofile wiederherstellen"
+            "value" : "Standards wiederherstellen"
           }
         }
       }
@@ -1770,6 +1790,16 @@
           "stringUnit" : {
             "state" : "needs_review",
             "value" : "Beim Beenden die automatische Lüftersteuerung wiederherstellen"
+          }
+        }
+      }
+    },
+    "Restore the default profiles?" : {
+      "localizations" : {
+        "de" : {
+          "stringUnit" : {
+            "state" : "needs_review",
+            "value" : "Standardprofile wiederherstellen?"
           }
         }
       }
@@ -1936,6 +1966,16 @@
           "stringUnit" : {
             "state" : "needs_review",
             "value" : "Alle Lüfter auf Maximum"
+          }
+        }
+      }
+    },
+    "Settings…" : {
+      "localizations" : {
+        "de" : {
+          "stringUnit" : {
+            "state" : "needs_review",
+            "value" : "Einstellungen …"
           }
         }
       }
@@ -2263,6 +2303,16 @@
         }
       }
     },
+    "This can't be undone. Rules and shortcuts that use it stop switching to it." : {
+      "localizations" : {
+        "de" : {
+          "stringUnit" : {
+            "state" : "needs_review",
+            "value" : "Das lässt sich nicht widerrufen. Regeln und Kurzbefehle, die es verwenden, wechseln nicht mehr dorthin."
+          }
+        }
+      }
+    },
     "This file has no profiles in it." : {
       "localizations" : {
         "de" : {
@@ -2531,6 +2581,16 @@
           "stringUnit" : {
             "state" : "needs_review",
             "value" : "Mit ThermoTune in der Menüleiste läuft es dort weiter, wenn du das Fenster schließt."
+          }
+        }
+      }
+    },
+    "Your own profiles are deleted, and rules and shortcuts that use them stop switching to them." : {
+      "localizations" : {
+        "de" : {
+          "stringUnit" : {
+            "state" : "needs_review",
+            "value" : "Deine eigenen Profile werden gelöscht, und Regeln und Kurzbefehle, die sie verwenden, wechseln nicht mehr dorthin."
           }
         }
       }

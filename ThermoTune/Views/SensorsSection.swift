@@ -19,7 +19,7 @@ struct SensorsSection: View {
                 Text("Temperatures").font(.headline)
                 Spacer()
                 Button("All Sensors…") { showsAllSensors = true }
-                    .buttonStyle(.link)
+                    .controlSize(.small)
                     .disabled(monitor.sensors.isEmpty)
                     .popover(isPresented: $showsAllSensors, arrowEdge: .trailing) {
                         AllSensorsView()
@@ -65,10 +65,11 @@ private struct GroupRow: View {
                     .contentShape(Rectangle())
                     .padding(-4)
                     .onHover(perform: hover)
-                    .onTapGesture {
-                        isPinned = true
-                        showsBreakdown = true
-                    }
+                    .onTapGesture(perform: pin)
+                    // A tap gesture alone is invisible to VoiceOver.
+                    .accessibilityLabel("\(sensors.count) sensors")
+                    .accessibilityAddTraits(.isButton)
+                    .accessibilityAction { pin() }
                     .popover(isPresented: $showsBreakdown, arrowEdge: .bottom) {
                         SensorBreakdown(title: title, sensors: sensors)
                     }
@@ -85,6 +86,11 @@ private struct GroupRow: View {
             }
             .monospacedDigit()
         }
+    }
+
+    private func pin() {
+        isPinned = true
+        showsBreakdown = true
     }
 
     private func hover(_ hovering: Bool) {

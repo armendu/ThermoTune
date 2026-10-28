@@ -171,16 +171,16 @@ struct MenuBarView: View {
                     Button("Set All Fans to Max") { monitor.setAllMax() }
                         .disabled(monitor.fans.allSatisfy { monitor.mode(of: $0) == .max })
                     if !monitor.fansAreSystemControlled {
-                        Button("Reset Fans to Automatic") { monitor.setAllAutomatic() }
+                        Button("Hand All Fans to macOS") { monitor.setAllAutomatic() }
                     }
                 }
                 .disabled(!monitor.canControlFans)
             }
-            Button("Open ThermoTune…") {
+            Button("Open ThermoTune") {
                 openWindow(id: ThermoTuneApp.mainWindowID)
                 NSApp.activate()
             }
-            SettingsLink { Text("Preferences…") }
+            SettingsLink { Text("Settings…") }
                 .keyboardShortcut(",")
             Button("Quit ThermoTune") { NSApp.terminate(nil) }
                 .keyboardShortcut("q")
