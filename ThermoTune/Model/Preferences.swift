@@ -10,6 +10,18 @@ enum PreferenceKey {
     static let chartWindowMinutes = "chartWindowMinutes"
     static let profiles = "profiles"
     static let activeProfileID = "activeProfileID"
+    static let safetyNetEnabled = "safetyNetEnabled"
+    static let safetyLimit = "safetyLimit"
+    static let safetyDelay = "safetyDelay"
+    static let safetyAction = "safetyAction"
+    static let alertSafetyNet = "alertSafetyNet"
+    static let alertTemperature = "alertTemperature"
+    static let alertTemperatureSource = "alertTemperatureSource"
+    static let alertTemperatureLimit = "alertTemperatureLimit"
+    static let alertTemperatureDuration = "alertTemperatureDuration"
+    static let alertFanStall = "alertFanStall"
+    static let alertThermalPressure = "alertThermalPressure"
+    static let alertHelper = "alertHelper"
 
     static func registerDefaults() {
         UserDefaults.standard.register(defaults: [
@@ -19,6 +31,18 @@ enum PreferenceKey {
             showMenuBarExtra: true,
             menuBarSource: SensorSource.cpu.rawValue,
             chartWindowMinutes: 5,
+            safetyNetEnabled: true,
+            safetyLimit: 95.0,
+            safetyDelay: 10.0,
+            safetyAction: SafetyAction.automatic.rawValue,
+            alertSafetyNet: true,
+            alertTemperature: false,
+            alertTemperatureSource: SensorSource.hottest.rawValue,
+            alertTemperatureLimit: 90.0,
+            alertTemperatureDuration: 30.0,
+            alertFanStall: true,
+            alertThermalPressure: true,
+            alertHelper: true,
         ])
     }
 }
@@ -105,5 +129,24 @@ extension SensorSource: RawRepresentable, Codable {
     func encode(to encoder: Encoder) throws {
         var container = encoder.singleValueContainer()
         try container.encode(rawValue)
+    }
+}
+
+/// What the safety net does once a reading has stayed over its limit.
+enum SafetyAction: String, CaseIterable, Identifiable {
+    /// Let go of the fans: macOS's own thermal management ramps them and
+    /// throttles the Mac as designed. The active profile is switched off.
+    case automatic
+    /// Every fan to full speed until the reading is 10° under the limit, then
+    /// the profile carries on.
+    case max
+
+    var id: Self { self }
+
+    var title: String {
+        switch self {
+        case .automatic: return "Hand the fans back to macOS"
+        case .max: return "Run every fan at full speed"
+        }
     }
 }

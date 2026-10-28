@@ -38,10 +38,15 @@ no background daemons, no third-party code.
   - *Full Speed*: every fan at maximum.
 
   ThermoTune comes with **Automatic**, **Balanced**, **Cool** and **Full Speed**, and you can
-  create your own. Whatever a Fixed Speed or Temperature Curve profile says, every fan goes to
-  full speed once the hottest sensor reaches 95 °C, until it is back under 85 °C. If the
-  temperatures can't be read at all, macOS gets the fans until they can. Choosing **None**, or
-  a profile stopping because of an error, also hands the fans back to macOS.
+  create your own. If the temperatures can't be read at all, macOS gets the fans until they
+  can. Choosing **None**, or a profile stopping because of an error, also hands the fans back to
+  macOS.
+- **Safety net:** while ThermoTune controls the fans, a reading that stays at your limit (95 °C
+  by default, for 10 seconds) hands the fans back to macOS and switches the profile off, or, if
+  you prefer, runs every fan at full speed until it cools down.
+- **Notifications:** when the safety net steps in, a fan isn't spinning, macOS starts slowing
+  the Mac to cool it, the helper needs updating, or a temperature stays above a limit you set.
+  The main window and the menu bar also show macOS's thermal pressure.
 - **Menu bar:** a live temperature in the menu bar, with a quick panel for profiles and fan
   actions. ThermoTune keeps running there after you close its window.
 - **Preferences (⌘,):** launch at login, °C or °F, refresh rate, which temperature the menu bar

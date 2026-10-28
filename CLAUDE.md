@@ -72,7 +72,7 @@ make build          # Debug build, a compile check
 make release        # Release build, what CI builds and what users run
 make run            # Release build, then launch it
 make shot           # Release build, launch, PNGs of its windows in build/screenshots
-make shot TAB=profiles   # …plus Preferences on that tab (general | profiles | menuBar | advanced | about)
+make shot TAB=profiles   # …plus Preferences on that tab (general | profiles | safety | menuBar | advanced | about)
 make helper-status  # what the installed helper reports for each fan
 make fans-auto      # hand every fan back to macOS, whatever state they were left in
 ```
@@ -200,8 +200,10 @@ asynchronously, the fans read straight after it can still look automatic.
 a Fixed, Curve or Max profile in charge. If that profile ends by any route other than the user
 taking a fan over (None, deleted, Restore Defaults, a helper error), the next refresh sends
 `auto-all`; otherwise the fans stay at the profile's last speed with thermal control suspended.
-Fixed and Curve profiles also go to full speed past 95 °C, and hand back to macOS when no
-temperature can be read. Uninstall blocks helper calls, waits for the queue, and hands the fans
+Fixed and Curve profiles hand back to macOS when no temperature can be read. Past the safety
+net's limit (Settings › Safety, `checkSafetyNet`) any manual speed or profile is handed back, or
+run at full speed, depending on the setting; it runs before the profile each refresh so the profile
+can't undo it, and never acts when every fan is already at full speed. Uninstall blocks helper calls, waits for the queue, and hands the fans
 back before removing the helper, refusing if it can't: once the helper is gone, nothing can. A
 new way for a profile to end goes through this, not around it.
 
