@@ -10,7 +10,7 @@ struct FanRow: View {
     private var isBusy: Bool { monitor.busyFans.contains(fan.id) }
 
     private var canControl: Bool {
-        monitor.helperState == .ready && fan.maximum > fan.minimum && !isBusy
+        monitor.canControlFans && fan.maximum > fan.minimum && !isBusy
     }
 
     private var range: ClosedRange<Double> {
@@ -20,12 +20,11 @@ struct FanRow: View {
     var body: some View {
         VStack(alignment: .leading, spacing: 8) {
             HStack(spacing: 10) {
-                Label(fan.name, systemImage: "fan")
+                Label(fan.title, systemImage: "fan")
                     .symbolEffect(.rotate, options: .repeat(.continuous), isActive: fan.actual > 0)
                     .font(.headline)
-                Text(fan.actual.rpm)
+                speedText
                     .font(.callout.monospacedDigit())
-                    .foregroundStyle(.secondary)
                     .contentTransition(.numericText())
                 Spacer()
                 if isBusy {
@@ -33,7 +32,7 @@ struct FanRow: View {
                         .help("Switching modes can take about 10 seconds while macOS hands over fan control.")
                 }
                 Picker("Mode", selection: modeBinding) {
-                    ForEach(FanMode.allCases) { Text($0.rawValue).tag($0) }
+                    ForEach(FanMode.allCases) { Text($0.title).tag($0) }
                 }
                 .pickerStyle(.segmented)
                 .labelsHidden()
@@ -55,7 +54,7 @@ struct FanRow: View {
                     }
                     .controlSize(.small)
                     .disabled(!canControl)
-                    Text("\(Int(targetRPM)) RPM")
+                    Text(targetRPM.rpm)
                         .font(.callout.monospacedDigit())
                         .frame(width: 76, alignment: .trailing)
                 }
@@ -64,10 +63,28 @@ struct FanRow: View {
                     .tint(mode == .max ? .red : .accentColor)
                     .help("\(Int(fan.minimum))–\(Int(fan.maximum)) RPM")
             }
+
+            if mode == .automatic, fan.isControlUnlocked, !isBusy {
+                Label("Held at minimum speed until every fan is back on Auto.", systemImage: "info.circle")
+                    .font(.caption)
+                    .foregroundStyle(.secondary)
+            }
         }
         .padding(.vertical, 2)
         .onAppear(perform: syncTarget)
         .onChange(of: fan.target) { syncTarget() }
+    }
+
+    /// Current speed with the fan's ceiling, so a running fan always shows how
+    /// far it could go: "2,321 / 6,800 RPM", or "Off · max 6,800 RPM".
+    private var speedText: Text {
+        let maximum = Int(fan.maximum).formatted()
+        if fan.actual < 1 {
+            return Text("Off").foregroundStyle(.secondary)
+                + Text(" · max \(maximum) RPM").foregroundStyle(.tertiary)
+        }
+        return Text(Int(fan.actual).formatted()).foregroundStyle(.secondary)
+            + Text(" / \(maximum) RPM").foregroundStyle(.tertiary)
     }
 
     private var modeBinding: Binding<FanMode> {

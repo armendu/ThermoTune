@@ -10,15 +10,24 @@ struct ThermoTuneApp: App {
 
     init() {
         PreferenceKey.registerDefaults()
+        // A tab left over from a quit with Settings open, or from `make shot TAB=…`.
+        SettingsTab.reset()
         _monitor = State(initialValue: HardwareMonitor(profiles: ProfileStore()))
     }
 
     var body: some Scene {
-        Window("ThermoTune", id: Self.mainWindowID) {
+        Window(AppInfo.windowTitle, id: Self.mainWindowID) {
             ContentView()
                 .environment(monitor)
         }
-        .defaultSize(width: 620, height: 800)
+        .defaultSize(width: 900, height: 640)
+        .commands {
+            // The About tab rather than the standard panel, so there is one
+            // About screen to keep current.
+            CommandGroup(replacing: .appInfo) {
+                SettingsTabButton(title: "About \(AppInfo.name)", tab: .about)
+            }
+        }
 
         Settings {
             SettingsView()
@@ -41,6 +50,11 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
 
     func applicationDidFinishLaunching(_ notification: Notification) {
         WindowSnapshot.scheduleIfRequested()
+        if UserDefaults.standard.bool(forKey: PreferenceKey.hideDockIcon), !RunMode.isReadOnly {
+            // With neither a Dock icon nor a menu bar item, there'd be no way back in.
+            UserDefaults.standard.set(true, forKey: PreferenceKey.showMenuBarExtra)
+            DockIcon.apply()
+        }
         // `kill`/`pkill` send SIGTERM, which would otherwise skip
         // applicationWillTerminate and leave fans under manual control.
         signal(SIGTERM, SIG_IGN)

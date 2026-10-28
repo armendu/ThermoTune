@@ -1,0 +1,2672 @@
+{
+  "sourceLanguage" : "en",
+  "strings" : {
+    " / %@ RPM" : {
+      "localizations" : {
+        "de" : {
+          "stringUnit" : {
+            "state" : "needs_review",
+            "value" : " / %@ U/min"
+          }
+        }
+      }
+    },
+    " · max %@ RPM" : {
+      "localizations" : {
+        "de" : {
+          "stringUnit" : {
+            "state" : "needs_review",
+            "value" : " · max. %@ U/min"
+          }
+        }
+      }
+    },
+    "%@ %lld" : {
+      "comment" : "A sensor name numbered among several with the same name, e.g. Performance cores 3",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "%1$@ %2$lld"
+          }
+        }
+      },
+      "shouldTranslate" : false
+    },
+    "%@ (%@) · %@" : {
+      "localizations" : {
+        "de" : {
+          "stringUnit" : {
+            "state" : "needs_review",
+            "value" : "%@ (%@) · %@"
+          }
+        },
+        "en" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "%1$@ (%2$@) · %3$@"
+          }
+        }
+      }
+    },
+    "%@ (no reading)" : {
+      "localizations" : {
+        "de" : {
+          "stringUnit" : {
+            "state" : "needs_review",
+            "value" : "%@ (kein Messwert)"
+          }
+        }
+      }
+    },
+    "%@ Copy" : {
+      "localizations" : {
+        "de" : {
+          "stringUnit" : {
+            "state" : "needs_review",
+            "value" : "%@ Kopie"
+          }
+        }
+      }
+    },
+    "%@ Not affiliated with Apple." : {
+      "localizations" : {
+        "de" : {
+          "stringUnit" : {
+            "state" : "needs_review",
+            "value" : "%@ Nicht mit Apple verbunden."
+          }
+        }
+      }
+    },
+    "%@ at %@ or more" : {
+      "localizations" : {
+        "de" : {
+          "stringUnit" : {
+            "state" : "needs_review",
+            "value" : "%@ bei %@ oder mehr"
+          }
+        },
+        "en" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "%1$@ at %2$@ or more"
+          }
+        }
+      }
+    },
+    "%@ has been at %@ or more for %lld seconds." : {
+      "localizations" : {
+        "de" : {
+          "stringUnit" : {
+            "state" : "needs_review",
+            "value" : "%1$@ liegt seit %3$lld Sekunden bei %2$@ oder mehr."
+          }
+        },
+        "en" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "%1$@ has been at %2$@ or more for %3$lld seconds."
+          }
+        }
+      }
+    },
+    "%@ is running hot" : {
+      "localizations" : {
+        "de" : {
+          "stringUnit" : {
+            "state" : "needs_review",
+            "value" : "%@ wird heiß"
+          }
+        }
+      }
+    },
+    "%@ isn't spinning" : {
+      "localizations" : {
+        "de" : {
+          "stringUnit" : {
+            "state" : "needs_review",
+            "value" : "%@ dreht sich nicht"
+          }
+        }
+      }
+    },
+    "%@ max · %@ avg" : {
+      "localizations" : {
+        "de" : {
+          "stringUnit" : {
+            "state" : "needs_review",
+            "value" : "%@ max. · %@ Ø"
+          }
+        },
+        "en" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "%1$@ max · %2$@ avg"
+          }
+        }
+      }
+    },
+    "%lld" : {
+      "shouldTranslate" : false
+    },
+    "%lld sensors" : {
+      "localizations" : {
+        "de" : {
+          "stringUnit" : {
+            "state" : "needs_review",
+            "value" : "%lld Sensoren"
+          }
+        }
+      }
+    },
+    "%lld%%" : {
+      "shouldTranslate" : false
+    },
+    "%lld°" : {
+      "shouldTranslate" : false
+    },
+    "%lld–%lld RPM" : {
+      "localizations" : {
+        "de" : {
+          "stringUnit" : {
+            "state" : "needs_review",
+            "value" : "%lld–%lld U/min"
+          }
+        },
+        "en" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "%1$lld–%2$lld RPM"
+          }
+        }
+      }
+    },
+    "1 minute" : {
+      "localizations" : {
+        "de" : {
+          "stringUnit" : {
+            "state" : "needs_review",
+            "value" : "1 Minute"
+          }
+        }
+      }
+    },
+    "1 second" : {
+      "localizations" : {
+        "de" : {
+          "stringUnit" : {
+            "state" : "needs_review",
+            "value" : "1 Sekunde"
+          }
+        }
+      }
+    },
+    "10 seconds" : {
+      "localizations" : {
+        "de" : {
+          "stringUnit" : {
+            "state" : "needs_review",
+            "value" : "10 Sekunden"
+          }
+        }
+      }
+    },
+    "2 seconds" : {
+      "localizations" : {
+        "de" : {
+          "stringUnit" : {
+            "state" : "needs_review",
+            "value" : "2 Sekunden"
+          }
+        }
+      }
+    },
+    "30 seconds" : {
+      "localizations" : {
+        "de" : {
+          "stringUnit" : {
+            "state" : "needs_review",
+            "value" : "30 Sekunden"
+          }
+        }
+      }
+    },
+    "5 minutes" : {
+      "localizations" : {
+        "de" : {
+          "stringUnit" : {
+            "state" : "needs_review",
+            "value" : "5 Minuten"
+          }
+        }
+      }
+    },
+    "5 seconds" : {
+      "localizations" : {
+        "de" : {
+          "stringUnit" : {
+            "state" : "needs_review",
+            "value" : "5 Sekunden"
+          }
+        }
+      }
+    },
+    "About" : {
+      "localizations" : {
+        "de" : {
+          "stringUnit" : {
+            "state" : "needs_review",
+            "value" : "Über"
+          }
+        }
+      }
+    },
+    "About %@" : {
+      "localizations" : {
+        "de" : {
+          "stringUnit" : {
+            "state" : "needs_review",
+            "value" : "Über %@"
+          }
+        }
+      }
+    },
+    "Active" : {
+      "localizations" : {
+        "de" : {
+          "stringUnit" : {
+            "state" : "needs_review",
+            "value" : "Aktiv"
+          }
+        }
+      }
+    },
+    "Active profile" : {
+      "localizations" : {
+        "de" : {
+          "stringUnit" : {
+            "state" : "needs_review",
+            "value" : "Aktives Profil"
+          }
+        }
+      }
+    },
+    "Add Point" : {
+      "localizations" : {
+        "de" : {
+          "stringUnit" : {
+            "state" : "needs_review",
+            "value" : "Punkt hinzufügen"
+          }
+        }
+      }
+    },
+    "Add Rule" : {
+      "localizations" : {
+        "de" : {
+          "stringUnit" : {
+            "state" : "needs_review",
+            "value" : "Regel hinzufügen"
+          }
+        }
+      }
+    },
+    "Advanced" : {
+      "localizations" : {
+        "de" : {
+          "stringUnit" : {
+            "state" : "needs_review",
+            "value" : "Erweitert"
+          }
+        }
+      }
+    },
+    "Airflow" : {
+      "localizations" : {
+        "de" : {
+          "stringUnit" : {
+            "state" : "needs_review",
+            "value" : "Luftstrom"
+          }
+        }
+      }
+    },
+    "All Auto" : {
+      "localizations" : {
+        "de" : {
+          "stringUnit" : {
+            "state" : "needs_review",
+            "value" : "Alle automatisch"
+          }
+        }
+      }
+    },
+    "All Max" : {
+      "localizations" : {
+        "de" : {
+          "stringUnit" : {
+            "state" : "needs_review",
+            "value" : "Alle maximal"
+          }
+        }
+      }
+    },
+    "All Sensors…" : {
+      "localizations" : {
+        "de" : {
+          "stringUnit" : {
+            "state" : "needs_review",
+            "value" : "Alle Sensoren …"
+          }
+        }
+      }
+    },
+    "Ambient" : {
+      "localizations" : {
+        "de" : {
+          "stringUnit" : {
+            "state" : "needs_review",
+            "value" : "Umgebung"
+          }
+        }
+      }
+    },
+    "Any time" : {
+      "localizations" : {
+        "de" : {
+          "stringUnit" : {
+            "state" : "needs_review",
+            "value" : "Sofort"
+          }
+        }
+      }
+    },
+    "At or above" : {
+      "localizations" : {
+        "de" : {
+          "stringUnit" : {
+            "state" : "needs_review",
+            "value" : "Ab"
+          }
+        }
+      }
+    },
+    "Auto" : {
+      "localizations" : {
+        "de" : {
+          "stringUnit" : {
+            "state" : "needs_review",
+            "value" : "Auto"
+          }
+        }
+      }
+    },
+    "Automatic" : {
+      "localizations" : {
+        "de" : {
+          "stringUnit" : {
+            "state" : "needs_review",
+            "value" : "Automatisch"
+          }
+        }
+      }
+    },
+    "Automation" : {
+      "localizations" : {
+        "de" : {
+          "stringUnit" : {
+            "state" : "needs_review",
+            "value" : "Automatisierung"
+          }
+        }
+      }
+    },
+    "Average" : {
+      "localizations" : {
+        "de" : {
+          "stringUnit" : {
+            "state" : "needs_review",
+            "value" : "Durchschnitt"
+          }
+        }
+      }
+    },
+    "Average temperature (%@)" : {
+      "localizations" : {
+        "de" : {
+          "stringUnit" : {
+            "state" : "needs_review",
+            "value" : "Durchschnittstemperatur (%@)"
+          }
+        }
+      }
+    },
+    "Balanced" : {
+      "localizations" : {
+        "de" : {
+          "stringUnit" : {
+            "state" : "needs_review",
+            "value" : "Ausgewogen"
+          }
+        }
+      }
+    },
+    "Battery" : {
+      "localizations" : {
+        "de" : {
+          "stringUnit" : {
+            "state" : "needs_review",
+            "value" : "Batterie"
+          }
+        }
+      }
+    },
+    "Behavior" : {
+      "localizations" : {
+        "de" : {
+          "stringUnit" : {
+            "state" : "needs_review",
+            "value" : "Verhalten"
+          }
+        }
+      }
+    },
+    "CPU" : {
+      "localizations" : {
+        "de" : {
+          "stringUnit" : {
+            "state" : "needs_review",
+            "value" : "CPU"
+          }
+        }
+      }
+    },
+    "CPU Package" : {
+      "localizations" : {
+        "de" : {
+          "stringUnit" : {
+            "state" : "needs_review",
+            "value" : "CPU-Gehäuse"
+          }
+        }
+      }
+    },
+    "CPU package" : {
+      "localizations" : {
+        "de" : {
+          "stringUnit" : {
+            "state" : "needs_review",
+            "value" : "CPU-Gehäuse"
+          }
+        }
+      }
+    },
+    "Cancelled." : {
+      "localizations" : {
+        "de" : {
+          "stringUnit" : {
+            "state" : "needs_review",
+            "value" : "Abgebrochen."
+          }
+        }
+      }
+    },
+    "Celsius (°C)" : {
+      "localizations" : {
+        "de" : {
+          "stringUnit" : {
+            "state" : "needs_review",
+            "value" : "Celsius (°C)"
+          }
+        }
+      }
+    },
+    "Changing fan speed needs a helper tool, installed once with your administrator password." : {
+      "localizations" : {
+        "de" : {
+          "stringUnit" : {
+            "state" : "needs_review",
+            "value" : "Zum Ändern der Lüftergeschwindigkeit wird ein Hilfsprogramm benötigt, das einmalig mit deinem Administratorpasswort installiert wird."
+          }
+        }
+      }
+    },
+    "Colour by temperature" : {
+      "localizations" : {
+        "de" : {
+          "stringUnit" : {
+            "state" : "needs_review",
+            "value" : "Nach Temperatur einfärben"
+          }
+        }
+      }
+    },
+    "Compact" : {
+      "localizations" : {
+        "de" : {
+          "stringUnit" : {
+            "state" : "needs_review",
+            "value" : "Kompakt"
+          }
+        }
+      }
+    },
+    "Cool" : {
+      "localizations" : {
+        "de" : {
+          "stringUnit" : {
+            "state" : "needs_review",
+            "value" : "Kühl"
+          }
+        }
+      }
+    },
+    "Create and edit fan profiles" : {
+      "localizations" : {
+        "de" : {
+          "stringUnit" : {
+            "state" : "needs_review",
+            "value" : "Lüfterprofile erstellen und bearbeiten"
+          }
+        }
+      }
+    },
+    "Created by" : {
+      "localizations" : {
+        "de" : {
+          "stringUnit" : {
+            "state" : "needs_review",
+            "value" : "Erstellt von"
+          }
+        }
+      }
+    },
+    "Critical" : {
+      "localizations" : {
+        "de" : {
+          "stringUnit" : {
+            "state" : "needs_review",
+            "value" : "Kritisch"
+          }
+        }
+      }
+    },
+    "Curve" : {
+      "localizations" : {
+        "de" : {
+          "stringUnit" : {
+            "state" : "needs_review",
+            "value" : "Kurve"
+          }
+        }
+      }
+    },
+    "Delete Rule" : {
+      "localizations" : {
+        "de" : {
+          "stringUnit" : {
+            "state" : "needs_review",
+            "value" : "Regel löschen"
+          }
+        }
+      }
+    },
+    "Delete profile" : {
+      "localizations" : {
+        "de" : {
+          "stringUnit" : {
+            "state" : "needs_review",
+            "value" : "Profil löschen"
+          }
+        }
+      }
+    },
+    "Different settings for each fan" : {
+      "localizations" : {
+        "de" : {
+          "stringUnit" : {
+            "state" : "needs_review",
+            "value" : "Eigene Einstellungen für jeden Lüfter"
+          }
+        }
+      }
+    },
+    "Discovering sensors…" : {
+      "localizations" : {
+        "de" : {
+          "stringUnit" : {
+            "state" : "needs_review",
+            "value" : "Sensoren werden gesucht …"
+          }
+        }
+      }
+    },
+    "Dismiss" : {
+      "localizations" : {
+        "de" : {
+          "stringUnit" : {
+            "state" : "needs_review",
+            "value" : "Ausblenden"
+          }
+        }
+      }
+    },
+    "Display" : {
+      "localizations" : {
+        "de" : {
+          "stringUnit" : {
+            "state" : "needs_review",
+            "value" : "Anzeige"
+          }
+        }
+      }
+    },
+    "Duplicate" : {
+      "localizations" : {
+        "de" : {
+          "stringUnit" : {
+            "state" : "needs_review",
+            "value" : "Duplizieren"
+          }
+        }
+      }
+    },
+    "Each notification is sent once, and again only after the problem has gone away and come back." : {
+      "localizations" : {
+        "de" : {
+          "stringUnit" : {
+            "state" : "needs_review",
+            "value" : "Jede Mitteilung wird einmal gesendet und erst wieder, wenn das Problem verschwunden und erneut aufgetreten ist."
+          }
+        }
+      }
+    },
+    "Edit…" : {
+      "localizations" : {
+        "de" : {
+          "stringUnit" : {
+            "state" : "needs_review",
+            "value" : "Bearbeiten …"
+          }
+        }
+      }
+    },
+    "Efficiency Cores" : {
+      "localizations" : {
+        "de" : {
+          "stringUnit" : {
+            "state" : "needs_review",
+            "value" : "Effizienzkerne"
+          }
+        }
+      }
+    },
+    "Efficiency cores" : {
+      "localizations" : {
+        "de" : {
+          "stringUnit" : {
+            "state" : "needs_review",
+            "value" : "Effizienzkerne"
+          }
+        }
+      }
+    },
+    "Enabled" : {
+      "localizations" : {
+        "de" : {
+          "stringUnit" : {
+            "state" : "needs_review",
+            "value" : "Aktiviert"
+          }
+        }
+      }
+    },
+    "Every fan is at full speed until it cools down." : {
+      "localizations" : {
+        "de" : {
+          "stringUnit" : {
+            "state" : "needs_review",
+            "value" : "Alle Lüfter laufen mit voller Geschwindigkeit, bis der Mac abgekühlt ist."
+          }
+        }
+      }
+    },
+    "Every fan runs at full speed until it cools down. %@" : {
+      "localizations" : {
+        "de" : {
+          "stringUnit" : {
+            "state" : "needs_review",
+            "value" : "Alle Lüfter laufen mit voller Geschwindigkeit, bis der Mac abgekühlt ist. %@"
+          }
+        }
+      }
+    },
+    "Export Profiles…" : {
+      "localizations" : {
+        "de" : {
+          "stringUnit" : {
+            "state" : "needs_review",
+            "value" : "Profile exportieren …"
+          }
+        }
+      }
+    },
+    "Export as CSV…" : {
+      "localizations" : {
+        "de" : {
+          "stringUnit" : {
+            "state" : "needs_review",
+            "value" : "Als CSV exportieren …"
+          }
+        }
+      }
+    },
+    "Fahrenheit (°F)" : {
+      "localizations" : {
+        "de" : {
+          "stringUnit" : {
+            "state" : "needs_review",
+            "value" : "Fahrenheit (°F)"
+          }
+        }
+      }
+    },
+    "Fair" : {
+      "localizations" : {
+        "de" : {
+          "stringUnit" : {
+            "state" : "needs_review",
+            "value" : "Mäßig"
+          }
+        }
+      }
+    },
+    "Fan" : {
+      "localizations" : {
+        "de" : {
+          "stringUnit" : {
+            "state" : "needs_review",
+            "value" : "Lüfter"
+          }
+        }
+      }
+    },
+    "Fan %lld" : {
+      "localizations" : {
+        "de" : {
+          "stringUnit" : {
+            "state" : "needs_review",
+            "value" : "Lüfter %lld"
+          }
+        }
+      }
+    },
+    "Fan curve" : {
+      "localizations" : {
+        "de" : {
+          "stringUnit" : {
+            "state" : "needs_review",
+            "value" : "Lüfterkurve"
+          }
+        }
+      }
+    },
+    "Fan speed" : {
+      "localizations" : {
+        "de" : {
+          "stringUnit" : {
+            "state" : "needs_review",
+            "value" : "Lüftergeschwindigkeit"
+          }
+        }
+      }
+    },
+    "Fans" : {
+      "localizations" : {
+        "de" : {
+          "stringUnit" : {
+            "state" : "needs_review",
+            "value" : "Lüfter"
+          }
+        }
+      }
+    },
+    "Fans keep their speeds when ThermoTune quits." : {
+      "localizations" : {
+        "de" : {
+          "stringUnit" : {
+            "state" : "needs_review",
+            "value" : "Die Lüfter behalten ihre Drehzahl, wenn ThermoTune beendet wird."
+          }
+        }
+      }
+    },
+    "Fans off" : {
+      "localizations" : {
+        "de" : {
+          "stringUnit" : {
+            "state" : "needs_review",
+            "value" : "Lüfter aus"
+          }
+        }
+      }
+    },
+    "Fans return to automatic when ThermoTune quits." : {
+      "localizations" : {
+        "de" : {
+          "stringUnit" : {
+            "state" : "needs_review",
+            "value" : "Beim Beenden von ThermoTune übernimmt macOS wieder die Lüfter."
+          }
+        }
+      }
+    },
+    "Fixed Speed" : {
+      "localizations" : {
+        "de" : {
+          "stringUnit" : {
+            "state" : "needs_review",
+            "value" : "Feste Geschwindigkeit"
+          }
+        }
+      }
+    },
+    "Follow" : {
+      "localizations" : {
+        "de" : {
+          "stringUnit" : {
+            "state" : "needs_review",
+            "value" : "Folgen"
+          }
+        }
+      }
+    },
+    "For at least" : {
+      "localizations" : {
+        "de" : {
+          "stringUnit" : {
+            "state" : "needs_review",
+            "value" : "Mindestens"
+          }
+        }
+      }
+    },
+    "Full Speed" : {
+      "localizations" : {
+        "de" : {
+          "stringUnit" : {
+            "state" : "needs_review",
+            "value" : "Volle Geschwindigkeit"
+          }
+        }
+      }
+    },
+    "GPU" : {
+      "localizations" : {
+        "de" : {
+          "stringUnit" : {
+            "state" : "needs_review",
+            "value" : "GPU"
+          }
+        }
+      }
+    },
+    "General" : {
+      "localizations" : {
+        "de" : {
+          "stringUnit" : {
+            "state" : "needs_review",
+            "value" : "Allgemein"
+          }
+        }
+      }
+    },
+    "Hand All Fans to macOS" : {
+      "localizations" : {
+        "de" : {
+          "stringUnit" : {
+            "state" : "needs_review",
+            "value" : "Alle Lüfter an macOS übergeben"
+          }
+        }
+      }
+    },
+    "Hand every fan back to macOS" : {
+      "localizations" : {
+        "de" : {
+          "stringUnit" : {
+            "state" : "needs_review",
+            "value" : "Alle Lüfter wieder an macOS übergeben"
+          }
+        }
+      }
+    },
+    "Hand the fans back to macOS" : {
+      "localizations" : {
+        "de" : {
+          "stringUnit" : {
+            "state" : "needs_review",
+            "value" : "Lüfter wieder an macOS übergeben"
+          }
+        }
+      }
+    },
+    "Held at minimum speed until every fan is back on Auto." : {
+      "localizations" : {
+        "de" : {
+          "stringUnit" : {
+            "state" : "needs_review",
+            "value" : "Läuft mit Mindestgeschwindigkeit, bis alle Lüfter wieder auf Auto stehen."
+          }
+        }
+      }
+    },
+    "Helper" : {
+      "localizations" : {
+        "de" : {
+          "stringUnit" : {
+            "state" : "needs_review",
+            "value" : "Hilfsprogramm"
+          }
+        }
+      }
+    },
+    "Hide ThermoTune from the Dock" : {
+      "localizations" : {
+        "de" : {
+          "stringUnit" : {
+            "state" : "needs_review",
+            "value" : "ThermoTune im Dock ausblenden"
+          }
+        }
+      }
+    },
+    "History" : {
+      "localizations" : {
+        "de" : {
+          "stringUnit" : {
+            "state" : "needs_review",
+            "value" : "Verlauf"
+          }
+        }
+      }
+    },
+    "Hottest (CPU or GPU)" : {
+      "localizations" : {
+        "de" : {
+          "stringUnit" : {
+            "state" : "needs_review",
+            "value" : "Heißester (CPU oder GPU)"
+          }
+        }
+      }
+    },
+    "Hottest first. Names are best guesses from each sensor's SMC key; Apple doesn't publish where they sit. Click the count to keep this open." : {
+      "localizations" : {
+        "de" : {
+          "stringUnit" : {
+            "state" : "needs_review",
+            "value" : "Heißeste zuerst. Die Namen sind Vermutungen anhand des SMC-Schlüssels; Apple veröffentlicht nicht, wo die Sensoren sitzen. Klicke auf die Anzahl, damit dies geöffnet bleibt."
+          }
+        }
+      }
+    },
+    "Hottest sensor" : {
+      "localizations" : {
+        "de" : {
+          "stringUnit" : {
+            "state" : "needs_review",
+            "value" : "Heißester Sensor"
+          }
+        }
+      }
+    },
+    "Hover over a count to see its sensors." : {
+      "localizations" : {
+        "de" : {
+          "stringUnit" : {
+            "state" : "needs_review",
+            "value" : "Zeige auf eine Anzahl, um ihre Sensoren zu sehen."
+          }
+        }
+      }
+    },
+    "How hard macOS is working to keep the Mac cool. At Serious and Critical it slows the Mac down." : {
+      "localizations" : {
+        "de" : {
+          "stringUnit" : {
+            "state" : "needs_review",
+            "value" : "Wie stark macOS arbeiten muss, um den Mac kühl zu halten. Bei „Ernst“ und „Kritisch“ wird der Mac verlangsamt."
+          }
+        }
+      }
+    },
+    "Icon only" : {
+      "localizations" : {
+        "de" : {
+          "stringUnit" : {
+            "state" : "needs_review",
+            "value" : "Nur Symbol"
+          }
+        }
+      }
+    },
+    "Import Profiles…" : {
+      "localizations" : {
+        "de" : {
+          "stringUnit" : {
+            "state" : "needs_review",
+            "value" : "Profile importieren …"
+          }
+        }
+      }
+    },
+    "Install Helper…" : {
+      "localizations" : {
+        "de" : {
+          "stringUnit" : {
+            "state" : "needs_review",
+            "value" : "Hilfsprogramm installieren …"
+          }
+        }
+      }
+    },
+    "Install the helper (Advanced tab) to use profiles." : {
+      "localizations" : {
+        "de" : {
+          "stringUnit" : {
+            "state" : "needs_review",
+            "value" : "Installiere das Hilfsprogramm (Tab „Erweitert“), um Profile zu verwenden."
+          }
+        }
+      }
+    },
+    "Install the helper tool to control fan speed." : {
+      "localizations" : {
+        "de" : {
+          "stringUnit" : {
+            "state" : "needs_review",
+            "value" : "Installiere das Hilfsprogramm, um die Lüftergeschwindigkeit zu steuern."
+          }
+        }
+      }
+    },
+    "Install the helper tool to use fan profiles." : {
+      "localizations" : {
+        "de" : {
+          "stringUnit" : {
+            "state" : "needs_review",
+            "value" : "Installiere das Hilfsprogramm, um Lüfterprofile zu verwenden."
+          }
+        }
+      }
+    },
+    "Installed" : {
+      "localizations" : {
+        "de" : {
+          "stringUnit" : {
+            "state" : "needs_review",
+            "value" : "Installiert"
+          }
+        }
+      }
+    },
+    "It was set to %lld RPM but reads %lld RPM. It may be blocked or failing." : {
+      "localizations" : {
+        "de" : {
+          "stringUnit" : {
+            "state" : "needs_review",
+            "value" : "Er wurde auf %lld U/min gestellt, misst aber %lld U/min. Er ist möglicherweise blockiert oder defekt."
+          }
+        },
+        "en" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "It was set to %1$lld RPM but reads %2$lld RPM. It may be blocked or failing."
+          }
+        }
+      }
+    },
+    "Keep a log file" : {
+      "localizations" : {
+        "de" : {
+          "stringUnit" : {
+            "state" : "needs_review",
+            "value" : "Protokolldatei führen"
+          }
+        }
+      }
+    },
+    "Keyboard Shortcuts" : {
+      "localizations" : {
+        "de" : {
+          "stringUnit" : {
+            "state" : "needs_review",
+            "value" : "Tastaturkurzbefehle"
+          }
+        }
+      }
+    },
+    "Last %lld minutes" : {
+      "localizations" : {
+        "de" : {
+          "stringUnit" : {
+            "state" : "needs_review",
+            "value" : "Letzte %lld Minuten"
+          }
+        }
+      }
+    },
+    "Last hour" : {
+      "localizations" : {
+        "de" : {
+          "stringUnit" : {
+            "state" : "needs_review",
+            "value" : "Letzte Stunde"
+          }
+        }
+      }
+    },
+    "Last minute" : {
+      "localizations" : {
+        "de" : {
+          "stringUnit" : {
+            "state" : "needs_review",
+            "value" : "Letzte Minute"
+          }
+        }
+      }
+    },
+    "Launch at Login" : {
+      "localizations" : {
+        "de" : {
+          "stringUnit" : {
+            "state" : "needs_review",
+            "value" : "Bei der Anmeldung öffnen"
+          }
+        }
+      }
+    },
+    "Launch at login" : {
+      "localizations" : {
+        "de" : {
+          "stringUnit" : {
+            "state" : "needs_review",
+            "value" : "Bei der Anmeldung öffnen"
+          }
+        }
+      }
+    },
+    "Leave as it is" : {
+      "localizations" : {
+        "de" : {
+          "stringUnit" : {
+            "state" : "needs_review",
+            "value" : "Unverändert lassen"
+          }
+        }
+      }
+    },
+    "License" : {
+      "localizations" : {
+        "de" : {
+          "stringUnit" : {
+            "state" : "needs_review",
+            "value" : "Lizenz"
+          }
+        }
+      }
+    },
+    "Limit" : {
+      "localizations" : {
+        "de" : {
+          "stringUnit" : {
+            "state" : "needs_review",
+            "value" : "Grenzwert"
+          }
+        }
+      }
+    },
+    "Location" : {
+      "localizations" : {
+        "de" : {
+          "stringUnit" : {
+            "state" : "needs_review",
+            "value" : "Ort"
+          }
+        }
+      }
+    },
+    "Manual" : {
+      "localizations" : {
+        "de" : {
+          "stringUnit" : {
+            "state" : "needs_review",
+            "value" : "Manuell"
+          }
+        }
+      }
+    },
+    "Manual speeds and profiles keep running after ThermoTune quits, and macOS won't manage the fans until you switch them back to Automatic." : {
+      "localizations" : {
+        "de" : {
+          "stringUnit" : {
+            "state" : "needs_review",
+            "value" : "Manuelle Geschwindigkeiten und Profile laufen nach dem Beenden von ThermoTune weiter, und macOS steuert die Lüfter erst wieder, wenn du sie auf Automatisch zurückstellst."
+          }
+        }
+      }
+    },
+    "Manual speeds and profiles stay where they are until the hottest sensor reaches %@. Then the fans go back to macOS." : {
+      "localizations" : {
+        "de" : {
+          "stringUnit" : {
+            "state" : "needs_review",
+            "value" : "Manuelle Drehzahlen und Profile bleiben, wie sie sind, bis der heißeste Sensor %@ erreicht. Dann übernimmt macOS die Lüfter wieder."
+          }
+        }
+      }
+    },
+    "Max" : {
+      "localizations" : {
+        "de" : {
+          "stringUnit" : {
+            "state" : "needs_review",
+            "value" : "Max."
+          }
+        }
+      }
+    },
+    "Memory" : {
+      "localizations" : {
+        "de" : {
+          "stringUnit" : {
+            "state" : "needs_review",
+            "value" : "Arbeitsspeicher"
+          }
+        }
+      }
+    },
+    "Menu Bar" : {
+      "localizations" : {
+        "de" : {
+          "stringUnit" : {
+            "state" : "needs_review",
+            "value" : "Menüleiste"
+          }
+        }
+      }
+    },
+    "Menu Bar Item" : {
+      "localizations" : {
+        "de" : {
+          "stringUnit" : {
+            "state" : "needs_review",
+            "value" : "Menüleistensymbol"
+          }
+        }
+      }
+    },
+    "Mode" : {
+      "localizations" : {
+        "de" : {
+          "stringUnit" : {
+            "state" : "needs_review",
+            "value" : "Modus"
+          }
+        }
+      }
+    },
+    "Move Down" : {
+      "localizations" : {
+        "de" : {
+          "stringUnit" : {
+            "state" : "needs_review",
+            "value" : "Nach unten"
+          }
+        }
+      }
+    },
+    "Move Up" : {
+      "localizations" : {
+        "de" : {
+          "stringUnit" : {
+            "state" : "needs_review",
+            "value" : "Nach oben"
+          }
+        }
+      }
+    },
+    "Name" : {
+      "localizations" : {
+        "de" : {
+          "stringUnit" : {
+            "state" : "needs_review",
+            "value" : "Name"
+          }
+        }
+      }
+    },
+    "New Profile" : {
+      "localizations" : {
+        "de" : {
+          "stringUnit" : {
+            "state" : "needs_review",
+            "value" : "Neues Profil"
+          }
+        }
+      }
+    },
+    "New profile" : {
+      "localizations" : {
+        "de" : {
+          "stringUnit" : {
+            "state" : "needs_review",
+            "value" : "Neues Profil"
+          }
+        }
+      }
+    },
+    "No Profile Selected" : {
+      "localizations" : {
+        "de" : {
+          "stringUnit" : {
+            "state" : "needs_review",
+            "value" : "Kein Profil ausgewählt"
+          }
+        }
+      }
+    },
+    "No fans detected on this Mac." : {
+      "localizations" : {
+        "de" : {
+          "stringUnit" : {
+            "state" : "needs_review",
+            "value" : "Auf diesem Mac wurden keine Lüfter gefunden."
+          }
+        }
+      }
+    },
+    "No sensors found." : {
+      "localizations" : {
+        "de" : {
+          "stringUnit" : {
+            "state" : "needs_review",
+            "value" : "Keine Sensoren gefunden."
+          }
+        }
+      }
+    },
+    "Nominal" : {
+      "localizations" : {
+        "de" : {
+          "stringUnit" : {
+            "state" : "needs_review",
+            "value" : "Normal"
+          }
+        }
+      }
+    },
+    "None" : {
+      "localizations" : {
+        "de" : {
+          "stringUnit" : {
+            "state" : "needs_review",
+            "value" : "Keins"
+          }
+        }
+      }
+    },
+    "Not installed" : {
+      "localizations" : {
+        "de" : {
+          "stringUnit" : {
+            "state" : "needs_review",
+            "value" : "Nicht installiert"
+          }
+        }
+      }
+    },
+    "Notifications" : {
+      "localizations" : {
+        "de" : {
+          "stringUnit" : {
+            "state" : "needs_review",
+            "value" : "Mitteilungen"
+          }
+        }
+      }
+    },
+    "Notifications are turned off for ThermoTune." : {
+      "localizations" : {
+        "de" : {
+          "stringUnit" : {
+            "state" : "needs_review",
+            "value" : "Mitteilungen sind für ThermoTune deaktiviert."
+          }
+        }
+      }
+    },
+    "Now" : {
+      "localizations" : {
+        "de" : {
+          "stringUnit" : {
+            "state" : "needs_review",
+            "value" : "Jetzt"
+          }
+        }
+      }
+    },
+    "Now %@ → %@" : {
+      "localizations" : {
+        "de" : {
+          "stringUnit" : {
+            "state" : "needs_review",
+            "value" : "Jetzt %1$@ → %2$@"
+          }
+        },
+        "en" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "Now %1$@ → %2$@"
+          }
+        }
+      }
+    },
+    "OK" : {
+      "localizations" : {
+        "de" : {
+          "stringUnit" : {
+            "state" : "needs_review",
+            "value" : "OK"
+          }
+        }
+      }
+    },
+    "Off" : {
+      "localizations" : {
+        "de" : {
+          "stringUnit" : {
+            "state" : "needs_review",
+            "value" : "Aus"
+          }
+        }
+      }
+    },
+    "On Battery" : {
+      "localizations" : {
+        "de" : {
+          "stringUnit" : {
+            "state" : "needs_review",
+            "value" : "Im Batteriebetrieb"
+          }
+        }
+      }
+    },
+    "On Power Adapter" : {
+      "localizations" : {
+        "de" : {
+          "stringUnit" : {
+            "state" : "needs_review",
+            "value" : "Am Netzteil"
+          }
+        }
+      }
+    },
+    "On battery" : {
+      "localizations" : {
+        "de" : {
+          "stringUnit" : {
+            "state" : "needs_review",
+            "value" : "Im Batteriebetrieb"
+          }
+        }
+      }
+    },
+    "On power adapter" : {
+      "localizations" : {
+        "de" : {
+          "stringUnit" : {
+            "state" : "needs_review",
+            "value" : "Am Netzteil"
+          }
+        }
+      }
+    },
+    "One row per reading: CPU and GPU average and hottest in °C, each fan's speed, thermal pressure and the active profile. The log starts a new file each day." : {
+      "localizations" : {
+        "de" : {
+          "stringUnit" : {
+            "state" : "needs_review",
+            "value" : "Eine Zeile pro Messung: Durchschnitt und Höchstwert von CPU und GPU in °C, die Geschwindigkeit jedes Lüfters, die thermische Belastung und das aktive Profil. Das Protokoll beginnt jeden Tag eine neue Datei."
+          }
+        }
+      }
+    },
+    "Only acts while ThermoTune is controlling the fans, with a manual speed or a profile. Fans already all at full speed are left alone." : {
+      "localizations" : {
+        "de" : {
+          "stringUnit" : {
+            "state" : "needs_review",
+            "value" : "Greift nur ein, während ThermoTune die Lüfter mit einer manuellen Geschwindigkeit oder einem Profil steuert. Laufen bereits alle Lüfter mit voller Geschwindigkeit, passiert nichts."
+          }
+        }
+      }
+    },
+    "Open System Settings…" : {
+      "localizations" : {
+        "de" : {
+          "stringUnit" : {
+            "state" : "needs_review",
+            "value" : "Systemeinstellungen öffnen …"
+          }
+        }
+      }
+    },
+    "Open ThermoTune…" : {
+      "localizations" : {
+        "de" : {
+          "stringUnit" : {
+            "state" : "needs_review",
+            "value" : "ThermoTune öffnen …"
+          }
+        }
+      }
+    },
+    "Other" : {
+      "localizations" : {
+        "de" : {
+          "stringUnit" : {
+            "state" : "needs_review",
+            "value" : "Sonstige"
+          }
+        }
+      }
+    },
+    "Out of date" : {
+      "localizations" : {
+        "de" : {
+          "stringUnit" : {
+            "state" : "needs_review",
+            "value" : "Veraltet"
+          }
+        }
+      }
+    },
+    "Palm rest" : {
+      "localizations" : {
+        "de" : {
+          "stringUnit" : {
+            "state" : "needs_review",
+            "value" : "Handballenauflage"
+          }
+        }
+      }
+    },
+    "Performance Cores" : {
+      "localizations" : {
+        "de" : {
+          "stringUnit" : {
+            "state" : "needs_review",
+            "value" : "Leistungskerne"
+          }
+        }
+      }
+    },
+    "Performance cores" : {
+      "localizations" : {
+        "de" : {
+          "stringUnit" : {
+            "state" : "needs_review",
+            "value" : "Leistungskerne"
+          }
+        }
+      }
+    },
+    "Preferences…" : {
+      "localizations" : {
+        "de" : {
+          "stringUnit" : {
+            "state" : "needs_review",
+            "value" : "Einstellungen …"
+          }
+        }
+      }
+    },
+    "Preview" : {
+      "localizations" : {
+        "de" : {
+          "stringUnit" : {
+            "state" : "needs_review",
+            "value" : "Vorschau"
+          }
+        }
+      }
+    },
+    "Profile" : {
+      "localizations" : {
+        "de" : {
+          "stringUnit" : {
+            "state" : "needs_review",
+            "value" : "Profil"
+          }
+        }
+      }
+    },
+    "Profiles" : {
+      "localizations" : {
+        "de" : {
+          "stringUnit" : {
+            "state" : "needs_review",
+            "value" : "Profile"
+          }
+        }
+      }
+    },
+    "Protect against overheating" : {
+      "localizations" : {
+        "de" : {
+          "stringUnit" : {
+            "state" : "needs_review",
+            "value" : "Vor Überhitzung schützen"
+          }
+        }
+      }
+    },
+    "Quit ThermoTune" : {
+      "localizations" : {
+        "de" : {
+          "stringUnit" : {
+            "state" : "needs_review",
+            "value" : "ThermoTune beenden"
+          }
+        }
+      }
+    },
+    "Reading" : {
+      "localizations" : {
+        "de" : {
+          "stringUnit" : {
+            "state" : "needs_review",
+            "value" : "Messwert"
+          }
+        }
+      }
+    },
+    "Reading temperatures needs no special access, but changing fan speed does. The helper is a small tool that only changes fan settings. Installing it asks for your administrator password once." : {
+      "localizations" : {
+        "de" : {
+          "stringUnit" : {
+            "state" : "needs_review",
+            "value" : "Zum Lesen der Temperaturen ist kein besonderer Zugriff nötig, zum Ändern der Lüftergeschwindigkeit schon. Das Hilfsprogramm ist ein kleines Werkzeug, das nur Lüftereinstellungen ändert. Bei der Installation wird einmalig dein Administratorpasswort abgefragt."
+          }
+        }
+      }
+    },
+    "Record Shortcut" : {
+      "localizations" : {
+        "de" : {
+          "stringUnit" : {
+            "state" : "needs_review",
+            "value" : "Kurzbefehl aufnehmen"
+          }
+        }
+      }
+    },
+    "Remove Point" : {
+      "localizations" : {
+        "de" : {
+          "stringUnit" : {
+            "state" : "needs_review",
+            "value" : "Punkt entfernen"
+          }
+        }
+      }
+    },
+    "Remove shortcut" : {
+      "localizations" : {
+        "de" : {
+          "stringUnit" : {
+            "state" : "needs_review",
+            "value" : "Kurzbefehl entfernen"
+          }
+        }
+      }
+    },
+    "Report an Issue…" : {
+      "localizations" : {
+        "de" : {
+          "stringUnit" : {
+            "state" : "needs_review",
+            "value" : "Problem melden …"
+          }
+        }
+      }
+    },
+    "Reset Fans to Automatic" : {
+      "localizations" : {
+        "de" : {
+          "stringUnit" : {
+            "state" : "needs_review",
+            "value" : "Lüfter auf Automatisch zurücksetzen"
+          }
+        }
+      }
+    },
+    "Restore Default Profiles" : {
+      "localizations" : {
+        "de" : {
+          "stringUnit" : {
+            "state" : "needs_review",
+            "value" : "Standardprofile wiederherstellen"
+          }
+        }
+      }
+    },
+    "Restore automatic fan control when quitting" : {
+      "localizations" : {
+        "de" : {
+          "stringUnit" : {
+            "state" : "needs_review",
+            "value" : "Beim Beenden die automatische Lüftersteuerung wiederherstellen"
+          }
+        }
+      }
+    },
+    "Rules" : {
+      "localizations" : {
+        "de" : {
+          "stringUnit" : {
+            "state" : "needs_review",
+            "value" : "Regeln"
+          }
+        }
+      }
+    },
+    "Run every fan at full speed" : {
+      "localizations" : {
+        "de" : {
+          "stringUnit" : {
+            "state" : "needs_review",
+            "value" : "Alle Lüfter mit voller Geschwindigkeit laufen lassen"
+          }
+        }
+      }
+    },
+    "SMC key %@: %@ °C" : {
+      "localizations" : {
+        "de" : {
+          "stringUnit" : {
+            "state" : "needs_review",
+            "value" : "SMC-Schlüssel %@: %@ °C"
+          }
+        },
+        "en" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "SMC key %1$@: %2$@ °C"
+          }
+        }
+      }
+    },
+    "SSD" : {
+      "localizations" : {
+        "de" : {
+          "stringUnit" : {
+            "state" : "needs_review",
+            "value" : "SSD"
+          }
+        }
+      }
+    },
+    "Safety" : {
+      "localizations" : {
+        "de" : {
+          "stringUnit" : {
+            "state" : "needs_review",
+            "value" : "Sicherheit"
+          }
+        }
+      }
+    },
+    "Safety Net" : {
+      "localizations" : {
+        "de" : {
+          "stringUnit" : {
+            "state" : "needs_review",
+            "value" : "Sicherheitsnetz"
+          }
+        }
+      }
+    },
+    "Safety net: %@" : {
+      "localizations" : {
+        "de" : {
+          "stringUnit" : {
+            "state" : "needs_review",
+            "value" : "Sicherheitsnetz: %@"
+          }
+        }
+      }
+    },
+    "Saved in" : {
+      "localizations" : {
+        "de" : {
+          "stringUnit" : {
+            "state" : "needs_review",
+            "value" : "Gespeichert in"
+          }
+        }
+      }
+    },
+    "Security Policy" : {
+      "localizations" : {
+        "de" : {
+          "stringUnit" : {
+            "state" : "needs_review",
+            "value" : "Sicherheitsrichtlinie"
+          }
+        }
+      }
+    },
+    "See your Mac's temperatures and control its fans." : {
+      "localizations" : {
+        "de" : {
+          "stringUnit" : {
+            "state" : "needs_review",
+            "value" : "Behalte die Temperaturen deines Mac im Blick und steuere seine Lüfter."
+          }
+        }
+      }
+    },
+    "Segment" : {
+      "localizations" : {
+        "de" : {
+          "stringUnit" : {
+            "state" : "needs_review",
+            "value" : "Abschnitt"
+          }
+        }
+      }
+    },
+    "Select a profile, or click + to create one." : {
+      "localizations" : {
+        "de" : {
+          "stringUnit" : {
+            "state" : "needs_review",
+            "value" : "Wähle ein Profil aus oder klicke auf +, um eines zu erstellen."
+          }
+        }
+      }
+    },
+    "Sensor" : {
+      "localizations" : {
+        "de" : {
+          "stringUnit" : {
+            "state" : "needs_review",
+            "value" : "Sensor"
+          }
+        }
+      }
+    },
+    "Sensor %@" : {
+      "localizations" : {
+        "de" : {
+          "stringUnit" : {
+            "state" : "needs_review",
+            "value" : "Sensor %@"
+          }
+        }
+      }
+    },
+    "Serious" : {
+      "localizations" : {
+        "de" : {
+          "stringUnit" : {
+            "state" : "needs_review",
+            "value" : "Ernst"
+          }
+        }
+      }
+    },
+    "Set All Fans to Max" : {
+      "localizations" : {
+        "de" : {
+          "stringUnit" : {
+            "state" : "needs_review",
+            "value" : "Alle Lüfter auf Maximum"
+          }
+        }
+      }
+    },
+    "Show" : {
+      "localizations" : {
+        "de" : {
+          "stringUnit" : {
+            "state" : "needs_review",
+            "value" : "Anzeigen"
+          }
+        }
+      }
+    },
+    "Show ThermoTune in the menu bar" : {
+      "localizations" : {
+        "de" : {
+          "stringUnit" : {
+            "state" : "needs_review",
+            "value" : "ThermoTune in der Menüleiste anzeigen"
+          }
+        }
+      }
+    },
+    "Show a graph of the last 10 minutes" : {
+      "localizations" : {
+        "de" : {
+          "stringUnit" : {
+            "state" : "needs_review",
+            "value" : "Diagramm der letzten 10 Minuten anzeigen"
+          }
+        }
+      }
+    },
+    "Show in Finder" : {
+      "localizations" : {
+        "de" : {
+          "stringUnit" : {
+            "state" : "needs_review",
+            "value" : "Im Finder zeigen"
+          }
+        }
+      }
+    },
+    "Source code" : {
+      "localizations" : {
+        "de" : {
+          "stringUnit" : {
+            "state" : "needs_review",
+            "value" : "Quellcode"
+          }
+        }
+      }
+    },
+    "Speed" : {
+      "localizations" : {
+        "de" : {
+          "stringUnit" : {
+            "state" : "needs_review",
+            "value" : "Geschwindigkeit"
+          }
+        }
+      }
+    },
+    "Status" : {
+      "localizations" : {
+        "de" : {
+          "stringUnit" : {
+            "state" : "needs_review",
+            "value" : "Status"
+          }
+        }
+      }
+    },
+    "Switch profiles automatically" : {
+      "localizations" : {
+        "de" : {
+          "stringUnit" : {
+            "state" : "needs_review",
+            "value" : "Profile automatisch wechseln"
+          }
+        }
+      }
+    },
+    "Switching modes can take about 10 seconds while macOS hands over fan control." : {
+      "localizations" : {
+        "de" : {
+          "stringUnit" : {
+            "state" : "needs_review",
+            "value" : "Der Moduswechsel kann etwa 10 Sekunden dauern, während macOS die Lüftersteuerung übergibt."
+          }
+        }
+      }
+    },
+    "System Automatic" : {
+      "localizations" : {
+        "de" : {
+          "stringUnit" : {
+            "state" : "needs_review",
+            "value" : "Systemautomatik"
+          }
+        }
+      }
+    },
+    "System Automatic isn't available per fan: while any fan is under manual control, macOS stops managing all of them." : {
+      "localizations" : {
+        "de" : {
+          "stringUnit" : {
+            "state" : "needs_review",
+            "value" : "Die Systemautomatik ist nicht pro Lüfter verfügbar: Sobald ein Lüfter manuell gesteuert wird, steuert macOS keinen der Lüfter mehr."
+          }
+        }
+      }
+    },
+    "Target" : {
+      "localizations" : {
+        "de" : {
+          "stringUnit" : {
+            "state" : "needs_review",
+            "value" : "Ziel"
+          }
+        }
+      }
+    },
+    "Temperature" : {
+      "localizations" : {
+        "de" : {
+          "stringUnit" : {
+            "state" : "needs_review",
+            "value" : "Temperatur"
+          }
+        }
+      }
+    },
+    "Temperature Curve" : {
+      "localizations" : {
+        "de" : {
+          "stringUnit" : {
+            "state" : "needs_review",
+            "value" : "Temperaturkurve"
+          }
+        }
+      }
+    },
+    "Temperature and fan speed" : {
+      "localizations" : {
+        "de" : {
+          "stringUnit" : {
+            "state" : "needs_review",
+            "value" : "Temperatur und Lüftergeschwindigkeit"
+          }
+        }
+      }
+    },
+    "Temperature unit" : {
+      "localizations" : {
+        "de" : {
+          "stringUnit" : {
+            "state" : "needs_review",
+            "value" : "Temperatureinheit"
+          }
+        }
+      }
+    },
+    "Temperatures" : {
+      "localizations" : {
+        "de" : {
+          "stringUnit" : {
+            "state" : "needs_review",
+            "value" : "Temperaturen"
+          }
+        }
+      }
+    },
+    "The fan follows the curve as the chosen temperature changes. Drag the points, or double-click the chart to add one." : {
+      "localizations" : {
+        "de" : {
+          "stringUnit" : {
+            "state" : "needs_review",
+            "value" : "Der Lüfter folgt der Kurve, wenn sich die gewählte Temperatur ändert. Ziehe die Punkte oder doppelklicke in das Diagramm, um einen hinzuzufügen."
+          }
+        }
+      }
+    },
+    "The fan runs at a constant share of its speed range." : {
+      "localizations" : {
+        "de" : {
+          "stringUnit" : {
+            "state" : "needs_review",
+            "value" : "Der Lüfter läuft mit einem festen Anteil seines Geschwindigkeitsbereichs."
+          }
+        }
+      }
+    },
+    "The fan runs at its maximum speed." : {
+      "localizations" : {
+        "de" : {
+          "stringUnit" : {
+            "state" : "needs_review",
+            "value" : "Der Lüfter läuft mit maximaler Geschwindigkeit."
+          }
+        }
+      }
+    },
+    "The fans could not be handed back to macOS, so the helper was left installed." : {
+      "localizations" : {
+        "de" : {
+          "stringUnit" : {
+            "state" : "needs_review",
+            "value" : "Die Lüfter konnten nicht an macOS übergeben werden, daher bleibt das Hilfsprogramm installiert."
+          }
+        }
+      }
+    },
+    "The first rule that matches picks the profile. A rule only switches when what matches changes, so a profile you pick by hand stays until then." : {
+      "localizations" : {
+        "de" : {
+          "stringUnit" : {
+            "state" : "needs_review",
+            "value" : "Die erste zutreffende Regel bestimmt das Profil. Eine Regel wechselt nur, wenn sich ändert, was zutrifft; ein von Hand gewähltes Profil bleibt bis dahin aktiv."
+          }
+        }
+      }
+    },
+    "The helper tool is missing from the app bundle." : {
+      "localizations" : {
+        "de" : {
+          "stringUnit" : {
+            "state" : "needs_review",
+            "value" : "Das Hilfsprogramm fehlt im App-Paket."
+          }
+        }
+      }
+    },
+    "The installed helper tool is out of date." : {
+      "localizations" : {
+        "de" : {
+          "stringUnit" : {
+            "state" : "needs_review",
+            "value" : "Das installierte Hilfsprogramm ist veraltet."
+          }
+        }
+      }
+    },
+    "The safety net stepped in at %@" : {
+      "localizations" : {
+        "de" : {
+          "stringUnit" : {
+            "state" : "needs_review",
+            "value" : "Das Sicherheitsnetz hat bei %@ eingegriffen"
+          }
+        }
+      }
+    },
+    "Then" : {
+      "localizations" : {
+        "de" : {
+          "stringUnit" : {
+            "state" : "needs_review",
+            "value" : "Dann"
+          }
+        }
+      }
+    },
+    "Thermal pressure is %@. macOS is reducing performance to keep the Mac cool." : {
+      "localizations" : {
+        "de" : {
+          "stringUnit" : {
+            "state" : "needs_review",
+            "value" : "Die thermische Belastung ist %@. macOS drosselt die Leistung, um den Mac kühl zu halten."
+          }
+        }
+      }
+    },
+    "Thermal pressure: %@" : {
+      "localizations" : {
+        "de" : {
+          "stringUnit" : {
+            "state" : "needs_review",
+            "value" : "Thermische Belastung: %@"
+          }
+        }
+      }
+    },
+    "ThermoTune" : {
+      "shouldTranslate" : false
+    },
+    "ThermoTune can't change fan speeds until its helper tool is updated. Open ThermoTune to update it." : {
+      "localizations" : {
+        "de" : {
+          "stringUnit" : {
+            "state" : "needs_review",
+            "value" : "ThermoTune kann die Lüftergeschwindigkeit erst wieder ändern, wenn das Hilfsprogramm aktualisiert ist. Öffne ThermoTune, um es zu aktualisieren."
+          }
+        }
+      }
+    },
+    "ThermoTune is free and open source. Bug reports, pull requests and reports of which Macs it works on are all welcome." : {
+      "localizations" : {
+        "de" : {
+          "stringUnit" : {
+            "state" : "needs_review",
+            "value" : "ThermoTune ist kostenlos und quelloffen. Fehlerberichte, Pull-Requests und Rückmeldungen, auf welchen Macs es läuft, sind willkommen."
+          }
+        }
+      }
+    },
+    "ThermoTune runs from the menu bar only. Open its window and Settings from the menu bar item." : {
+      "localizations" : {
+        "de" : {
+          "stringUnit" : {
+            "state" : "needs_review",
+            "value" : "ThermoTune läuft nur in der Menüleiste. Fenster und Einstellungen öffnest du über das Menüleistensymbol."
+          }
+        }
+      }
+    },
+    "These work from any app. Use at least one of ⌘, ⌥ or ⌃." : {
+      "localizations" : {
+        "de" : {
+          "stringUnit" : {
+            "state" : "needs_review",
+            "value" : "Diese funktionieren in jeder App. Verwende mindestens ⌘, ⌥ oder ⌃."
+          }
+        }
+      }
+    },
+    "This file has no profiles in it." : {
+      "localizations" : {
+        "de" : {
+          "stringUnit" : {
+            "state" : "needs_review",
+            "value" : "Diese Datei enthält keine Profile."
+          }
+        }
+      }
+    },
+    "This file was made by a newer version of %@ (format %lld). Update %@ to import it." : {
+      "localizations" : {
+        "de" : {
+          "stringUnit" : {
+            "state" : "needs_review",
+            "value" : "Diese Datei wurde mit einer neueren Version von %1$@ erstellt (Format %2$lld). Aktualisiere %3$@, um sie zu importieren."
+          }
+        },
+        "en" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "This file was made by a newer version of %1$@ (format %2$lld). Update %3$@ to import it."
+          }
+        }
+      }
+    },
+    "Time" : {
+      "localizations" : {
+        "de" : {
+          "stringUnit" : {
+            "state" : "needs_review",
+            "value" : "Zeit"
+          }
+        }
+      }
+    },
+    "Time range" : {
+      "localizations" : {
+        "de" : {
+          "stringUnit" : {
+            "state" : "needs_review",
+            "value" : "Zeitraum"
+          }
+        }
+      }
+    },
+    "Type shortcut…" : {
+      "localizations" : {
+        "de" : {
+          "stringUnit" : {
+            "state" : "needs_review",
+            "value" : "Kurzbefehl eingeben …"
+          }
+        }
+      }
+    },
+    "Uninstall Helper…" : {
+      "localizations" : {
+        "de" : {
+          "stringUnit" : {
+            "state" : "needs_review",
+            "value" : "Hilfsprogramm deinstallieren …"
+          }
+        }
+      }
+    },
+    "Unknown" : {
+      "localizations" : {
+        "de" : {
+          "stringUnit" : {
+            "state" : "needs_review",
+            "value" : "Unbekannt"
+          }
+        }
+      }
+    },
+    "Update Helper…" : {
+      "localizations" : {
+        "de" : {
+          "stringUnit" : {
+            "state" : "needs_review",
+            "value" : "Hilfsprogramm aktualisieren …"
+          }
+        }
+      }
+    },
+    "Update readings every" : {
+      "localizations" : {
+        "de" : {
+          "stringUnit" : {
+            "state" : "needs_review",
+            "value" : "Messwerte aktualisieren alle"
+          }
+        }
+      }
+    },
+    "Update the ThermoTune helper" : {
+      "localizations" : {
+        "de" : {
+          "stringUnit" : {
+            "state" : "needs_review",
+            "value" : "ThermoTune-Hilfsprogramm aktualisieren"
+          }
+        }
+      }
+    },
+    "Use" : {
+      "localizations" : {
+        "de" : {
+          "stringUnit" : {
+            "state" : "needs_review",
+            "value" : "Verwenden"
+          }
+        }
+      }
+    },
+    "Use %@" : {
+      "localizations" : {
+        "de" : {
+          "stringUnit" : {
+            "state" : "needs_review",
+            "value" : "%@ verwenden"
+          }
+        }
+      }
+    },
+    "Use This Profile" : {
+      "localizations" : {
+        "de" : {
+          "stringUnit" : {
+            "state" : "needs_review",
+            "value" : "Dieses Profil verwenden"
+          }
+        }
+      }
+    },
+    "Version %@ (%@)" : {
+      "localizations" : {
+        "de" : {
+          "stringUnit" : {
+            "state" : "needs_review",
+            "value" : "Version %@ (%@)"
+          }
+        },
+        "en" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "Version %1$@ (%2$@)"
+          }
+        }
+      }
+    },
+    "When a Temperature Is High" : {
+      "localizations" : {
+        "de" : {
+          "stringUnit" : {
+            "state" : "needs_review",
+            "value" : "Bei hoher Temperatur"
+          }
+        }
+      }
+    },
+    "When a fan isn't spinning" : {
+      "localizations" : {
+        "de" : {
+          "stringUnit" : {
+            "state" : "needs_review",
+            "value" : "Wenn sich ein Lüfter nicht dreht"
+          }
+        }
+      }
+    },
+    "When a temperature stays high" : {
+      "localizations" : {
+        "de" : {
+          "stringUnit" : {
+            "state" : "needs_review",
+            "value" : "Wenn eine Temperatur hoch bleibt"
+          }
+        }
+      }
+    },
+    "When macOS slows the Mac to cool it" : {
+      "localizations" : {
+        "de" : {
+          "stringUnit" : {
+            "state" : "needs_review",
+            "value" : "Wenn macOS den Mac zum Kühlen drosselt"
+          }
+        }
+      }
+    },
+    "When no rule matches" : {
+      "localizations" : {
+        "de" : {
+          "stringUnit" : {
+            "state" : "needs_review",
+            "value" : "Wenn keine Regel zutrifft"
+          }
+        }
+      }
+    },
+    "When the helper needs updating" : {
+      "localizations" : {
+        "de" : {
+          "stringUnit" : {
+            "state" : "needs_review",
+            "value" : "Wenn das Hilfsprogramm veraltet ist"
+          }
+        }
+      }
+    },
+    "When the hottest sensor reaches" : {
+      "localizations" : {
+        "de" : {
+          "stringUnit" : {
+            "state" : "needs_review",
+            "value" : "Wenn der heißeste Sensor erreicht"
+          }
+        }
+      }
+    },
+    "When the safety net steps in" : {
+      "localizations" : {
+        "de" : {
+          "stringUnit" : {
+            "state" : "needs_review",
+            "value" : "Wenn das Sicherheitsnetz eingreift"
+          }
+        }
+      }
+    },
+    "While %@ is running" : {
+      "localizations" : {
+        "de" : {
+          "stringUnit" : {
+            "state" : "needs_review",
+            "value" : "Während %@ läuft"
+          }
+        }
+      }
+    },
+    "While an App Is Running…" : {
+      "localizations" : {
+        "de" : {
+          "stringUnit" : {
+            "state" : "needs_review",
+            "value" : "Während eine App läuft …"
+          }
+        }
+      }
+    },
+    "Wi-Fi" : {
+      "localizations" : {
+        "de" : {
+          "stringUnit" : {
+            "state" : "needs_review",
+            "value" : "WLAN"
+          }
+        }
+      }
+    },
+    "With ThermoTune in the menu bar, closing its window keeps it running there." : {
+      "localizations" : {
+        "de" : {
+          "stringUnit" : {
+            "state" : "needs_review",
+            "value" : "Mit ThermoTune in der Menüleiste läuft es dort weiter, wenn du das Fenster schließt."
+          }
+        }
+      }
+    },
+    "at %@ or more" : {
+      "localizations" : {
+        "de" : {
+          "stringUnit" : {
+            "state" : "needs_review",
+            "value" : "bei %@ oder mehr"
+          }
+        }
+      }
+    },
+    "automatic" : {
+      "localizations" : {
+        "de" : {
+          "stringUnit" : {
+            "state" : "needs_review",
+            "value" : "automatisch"
+          }
+        }
+      }
+    },
+    "average · hottest %@" : {
+      "localizations" : {
+        "de" : {
+          "stringUnit" : {
+            "state" : "needs_review",
+            "value" : "Durchschnitt · Höchstwert %@"
+          }
+        }
+      }
+    },
+    "avg %@" : {
+      "localizations" : {
+        "de" : {
+          "stringUnit" : {
+            "state" : "needs_review",
+            "value" : "Ø %@"
+          }
+        }
+      }
+    },
+    "fastest · %@" : {
+      "localizations" : {
+        "de" : {
+          "stringUnit" : {
+            "state" : "needs_review",
+            "value" : "schnellster · %@"
+          }
+        }
+      }
+    },
+    "github.com/armendu/ThermoTune" : {
+      "shouldTranslate" : false
+    },
+    "macOS didn't accept this shortcut; another app may already use it." : {
+      "localizations" : {
+        "de" : {
+          "stringUnit" : {
+            "state" : "needs_review",
+            "value" : "macOS hat diesen Kurzbefehl nicht angenommen; eventuell verwendet ihn bereits eine andere App."
+          }
+        }
+      }
+    },
+    "macOS is managing the fans again, and the active profile was switched off." : {
+      "localizations" : {
+        "de" : {
+          "stringUnit" : {
+            "state" : "needs_review",
+            "value" : "macOS steuert die Lüfter wieder, und das aktive Profil wurde ausgeschaltet."
+          }
+        }
+      }
+    },
+    "macOS is managing the fans again, and the profile was switched off. %@" : {
+      "localizations" : {
+        "de" : {
+          "stringUnit" : {
+            "state" : "needs_review",
+            "value" : "macOS steuert die Lüfter wieder, und das Profil wurde ausgeschaltet. %@"
+          }
+        }
+      }
+    },
+    "macOS is slowing your Mac down" : {
+      "localizations" : {
+        "de" : {
+          "stringUnit" : {
+            "state" : "needs_review",
+            "value" : "macOS drosselt deinen Mac"
+          }
+        }
+      }
+    },
+    "macOS manages the fans, as if ThermoTune weren't running." : {
+      "localizations" : {
+        "de" : {
+          "stringUnit" : {
+            "state" : "needs_review",
+            "value" : "macOS steuert die Lüfter, als würde ThermoTune nicht laufen."
+          }
+        }
+      }
+    },
+    "manual" : {
+      "localizations" : {
+        "de" : {
+          "stringUnit" : {
+            "state" : "needs_review",
+            "value" : "manuell"
+          }
+        }
+      }
+    },
+    "reading…" : {
+      "localizations" : {
+        "de" : {
+          "stringUnit" : {
+            "state" : "needs_review",
+            "value" : "wird gelesen …"
+          }
+        }
+      }
+    },
+    "·" : {
+      "shouldTranslate" : false
+    },
+    "–" : {
+      "shouldTranslate" : false
+    },
+    "→" : {
+      "shouldTranslate" : false
+    }
+  },
+  "version" : "1.0"
+}

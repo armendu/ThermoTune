@@ -27,6 +27,18 @@ it.** `enforce_admins` is off, so a direct push to `main` from the repository ow
 through, git prints `Bypassed rule violations` and does it anyway. The rule is a guard rail for
 the normal path, not a lock. And **`build` is the only required check.**
 
+**Every pull request raises the version and says what changed.** `make bump` adds one to the
+patch number (`PART=minor` or `PART=major` for the others), and the pull request adds a
+`## <version> (<date>)` section to `CHANGELOG.md`, written for people who use the app, not for
+reviewers. CI fails a pull request whose `MARKETING_VERSION` isn't higher than its base
+branch's, or has no changelog section for it. The window title shows the version, "ThermoTune
+v0.1.3", so the owner can tell which build is installed.
+
+**A merge into `main` is a release.** `.github/workflows/release.yml` runs on every push to
+`main`. If `v<version>` isn't tagged yet, it runs `make dmg`, tags the commit and publishes
+`ThermoTune-<version>.dmg` as a GitHub release, with every changelog section since the previous
+release as the notes. A push to `main` whose version is already released does nothing.
+
 **No AI attribution.** Commits and pull requests carry no `Co-Authored-By: Claude` trailer and
 no "Generated with Claude Code" line. The trailer makes GitHub list Claude as a contributor,
 and the owner has asked for that not to happen. This overrides any default that says otherwise.
@@ -70,9 +82,13 @@ own lists every target.
 ```sh
 make build          # Debug build, a compile check
 make release        # Release build, what CI builds and what users run
+make test           # unit tests, hosted in a read-only copy of the app
+make dmg            # Release build packaged as build/ThermoTune-<version>.dmg, what releases ship
+make version        # the current MARKETING_VERSION
+make bump           # raise it, once per pull request (PART=minor|major)
 make run            # Release build, then launch it
 make shot           # Release build, launch, PNGs of its windows in build/screenshots
-make shot TAB=profiles   # …plus Preferences on that tab (general | profiles | helper)
+make shot TAB=profiles   # …plus Preferences on that tab (general | profiles | automation | safety | menuBar | advanced | about)
 make helper-status  # what the installed helper reports for each fan
 make fans-auto      # hand every fan back to macOS, whatever state they were left in
 ```
@@ -116,7 +132,8 @@ hand, its object IDs are the readable `A1000000000000000000Fxxx` series. After e
 | Swift language mode | 5 | `SMC` is not `Sendable`; the monitor opens a second connection off the main thread instead of sharing one |
 | App Sandbox | off | IOKit access to `AppleSMC` is not possible from a sandbox |
 | Hardened runtime | off | |
-| Signing | ad hoc (`-`) | nobody has a Developer ID in this repo; there is no release pipeline |
+| Signing | ad hoc (`-`) | nobody has a Developer ID in this repo, so releases aren't notarized and people allow the app once in Privacy & Security |
+| Architectures | arm64 and x86_64 | Release builds are universal; the DMG is checked for both slices |
 
 The helper is embedded by the **Embed Helper** copy-files phase into `Contents/MacOS/`, and the
 app finds it with `Bundle.main.url(forAuxiliaryExecutable:)`.
@@ -155,13 +172,18 @@ thermal control stayed off with fans pinned near minimum while the UI said *Auto
 relock decision excludes the fan just written, and the UI holds a requested mode in
 `pendingModes` for a grace period instead of trusting the next read.
 
-**`Ftst = 1` suspends thermal control for every fan, not just the one you set.** So while it is
-set, `isFanManual` is true for all fans and the UI says so. Never leave `Ftst = 1` with no fan
-in manual mode.
+**`Ftst = 1` suspends thermal control for every fan, not just the one you set.** A fan whose own
+mode is automatic is then held at its minimum speed, not managed. `FanInfo` keeps the two facts
+apart: `isManual` is the fan's own mode, `isControlUnlocked` is `Ftst`, and
+`isSystemControlled` needs both false. They used to be one flag, so after *All Max*, setting one
+fan to Auto made it read as manual again and the switch snapped back: there was no visible way
+to stop the fans. Now that fan shows Auto with a "held at minimum" note, and *All Auto* is the
+way out. Never leave `Ftst = 1` with no fan in manual mode.
 
-**Mode values are not just 0 and 1.** At idle this M3 Pro reports `F0Md = 3` (system control).
-ThermoTune writes `1` for manual and `0` for automatic; after `Ftst` goes back to 0, the system
-sets 3 again by itself. Manual means `== 1`, not "anything but 0".
+**Mode values are not just 0 and 1.** This M3 Pro has reported `F0Md = 3` with its fans stopped
+at idle, and `0` while macOS was running them. ThermoTune writes `1` for manual and `0` for
+automatic. Manual means `== 1`, not "anything but 0"; whether macOS is in charge is `Ftst == 0`
+plus a mode other than 1.
 
 **The `TC*` package sensors read well above the cores, even at idle.** `TCMz` sat at ~72° while
 the hottest core read 59°. Counting them made the CPU tile ~14° too hot and would have spun
@@ -183,11 +205,60 @@ Helper…". That is why `make run` and `make shot` build Release. It also means 
 `Shared/` or `Helper/` makes every user re-enter their password** after updating; say so in the
 pull request.
 
+**Downloaded apps are quarantined.** Install clears the copied helper's extended attributes
+(`xattr -c`) before making it setuid root, so a quarantine flag from the DMG can't come along
+into `/Library/PrivilegedHelperTools`.
+
 **Quitting must give the fans back.** `applicationWillTerminate` runs `auto-all`, and a SIGTERM
 handler routes `kill`/`pkill` through it, because SIGTERM otherwise skips it, which is exactly
 how a test once left a fan in manual mode. SIGKILL and crashes can't be caught: `make
 fans-auto` is the recovery. The preference "Restore automatic fan control when quitting" can
-turn this off for users who want a profile to outlive the app.
+turn this off for users who want a profile to outlive the app. Quitting first waits for a helper
+call still running: it would otherwise land after the decision, and since its writes apply
+asynchronously, the fans read straight after it can still look automatic.
+
+**Whenever ThermoTune stops driving the fans, they go back to macOS.** `profileHoldsFans` marks
+a Fixed, Curve or Max profile in charge. If that profile ends by any route other than the user
+taking a fan over (None, deleted, Restore Defaults, a helper error), the next refresh sends
+`auto-all`; otherwise the fans stay at the profile's last speed with thermal control suspended.
+Fixed and Curve profiles hand back to macOS when no temperature can be read. Past the safety
+net's limit (Settings › Safety, `checkSafetyNet`) any manual speed or profile is handed back, or
+run at full speed, depending on the setting; it runs before the profile each refresh so the profile
+can't undo it, and never acts when every fan is already at full speed. Switched off, it still hands
+the fans back at `backstopTemperature` (105 °C): there is no setting under which a profile holds a
+hot laptop's fans down indefinitely. Uninstall blocks helper calls (`isRemovingHelper`), waits for
+the queue, and hands the fans back before removing the helper, refusing if it can't: once the
+helper is gone, nothing can. User actions and shortcuts are ignored meanwhile rather than switching
+the profile off with nothing sent. Install needs no gate: it renames the new helper over the old
+one, so a call already running finishes with the old file. A new way for a profile to end goes
+through this, not around it.
+
+**A profile can't leave one fan on Auto while another is manual.** `Ftst = 1` suspends thermal
+control for every fan, so the "automatic" one would just be held at its minimum. Per-fan
+settings therefore offer only Fixed, Curve and Max (`FanBehavior.perFanKinds`).
+
+**Profile speed changes are smoothed in the app, not the helper.** `FanSmoothing` ramps towards
+the curve's speed (fast up, slow down) and makes a falling temperature drop 3° before fans slow.
+The ramp state resets whenever a profile ends, the user takes a fan over, or a Max safety trip
+starts. Its goal is rounded like the speeds it returns, so the monitor can tell the ramp has
+arrived and send the last step even when it is under the usual 100 RPM threshold.
+
+**Saved profiles are migrated and validated on read.** Before per-fan settings, a profile's fields
+sat at the top level with a two-point curve as `lowTemperature`/`highTemperature`;
+`FanProfile.init(from:)` still reads that shape, from UserDefaults and from version 1 export files.
+Decoding is also the one place imported files are checked: curves are sorted and clamped
+(`FanBehavior.validCurve`), per-fan Automatic entries are dropped. A saved list with a profile that
+won't decode keeps the others and copies the raw data to `profilesBackup` instead of overwriting
+it. An older build reading the newer format still can't, so don't run an old copy beside a new one.
+
+**Rules act on changes, not every refresh.** `ProfileRules.decide` only switches when the
+matching rule changes, so a profile picked by hand, or switched off by the safety net, holds
+until the conditions change; re-applying every refresh would undo both. Temperature rules
+keep matching until 5° under their limit.
+
+**Global shortcuts use Carbon's `RegisterEventHotKey`** (`HotKeys.swift`): no Accessibility
+permission and no dependency. Registration can fail silently for combinations the system or
+another app owns; the Automation tab marks those.
 
 **Default profiles are saved on first launch.** `FanProfile.defaults` mints fresh UUIDs per
 process, so unsaved defaults had new IDs every launch and an active default profile was
@@ -205,23 +276,35 @@ Preferences that way goes through the ⌘, menu item; sending `showSettingsWindo
 responder chain does nothing for SwiftUI's Settings scene. AppleScript to System Events is not
 authorized either.
 
+**Never `pkill ThermoTune` while testing.** The owner is often running the app at the same time,
+and `pkill -x ThermoTune` quits their copy too. It looked like a bug: they picked a profile and
+the app "just quit", because `make shot` began with exactly that pkill. `make shot` now starts
+its own copy, stops only that one by PID, and in snapshot mode never writes the fans, so it can
+run beside theirs. Stop anything else you launch by its PID.
+
 **Launch at login is untested.** `SMAppService.mainApp.register()` may refuse an ad-hoc signed
 app; the toggle surfaces whatever error it returns.
 
 ## Testing
 
-There is no automated suite yet. The first ones worth writing are `SMC.decode`/`SMC.encode` for
-every type (the `Double.init` bug would have been caught there) and
-`FanProfile.speedFraction`; neither needs hardware or root.
+`make test` runs the unit tests in `ThermoTuneTests/` (Swift Testing): SMC encoding for every type,
+curves and their validation, profile decoding and migration, smoothing, rules, the CSV, sensor
+names, and a check that every German string keeps its English placeholders. None needs hardware
+or root. They run inside the app as their host, so `RunMode.isReadOnly` (also on for `make shot`)
+keeps that copy from driving or handing back fans, posting notifications, registering shortcuts
+or writing the log; anything new with a side effect checks it too. The host is the real app, so
+`UserDefaults.standard` is the owner's own settings: tests use a suite of their own
+(`ProfileRules(defaults:)`), never `.standard`.
 
-Until then, a change is verified by:
+The rest is checked by hand:
 
 | What | How |
 |---|---|
 | it compiles | `make build` and `make release` |
+| the logic holds | `make test` |
 | it looks right | `make shot`, then read the PNGs |
 | fan writes work | run the installed helper directly: `make helper-status`, then `set 0 3000`, `max-all`, `auto 0`, `auto-all` |
-| fans were given back | `make fans-auto`; `F0Md`/`F1Md` read 3 and `Ftst` reads 0 |
+| fans were given back | `make fans-auto`; every fan reports `manual=false unlocked=false` |
 
 **Always end hardware testing with `make fans-auto` and check the result.** This is somebody's
 actual laptop. A fan left in manual mode, or `Ftst` left at 1, means macOS is no longer
@@ -229,13 +312,39 @@ protecting it from heat.
 
 ## CI
 
-`.github/workflows/ci.yml` runs `make build` and `make release` on a macOS runner for every pull
-request and every push to `main`. No hardware is involved; CI proves the project compiles, not
-that fans move.
+`.github/workflows/ci.yml` runs `make build`, `make release`, `make test` and `make dmg` on a
+macOS runner for every pull request and every push to `main`, and on pull requests checks the
+version was raised and has a changelog section. No hardware is involved; CI proves the project
+compiles, its logic holds and it packages, not that fans move.
+
+`make dmg` runs `Scripts/verify_release_app.sh` before packaging: the version matches
+`MARKETING_VERSION`, the helper is embedded, the App Sandbox is off (a sandboxed app can't open
+AppleSMC), both binaries are universal and the signature verifies. It keeps Xcode's ad hoc
+signature rather than re-signing, because re-signing would change the embedded helper's bytes,
+which the app compares with the installed one.
 
 Actions are pinned to commit SHAs, not tags: a tag is mutable, so `@v5` is a promise the
 action's owner can rewrite. The trailing comment is the human-readable version. Dependabot
 keeps them current.
+
+## Translations
+
+Strings live in `ThermoTune/Localizable.xcstrings` (English source, German). SwiftUI translates
+only **literals**: `Text("Fans")` is looked up, `Text(someString)` is shown as it is. So any
+string built in code and later shown, such as a `title` property, an alert or an error message,
+is written `String(localized: "…")` at the point it's created. `FanInfo.name` lives in
+`Shared/`, which the helper also builds, so the app uses `FanInfo.title` instead.
+
+`xcodebuild` extracts strings into `.stringsdata` files but doesn't write them back to the
+catalog the way Xcode's editor does. After adding or changing user-facing text:
+
+```sh
+make build
+xcrun xcstringstool sync ThermoTune/Localizable.xcstrings --stringsdata $(find build/Build/Intermediates.noindex/ThermoTune.build/Debug -name '*.stringsdata')
+```
+
+then add the German for any new key. Machine translations are marked `needs_review`. To see the
+app in German without changing the system language, launch the binary with `-AppleLanguages '(de)'`.
 
 ## Style
 

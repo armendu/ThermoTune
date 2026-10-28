@@ -1,7 +1,6 @@
 import Foundation
 import IOKit
 
-/// Errors raised while talking to the System Management Controller.
 enum SMCError: LocalizedError {
     case serviceNotFound
     case openFailed(kern_return_t)
@@ -9,6 +8,8 @@ enum SMCError: LocalizedError {
     case smcResult(key: String, code: UInt8)
     case unsupportedType(key: String, type: String)
     case sizeMismatch(key: String)
+    case noFanRange(fan: Int)
+    case noFans
 
     var errorDescription: String? {
         switch self {
@@ -19,6 +20,8 @@ enum SMCError: LocalizedError {
             return code == 0x84 ? "SMC key \(key) not found." : "SMC returned error 0x\(String(code, radix: 16)) for \(key)."
         case .unsupportedType(let key, let type): return "SMC key \(key) has unsupported type '\(type)'."
         case .sizeMismatch(let key): return "Encoded value has the wrong size for SMC key \(key)."
+        case .noFanRange(let fan): return "Could not read the speed range of fan \(fan + 1), so its speed was left alone."
+        case .noFans: return "Could not read how many fans this Mac has."
         }
     }
 }
@@ -163,6 +166,8 @@ final class SMC {
             guard b.count >= count else { return nil }
             return b.prefix(count).reduce(0) { $0 << 8 | UInt64($1) }
         }
+        // Closures, never `.map(Double.init)`: on an integer that resolves to
+        // `Double(bitPattern:)`, which compiles and turns every reading to garbage.
         switch type {
         case "flt ":
             guard b.count >= 4 else { return nil }

@@ -60,14 +60,17 @@ feat(app): temperature-curve profiles
 
 ## Testing your change
 
-There's no automated test suite yet, so please check your change by hand:
-
-1. `make build` and `make release` both succeed with no new warnings.
-2. `make run` and look at what you changed. `make shot` saves screenshots of the app's windows
+1. `make build` and `make release` both succeed with no new warnings, and `make test` passes. The
+   tests need no special hardware; add one for logic you change where you can.
+2. `make bump` to raise the version, and add a section for that version to
+   [CHANGELOG.md](CHANGELOG.md) saying what changed for people who use the app. Every pull
+   request does both, so the version in the window title says which build someone is running
+   and the next release's notes write themselves; CI checks them.
+3. `make run` and look at what you changed. `make shot` saves screenshots of the app's windows
    to `build/screenshots/`, handy for the pull request description.
-3. **If your change touches fans**, try it on your own Mac and say which model in the pull
+4. **If your change touches fans**, try it on your own Mac and say which model in the pull
    request. Afterwards, run `make fans-auto` and check that `make helper-status` shows every fan
-   with `manual=false`.
+   with `manual=false unlocked=false`.
 
 Never leave a fan in manual mode after testing. While a fan is manual, macOS isn't managing that
 Mac's temperature.
@@ -83,6 +86,13 @@ The helper runs as root on users' machines, so changes there get extra scrutiny:
   argument check is a security change; explain why in the pull request.
 - Any change to `Shared/` or `Helper/` changes the helper binary, so every user will be asked
   for their password again after updating. Mention it in the pull request.
+
+## Translations
+
+ThermoTune ships in English and German. The German was written without a native speaker's
+review, so corrections are very welcome, and so are new languages: open
+`ThermoTune/Localizable.xcstrings` in Xcode, add a language, and fill in the column. CLAUDE.md
+explains how to keep the catalog in step with the code.
 
 ## Code style
 

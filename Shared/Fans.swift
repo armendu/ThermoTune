@@ -6,9 +6,17 @@ struct FanInfo: Identifiable, Equatable, Sendable {
     var minimum: Double
     var maximum: Double
     var target: Double
+    /// This fan's own mode is manual.
     var isManual: Bool
+    /// The `Ftst` unlock is on. That suspends macOS thermal control for every fan,
+    /// so a fan whose own mode is automatic is still not being managed: it is held
+    /// at its minimum speed until every fan is back on automatic.
+    var isControlUnlocked: Bool
 
     var name: String { "Fan \(id + 1)" }
+
+    /// True when macOS is managing this fan, i.e. nothing needs handing back.
+    var isSystemControlled: Bool { !isManual && !isControlUnlocked }
 }
 
 extension SMC {
@@ -23,62 +31,66 @@ extension SMC {
     }
 
     func fans() -> [FanInfo] {
-        (0..<fanCount()).compactMap { fan($0) }
+        let isControlUnlocked = isFanControlUnlocked
+        return (0..<fanCount()).compactMap { index in
+            guard let actual = try? read("F\(index)Ac") else { return nil }
+            return FanInfo(
+                id: index,
+                actual: max(actual, 0),
+                minimum: (try? read("F\(index)Mn")) ?? 0,
+                maximum: (try? read("F\(index)Mx")) ?? 0,
+                target: (try? read("F\(index)Tg")) ?? 0,
+                isManual: hasManualMode(index),
+                isControlUnlocked: isControlUnlocked
+            )
+        }
     }
 
-    func fan(_ index: Int) -> FanInfo? {
-        guard let actual = try? read("F\(index)Ac") else { return nil }
-        return FanInfo(
-            id: index,
-            actual: max(actual, 0),
-            minimum: (try? read("F\(index)Mn")) ?? 0,
-            maximum: (try? read("F\(index)Mx")) ?? 0,
-            target: (try? read("F\(index)Tg")) ?? 0,
-            isManual: isFanManual(index)
-        )
-    }
-
-    /// True when macOS is not managing this fan: it is in manual mode, or the
-    /// `Ftst` unlock is active, which suspends thermal control for every fan.
-    func isFanManual(_ index: Int) -> Bool {
-        isFanControlUnlocked || hasManualMode(index)
-    }
-
-    var isFanControlUnlocked: Bool {
+    private var isFanControlUnlocked: Bool {
         (try? read("Ftst")) == 1
+    }
+
+    /// Intel's `FS! `: one manual-mode bit per fan.
+    private var manualModeMask: Int {
+        Int((try? read("FS! ")) ?? 0)
     }
 
     private func hasManualMode(_ index: Int) -> Bool {
         if let mode = try? read("F\(index)Md") {
             return mode == Self.manualMode
         }
-        let mask = Int((try? read("FS! ")) ?? 0)
-        return mask & (1 << index) != 0
+        return manualModeMask & (1 << index) != 0
     }
 
     // MARK: Writes (require root)
 
     func setFanManual(_ index: Int, rpm: Double) throws {
-        guard let fan = fan(index) else { throw SMCError.smcResult(key: "F\(index)Ac", code: 0x84) }
-        let rpm = min(max(rpm, fan.minimum), fan.maximum)
+        let range = try speedRange(index)
+        let rpm = min(max(rpm, range.lowerBound), range.upperBound)
 
         try unlockManualControl()
+        var isManual = false
         do {
             try setMode(index, manual: true)
+            isManual = true
+            try write("F\(index)Tg", rpm)
         } catch {
+            // A fan left manual at whatever target it had, or `Ftst` left set
+            // with no fan manual, is a fan nobody is managing.
+            if isManual { try? setMode(index, manual: false) }
             try? relockIfAllAutomatic(except: index)
             throw error
         }
-        try write("F\(index)Tg", rpm)
     }
 
-    /// Puts every fan in manual mode at its maximum speed.
     func setAllFansMax() throws {
+        let fans = try (0..<writableFanCount()).map { (index: $0, maximum: try speedRange($0).upperBound) }
+
         try unlockManualControl()
         do {
-            for fan in fans() {
-                try setMode(fan.id, manual: true)
-                try write("F\(fan.id)Tg", fan.maximum)
+            for fan in fans {
+                try setMode(fan.index, manual: true)
+                try write("F\(fan.index)Tg", fan.maximum)
             }
         } catch {
             try? setAllFansAuto()
@@ -91,17 +103,43 @@ extension SMC {
         try relockIfAllAutomatic(except: index)
     }
 
+    /// The way back to macOS control, used by All Auto, quitting and `make
+    /// fans-auto`, so one failed write must not stop the rest: every fan is
+    /// tried and `Ftst` is always cleared, then the first error is reported.
     func setAllFansAuto() throws {
-        for index in 0..<fanCount() {
-            try setMode(index, manual: false)
+        var firstError: Error?
+        let count: Int
+        do { count = try writableFanCount() } catch { count = 0; firstError = error }
+        for index in 0..<count {
+            do { try setMode(index, manual: false) } catch { firstError = firstError ?? error }
         }
         if hasKey("Ftst") {
-            try write("Ftst", 0)
+            do { try write("Ftst", 0) } catch { firstError = firstError ?? error }
         }
+        if let firstError { throw firstError }
+    }
+
+    /// A fan's speed range, read fresh for a write. `fan(_:)` shows a failed read
+    /// as 0, but clamping to 0...0 would park the fan at 0 RPM with thermal
+    /// control suspended.
+    private func speedRange(_ index: Int) throws -> ClosedRange<Double> {
+        guard let minimum = try? read("F\(index)Mn"), let maximum = try? read("F\(index)Mx"),
+              minimum >= 0, maximum > 0, minimum <= maximum else {
+            throw SMCError.noFanRange(fan: index)
+        }
+        return minimum...maximum
+    }
+
+    /// `fanCount()` reads a failed `FNum` as no fans, which suits display. A write
+    /// over every fan would then touch none and still report success.
+    private func writableFanCount() throws -> Int {
+        let count = Int(try read("FNum"))
+        guard count > 0 else { throw SMCError.noFans }
+        return count
     }
 
     private func unlockManualControl() throws {
-        if hasKey("Ftst"), (try? read("Ftst")) != 1 {
+        if hasKey("Ftst"), !isFanControlUnlocked {
             try write("Ftst", 1)
         }
     }
@@ -118,9 +156,8 @@ extension SMC {
     private func setMode(_ index: Int, manual: Bool) throws {
         let key = "F\(index)Md"
         guard hasKey(key) else {
-            var mask = Int((try? read("FS! ")) ?? 0)
-            mask = manual ? mask | (1 << index) : mask & ~(1 << index)
-            try write("FS! ", Double(mask))
+            let mask = manualModeMask
+            try write("FS! ", Double(manual ? mask | (1 << index) : mask & ~(1 << index)))
             return
         }
         // After `Ftst` is set, Apple Silicon SMCs reject manual mode with 0x82
@@ -139,7 +176,9 @@ extension SMC {
 
     // MARK: Temperatures
 
-    /// Returns every temperature key that currently reports a plausible value.
+    /// Most `T*` keys are junk (constant zeros, negatives, `ioft` types). This runs
+    /// once at launch, so a real sensor that happens to read outside 5…130 °C then
+    /// is never found; that trade-off is deliberate.
     func discoverTemperatureKeys() -> [String] {
         allKeys().filter { key in
             guard key.hasPrefix("T"),

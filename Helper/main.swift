@@ -3,14 +3,10 @@ import Foundation
 // ThermoTune helper.
 //
 // The app installs this binary setuid-root in /Library/PrivilegedHelperTools so
-// fan speeds can be changed without asking for a password every time. It only
-// accepts a few narrowly scoped commands and only ever writes fan keys:
-//
-//   ThermoTuneHelper status
-//   ThermoTuneHelper set <fan> <rpm>     (rpm is clamped to the fan's min/max)
-//   ThermoTuneHelper auto <fan>
-//   ThermoTuneHelper max-all
-//   ThermoTuneHelper auto-all
+// fan speeds can be changed without asking for a password every time. Any local
+// user can run it, so the commands in `usage` are the security boundary: each
+// argument is validated, rpm is clamped to the fan's own range, and only fan
+// keys are ever written.
 
 func fail(_ message: String, code: Int32 = 1) -> Never {
     FileHandle.standardError.write(Data((message + "\n").utf8))
@@ -36,7 +32,7 @@ do {
 
     if args == ["status"] {
         for fan in smc.fans() {
-            print("\(fan.id) actual=\(Int(fan.actual)) target=\(Int(fan.target)) min=\(Int(fan.minimum)) max=\(Int(fan.maximum)) manual=\(fan.isManual)")
+            print("\(fan.id) actual=\(Int(fan.actual)) target=\(Int(fan.target)) min=\(Int(fan.minimum)) max=\(Int(fan.maximum)) manual=\(fan.isManual) unlocked=\(fan.isControlUnlocked)")
         }
         exit(0)
     }

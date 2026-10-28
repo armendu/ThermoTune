@@ -38,3 +38,33 @@ jobs:
 
       - name: Release build
         run: make release
+
+      - name: Unit tests
+        run: make test
+
+      # What the release workflow builds when this reaches main, checked here so a release
+      # can't fail after the merge.
+      - name: DMG
+        run: make dmg
+
+      # Every pull request raises MARKETING_VERSION (`make bump`), so the version in the window
+      # title says which build someone has installed, and adds a CHANGELOG.md section for it,
+      # which becomes part of the next release's notes. Before 0.1.0 the project carried
+      # Xcode's two-part placeholder, 1.0, which any three-part version replaces.
+      - name: Version and changelog
+        if: github.event_name == 'pull_request'
+        env:
+          BASE_REF: ${{ github.base_ref }}
+        run: |
+          git fetch --depth=1 origin "$BASE_REF"
+          version() { sed -n 's/.*MARKETING_VERSION = \(.*\);/\1/p' | head -1; }
+          base=$(git show FETCH_HEAD:ThermoTune.xcodeproj/project.pbxproj | version)
+          head=$(version < ThermoTune.xcodeproj/project.pbxproj)
+          echo "$BASE_REF is $base, this pull request is $head"
+          python3 -c '
+          import sys
+          base, head = (tuple(int(p) for p in v.split(".")) for v in sys.argv[1:])
+          sys.exit(0 if len(base) < 3 or head > base else "Raise the version with `make bump`.")
+          ' "$base" "$head"
+          grep -qE "^## ${head//./\\.}( |$)" CHANGELOG.md \
+            || { echo "CHANGELOG.md has no section for $head; add one under its heading."; exit 1; }
