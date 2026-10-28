@@ -15,7 +15,18 @@ enum HistoryCSV {
         return ([timestamp.string(from: sample.date), number(sample.cpu), number(sample.cpuMaximum),
                  number(sample.gpu), number(sample.gpuMaximum)]
             + sample.fanRPMs.map { String(Int($0.rounded())) }
-            + [sample.thermalState.title, profile]).joined(separator: ",")
+            + [token(sample.thermalState), profile]).joined(separator: ",")
+    }
+
+    /// The same in every language, so logs from different Macs line up.
+    static func token(_ state: ProcessInfo.ThermalState) -> String {
+        switch state {
+        case .nominal: return "nominal"
+        case .fair: return "fair"
+        case .serious: return "serious"
+        case .critical: return "critical"
+        @unknown default: return "unknown"
+        }
     }
 
     static func document(_ samples: [HardwareMonitor.Sample]) -> String {
@@ -42,18 +53,29 @@ final class HistoryLog {
 
     private static let dayFormatter: DateFormatter = {
         let formatter = DateFormatter()
+        // Gregorian whatever the user's calendar, so file names sort and match the timestamps.
+        formatter.locale = Locale(identifier: "en_US_POSIX")
+        formatter.calendar = Calendar(identifier: .gregorian)
         formatter.dateFormat = "yyyy-MM-dd"
         return formatter
     }()
 
     func append(_ sample: HardwareMonitor.Sample) {
-        guard UserDefaults.standard.bool(forKey: PreferenceKey.keepsLog), !WindowSnapshot.isActive else {
+        guard UserDefaults.standard.bool(forKey: PreferenceKey.keepsLog), !RunMode.isReadOnly else {
             close()
             return
         }
         let today = Self.dayFormatter.string(from: sample.date)
         if today != day { open(day: today, fanCount: sample.fanRPMs.count) }
-        handle?.write(Data((HistoryCSV.row(sample) + "\n").utf8))
+        // The throwing `write(contentsOf:)`: the older `write(_:)` raises an
+        // Objective-C exception on a full disk, and a crash would skip handing
+        // the fans back on quit. A failed write closes the file, and the next
+        // sample tries to open it again.
+        do {
+            try handle?.write(contentsOf: Data((HistoryCSV.row(sample) + "\n").utf8))
+        } catch {
+            close()
+        }
     }
 
     private func open(day: String, fanCount: Int) {

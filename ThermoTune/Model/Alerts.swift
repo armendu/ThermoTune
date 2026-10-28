@@ -22,7 +22,7 @@ final class Alerts: NSObject {
 
     override init() {
         super.init()
-        guard !WindowSnapshot.isActive else { return }
+        guard !RunMode.isReadOnly else { return }
         UNUserNotificationCenter.current().delegate = self
         // Several alerts are on by default, and they post nothing until macOS
         // has been asked, so ask at launch rather than on a first visit to Settings.
@@ -42,13 +42,13 @@ final class Alerts: NSObject {
     }
 
     private func updateAuthorization() async {
-        guard !WindowSnapshot.isActive else { return }
+        guard !RunMode.isReadOnly else { return }
         authorization = await UNUserNotificationCenter.current().notificationSettings().authorizationStatus
     }
 
     /// Asks macOS for permission to post notifications.
     func requestAuthorization() {
-        guard !WindowSnapshot.isActive else { return }
+        guard !RunMode.isReadOnly else { return }
         Task {
             _ = try? await UNUserNotificationCenter.current().requestAuthorization(options: [.alert, .sound])
             await updateAuthorization()
@@ -57,7 +57,7 @@ final class Alerts: NSObject {
 
     /// Checks every alert against one refresh's readings.
     func evaluate(_ monitor: HardwareMonitor) {
-        guard !WindowSnapshot.isActive else { return }
+        guard !RunMode.isReadOnly else { return }
         let defaults = UserDefaults.standard
         let now = Date()
 

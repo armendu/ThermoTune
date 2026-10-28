@@ -56,22 +56,30 @@ enum HelperInstaller {
 
     /// Copies the helper into place and marks it setuid root. Shows the standard
     /// macOS administrator password prompt.
+    ///
+    /// The copy is made beside the installed helper and renamed over it, so the
+    /// replacement is atomic: a helper call running meanwhile finishes with the
+    /// old file instead of executing one half overwritten. The directory is
+    /// root-owned, so nobody else can touch the copy before the rename.
     static func install() throws {
         guard let bundledURL else { throw HelperError.missingFromBundle }
         let src = shellQuoted(bundledURL.path)
         let dst = shellQuoted(installURL.path)
+        let tmp = shellQuoted(installURL.path + ".new")
         let command = [
             "/bin/mkdir -p /Library/PrivilegedHelperTools",
-            "/bin/cp -f \(src) \(dst)",
-            "/usr/sbin/chown root:wheel \(dst)",
-            "/bin/chmod 4755 \(dst)",
+            "/bin/cp -f \(src) \(tmp)",
+            "/usr/sbin/chown root:wheel \(tmp)",
+            "/bin/chmod 4755 \(tmp)",
+            "/bin/mv -f \(tmp) \(dst)",
             "/bin/rm -f \(shellQuoted(legacyInstallURL.path))",
         ].joined(separator: " && ")
         try runAsAdministrator(command)
     }
 
     static func uninstall() throws {
-        try runAsAdministrator("/bin/rm -f \(shellQuoted(installURL.path)) \(shellQuoted(legacyInstallURL.path))")
+        try runAsAdministrator("/bin/rm -f \(shellQuoted(installURL.path)) \(shellQuoted(installURL.path + ".new")) "
+                               + shellQuoted(legacyInstallURL.path))
     }
 
     static func run(_ arguments: [String]) throws {

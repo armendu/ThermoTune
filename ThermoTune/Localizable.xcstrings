@@ -1258,12 +1258,12 @@
         }
       }
     },
-    "Manual speeds and profiles will stay where they are, however hot the Mac gets." : {
+    "Manual speeds and profiles stay where they are until the hottest sensor reaches %@. Then the fans go back to macOS." : {
       "localizations" : {
         "de" : {
           "stringUnit" : {
             "state" : "needs_review",
-            "value" : "Manuelle Geschwindigkeiten und Profile bleiben unverändert, egal wie heiß der Mac wird."
+            "value" : "Manuelle Drehzahlen und Profile bleiben, wie sie sind, bis der heißeste Sensor %@ erreicht. Dann übernimmt macOS die Lüfter wieder."
           }
         }
       }

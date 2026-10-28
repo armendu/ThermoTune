@@ -84,11 +84,14 @@ struct FanProfile: Codable, Identifiable, Hashable {
                 curve: [.init(low, 0), .init(max(high, low + 1), 100)]
             )
         }
-        // JSON object keys are strings, so the fan index is stored as one.
+        // JSON object keys are strings, so the fan index is stored as one. "1"
+        // and "01" are the same fan, so duplicates keep the first rather than trap.
         let perFan = try container.decodeIfPresent([String: FanBehavior].self, forKey: .perFan) ?? [:]
-        self.perFan = Dictionary(uniqueKeysWithValues: perFan.compactMap { key, value in
-            Int(key).map { ($0, value) }
-        })
+        self.perFan = Dictionary(perFan.compactMap { key, value in
+            // An automatic fan among manual ones would only be held at its minimum.
+            guard let index = Int(key), index >= 0, FanBehavior.perFanKinds.contains(value.kind) else { return nil }
+            return (index, value)
+        }, uniquingKeysWith: { first, _ in first })
     }
 
     func encode(to encoder: Encoder) throws {
@@ -160,6 +163,37 @@ struct FanBehavior: Codable, Hashable {
     }
 }
 
+extension FanBehavior {
+    private enum CodingKeys: String, CodingKey {
+        case kind, fixedPercent, source, curve
+    }
+
+    // Saved and imported profiles are checked as they are read: a hand-edited or
+    // damaged file must not reach the fan engine with an unsorted curve or a
+    // speed outside 0…100%.
+    init(from decoder: Decoder) throws {
+        let container = try decoder.container(keyedBy: CodingKeys.self)
+        let fixedPercent = try container.decodeIfPresent(Double.self, forKey: .fixedPercent) ?? 50
+        self.init(kind: try container.decode(FanProfile.Kind.self, forKey: .kind),
+                  fixedPercent: min(max(fixedPercent, 0), 100),
+                  source: try container.decodeIfPresent(SensorSource.self, forKey: .source) ?? .cpu,
+                  curve: Self.validCurve(try container.decodeIfPresent([CurvePoint].self, forKey: .curve) ?? Self.newCurve))
+    }
+
+    /// Sorted by temperature, points at least a degree apart, percentages within
+    /// 0…100, and at least two points; anything less is replaced by `newCurve`.
+    static func validCurve(_ points: [CurvePoint]) -> [CurvePoint] {
+        var curve: [CurvePoint] = []
+        // Filtered before sorting: NaN compares false both ways and scrambles the order.
+        let finite = points.filter { $0.temperature.isFinite && $0.percent.isFinite }
+        for point in finite.sorted(by: { $0.temperature < $1.temperature }) {
+            if let last = curve.last, point.temperature - last.temperature < 1 { continue }
+            curve.append(CurvePoint(point.temperature, min(max(point.percent, 0), 100)))
+        }
+        return curve.count >= 2 ? curve : newCurve
+    }
+}
+
 /// Persists profiles and which one is active in UserDefaults.
 @MainActor
 @Observable
@@ -178,15 +212,27 @@ final class ProfileStore {
 
     init() {
         let defaults = UserDefaults.standard
-        if let data = defaults.data(forKey: PreferenceKey.profiles),
-           let saved = try? JSONDecoder().decode([FanProfile].self, from: data) {
-            profiles = saved
+        if let data = defaults.data(forKey: PreferenceKey.profiles) {
+            let (saved, isComplete) = Self.decode(data)
+            // Whatever couldn't be read (written by a newer ThermoTune, or damaged)
+            // is kept aside rather than lost the next time the list is saved.
+            if !isComplete { defaults.set(data, forKey: PreferenceKey.profilesBackup) }
+            profiles = saved.isEmpty ? FanProfile.defaults : saved
+            if saved.isEmpty { save() }
         } else {
             // Save right away so the defaults keep stable IDs across launches.
             profiles = FanProfile.defaults
             save()
         }
         activeProfileID = defaults.string(forKey: PreferenceKey.activeProfileID).flatMap(UUID.init)
+    }
+
+    /// The profiles in saved data, skipping any that can't be read instead of
+    /// dropping them all, and whether every one could be.
+    nonisolated static func decode(_ data: Data) -> (profiles: [FanProfile], isComplete: Bool) {
+        guard let entries = try? JSONDecoder().decode([Lenient<FanProfile>].self, from: data) else { return ([], false) }
+        let profiles = entries.compactMap(\.value)
+        return (profiles, profiles.count == entries.count)
     }
 
     func add() -> FanProfile {
@@ -241,6 +287,15 @@ final class ProfileStore {
         if let data = try? JSONEncoder().encode(profiles) {
             UserDefaults.standard.set(data, forKey: PreferenceKey.profiles)
         }
+    }
+}
+
+/// One element of a list that decodes to `nil` instead of failing the whole list.
+struct Lenient<Value: Decodable>: Decodable {
+    let value: Value?
+
+    init(from decoder: Decoder) throws {
+        value = try? Value(from: decoder)
     }
 }
 

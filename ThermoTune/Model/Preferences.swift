@@ -9,6 +9,8 @@ enum PreferenceKey {
     static let menuBarSource = "menuBarSource"
     static let chartWindowMinutes = "chartWindowMinutes"
     static let profiles = "profiles"
+    /// Saved profiles that couldn't all be read, kept as they were.
+    static let profilesBackup = "profilesBackup"
     static let activeProfileID = "activeProfileID"
     static let safetyNetEnabled = "safetyNetEnabled"
     static let safetyLimit = "safetyLimit"

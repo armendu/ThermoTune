@@ -42,7 +42,7 @@ final class ProfileRules {
 
     var isEnabled: Bool {
         didSet {
-            UserDefaults.standard.set(isEnabled, forKey: PreferenceKey.rulesEnabled)
+            defaults.set(isEnabled, forKey: PreferenceKey.rulesEnabled)
             matchedRuleID = nil
             hasEvaluated = false
         }
@@ -52,15 +52,16 @@ final class ProfileRules {
     }
     /// Used when no rule matches; `nil` leaves the profile as it is.
     var fallbackProfileID: UUID? {
-        didSet { UserDefaults.standard.set(fallbackProfileID?.uuidString, forKey: PreferenceKey.rulesFallbackProfileID) }
+        didSet { defaults.set(fallbackProfileID?.uuidString, forKey: PreferenceKey.rulesFallbackProfileID) }
     }
     private(set) var matchedRuleID: UUID?
 
+    @ObservationIgnored private let defaults: UserDefaults
     @ObservationIgnored private var hasEvaluated = false
     @ObservationIgnored private var hotRules: Set<UUID> = []
 
-    init() {
-        let defaults = UserDefaults.standard
+    init(defaults: UserDefaults = .standard) {
+        self.defaults = defaults
         isEnabled = defaults.bool(forKey: PreferenceKey.rulesEnabled)
         rules = defaults.data(forKey: PreferenceKey.rules)
             .flatMap { try? JSONDecoder().decode([ProfileRule].self, from: $0) } ?? []
@@ -77,7 +78,11 @@ final class ProfileRules {
     /// since the last call (or on the first call).
     func decide(temperature: (SensorSource) -> Double?) -> Decision {
         guard isEnabled else { return .keep }
-        let match = rules.first { $0.isEnabled && matches($0, temperature: temperature) }
+        // Every rule is checked, not only those up to the first match, so each
+        // temperature rule's hysteresis follows the reading while an earlier
+        // rule wins. Power and running apps are looked up once, and only if asked.
+        let state = SystemState()
+        let match = rules.filter { $0.isEnabled && matches($0, state: state, temperature: temperature) }.first
         defer {
             matchedRuleID = match?.id
             hasEvaluated = true
@@ -95,12 +100,11 @@ final class ProfileRules {
         if fallbackProfileID == id { fallbackProfileID = nil }
     }
 
-    private func matches(_ rule: ProfileRule, temperature: (SensorSource) -> Double?) -> Bool {
+    private func matches(_ rule: ProfileRule, state: SystemState, temperature: (SensorSource) -> Double?) -> Bool {
         switch rule.condition {
-        case .onBattery: return PowerSource.isOnBattery
-        case .onPowerAdapter: return !PowerSource.isOnBattery
-        case .appRunning(let bundleID, _):
-            return NSWorkspace.shared.runningApplications.contains { $0.bundleIdentifier == bundleID }
+        case .onBattery: return state.isOnBattery
+        case .onPowerAdapter: return !state.isOnBattery
+        case .appRunning(let bundleID, _): return state.runningApps.contains(bundleID)
         case .temperatureAbove(let source, let limit):
             guard let value = temperature(source) else { return hotRules.contains(rule.id) }
             if value >= limit {
@@ -114,8 +118,14 @@ final class ProfileRules {
 
     private func save() {
         if let data = try? JSONEncoder().encode(rules) {
-            UserDefaults.standard.set(data, forKey: PreferenceKey.rules)
+            defaults.set(data, forKey: PreferenceKey.rules)
         }
+    }
+
+    /// What the conditions check, read at most once per decision.
+    private final class SystemState {
+        lazy var isOnBattery = PowerSource.isOnBattery
+        lazy var runningApps = Set(NSWorkspace.shared.runningApplications.compactMap(\.bundleIdentifier))
     }
 }
 

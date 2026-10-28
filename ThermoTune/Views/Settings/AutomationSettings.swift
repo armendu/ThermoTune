@@ -181,6 +181,9 @@ private struct ShortcutRow: View {
 
     private func startRecording() {
         isRecording = true
+        // Otherwise typing a combination that is already set runs its action,
+        // since Carbon takes the key before this monitor sees it.
+        monitor.hotKeys.unregisterAll()
         monitorToken = NSEvent.addLocalMonitorForEvents(matching: .keyDown) { event in
             let flags = event.modifierFlags.intersection([.command, .option, .control, .shift])
             switch Int(event.keyCode) {
@@ -201,8 +204,10 @@ private struct ShortcutRow: View {
     }
 
     private func stopRecording() {
+        guard isRecording else { return }
         isRecording = false
         if let monitorToken { NSEvent.removeMonitor(monitorToken) }
         monitorToken = nil
+        monitor.hotKeys.registerAll()
     }
 }

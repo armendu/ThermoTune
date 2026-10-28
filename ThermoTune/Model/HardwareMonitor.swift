@@ -27,16 +27,19 @@ final class HardwareMonitor {
     /// Readable names by SMC key; see `TemperatureSensor.names(for:)`.
     private(set) var sensorNames: [String: String] = [:]
     private(set) var helperState = HelperInstaller.state()
-    /// An install or uninstall is waiting on the queue or the password prompt.
-    /// Fan changes are held off meanwhile: one landing after the final
-    /// `auto-all` of an uninstall would leave a fan manual with no helper left
-    /// to undo it.
+    /// An install or uninstall is waiting on the password prompt.
     private(set) var isChangingHelper = false
+    /// An uninstall is under way. Fan changes are held off meanwhile: one landing
+    /// after its final `auto-all` would leave a fan manual with no helper left to
+    /// undo it. An install needs no such gate, because the new helper replaces
+    /// the old one in a single rename: a call already running finishes with the
+    /// old one, and the profile and safety net keep working behind the prompt.
+    private(set) var isRemovingHelper = false
     private(set) var busyFans: Set<Int> = []
     private(set) var pendingModes: [Int: FanMode] = [:]
     var errorMessage: String?
 
-    var canControlFans: Bool { helperState == .ready && !isChangingHelper }
+    var canControlFans: Bool { helperState == .ready && !isRemovingHelper }
     var fansAreSystemControlled: Bool { fans.allSatisfy(\.isSystemControlled) }
 
     /// Per-core sensors when the Mac has them (Apple Silicon). The `TC*` package
@@ -99,6 +102,9 @@ final class HardwareMonitor {
     /// For the `.max` action: back to the profile once the hottest reading is
     /// this far under the limit.
     static let safetyClearMargin: Double = 10
+    /// The limit even with the safety net off, and the highest it can be set to.
+    static let backstopTemperature: Double = 105
+    static let backstopDelay: TimeInterval = 10
 
     let profiles: ProfileStore
     let alerts = Alerts()
@@ -174,7 +180,7 @@ final class HardwareMonitor {
 
     func refresh() {
         guard let smc else { return }
-        fans = smc.fans()
+        fans = smc.fans().map(\.withFiniteReadings)
         for fan in fans where !busyFans.contains(fan.id) {
             if let pending = pendingModes[fan.id], fan.isIn(pending) { pendingModes[fan.id] = nil }
         }
@@ -182,7 +188,7 @@ final class HardwareMonitor {
         // powered down. That is no reading, not a temperature: averaged in, it
         // dragged the GPU line on the chart to 0° and the axis down to -25°.
         sensors = sensorKeys.compactMap { key in
-            guard let value = try? smc.read(key), value > 1 else { return nil }
+            guard let value = try? smc.read(key), value.isFinite, value > 1 else { return nil }
             return TemperatureSensor(key: key, value: value)
         }
         if !sensors.isEmpty {
@@ -207,7 +213,7 @@ final class HardwareMonitor {
     // MARK: Rules
 
     private func applyRules() {
-        guard !WindowSnapshot.isActive, !isDiscoveringSensors, helperState == .ready else { return }
+        guard !RunMode.isReadOnly, !isDiscoveringSensors, helperState == .ready else { return }
         guard case .use(let id) = rules.decide(temperature: temperature) else { return }
         let profile = id.flatMap { id in profiles.profiles.first { $0.id == id } }
         if profile?.id != profiles.activeProfileID {
@@ -226,16 +232,27 @@ final class HardwareMonitor {
     /// chosen time while ThermoTune holds the fans, this takes them off it.
     /// Returns whether it is acting this refresh, so the profile doesn't undo it.
     private func checkSafetyNet() -> Bool {
-        let defaults = UserDefaults.standard
-        guard !WindowSnapshot.isActive, canControlFans, !fans.isEmpty,
-              defaults.bool(forKey: PreferenceKey.safetyNetEnabled),
+        // No helper calls can go out during an uninstall. A trip holds as it is
+        // meanwhile: clearing it would let the profile slow the fans, however hot
+        // the Mac still is.
+        if isRemovingHelper { return isOverheating }
+        guard !RunMode.isReadOnly, helperState == .ready, !fans.isEmpty,
               let hottest = temperature(.hottest) else {
             overLimitSince = nil
             isOverheating = false
             return false
         }
-        let limit = defaults.double(forKey: PreferenceKey.safetyLimit)
-        let action = defaults.string(forKey: PreferenceKey.safetyAction).flatMap(SafetyAction.init) ?? .automatic
+        let defaults = UserDefaults.standard
+        // Switched off, the safety net still has a fixed backstop: nothing should
+        // hold a laptop's fans down at a temperature where it is about to throttle.
+        let isEnabled = defaults.bool(forKey: PreferenceKey.safetyNetEnabled)
+        let limit = isEnabled
+            ? min(defaults.double(forKey: PreferenceKey.safetyLimit), Self.backstopTemperature)
+            : Self.backstopTemperature
+        let delay = isEnabled ? defaults.double(forKey: PreferenceKey.safetyDelay) : Self.backstopDelay
+        let action = isEnabled
+            ? defaults.string(forKey: PreferenceKey.safetyAction).flatMap(SafetyAction.init) ?? .automatic
+            : .automatic
 
         if isOverheating {
             if hottest <= limit - Self.safetyClearMargin {
@@ -255,7 +272,7 @@ final class HardwareMonitor {
         overLimitSince = since
         // Fans already all at full speed can't cool any harder, and handing them
         // back would let macOS slow them down.
-        guard Date().timeIntervalSince(since) >= defaults.double(forKey: PreferenceKey.safetyDelay),
+        guard Date().timeIntervalSince(since) >= delay,
               busyFans.isEmpty, pendingModes.isEmpty,
               fans.contains(where: { mode(of: $0) != .max }) else { return false }
 
@@ -268,6 +285,9 @@ final class HardwareMonitor {
             sendAllAutomatic()
         case .max:
             isOverheating = true
+            // So the profile ramps down from full speed when the trip clears,
+            // instead of jumping back to where its ramp was before.
+            smoothing = [:]
             sendAllMax()
         }
         return true
@@ -288,7 +308,7 @@ final class HardwareMonitor {
     /// so curves follow temperature and the profile is re-applied if macOS takes
     /// control back.
     private func applyActiveProfile() {
-        guard !WindowSnapshot.isActive, !isDiscoveringSensors, canControlFans,
+        guard !RunMode.isReadOnly, !isDiscoveringSensors, canControlFans,
               busyFans.isEmpty, pendingModes.isEmpty, !fans.isEmpty else { return }
         guard let profile = profiles.activeProfile else {
             smoothing = [:]
@@ -347,51 +367,13 @@ final class HardwareMonitor {
 
     // MARK: Smoothing
 
-    /// Per fan: the temperature the curve last followed, the speed being ramped
-    /// towards, and where the ramp has got to.
-    private struct Smoothing {
-        var temperature: Double
-        var goal: Double
-        var rpm: Double
-        var date: Date
-    }
-
-    /// A falling temperature has to drop this far before fans slow down, so a
-    /// reading wobbling across a curve point doesn't make them hunt.
-    static let hysteresis: Double = 3
-    /// Fans speed up quickly and slow down gently: a sudden load needs cooling
-    /// now, but a fan dropping 1,000 RPM at once is more noticeable than heat.
-    static let rampUpRPMPerSecond: Double = 1000
-    static let rampDownRPMPerSecond: Double = 150
-
-    @ObservationIgnored private var smoothing: [Int: Smoothing] = [:]
+    @ObservationIgnored private var smoothing: [Int: FanSmoothing] = [:]
 
     private func smoothedRPM(for fan: FanInfo, behavior: FanBehavior, temperature: Double) -> Double? {
-        let now = Date()
-        var state = smoothing[fan.id]
-            ?? Smoothing(temperature: temperature, goal: 0,
-                         rpm: fan.isManual ? fan.target : max(fan.actual, fan.minimum), date: now)
-
-        if temperature >= state.temperature {
-            state.temperature = temperature
-        } else if state.temperature - temperature > Self.hysteresis {
-            state.temperature = temperature + Self.hysteresis
-        }
-        guard let goal = behavior.targetRPM(for: fan, temperature: state.temperature) else {
-            smoothing[fan.id] = nil
-            return nil
-        }
-        // Bounded, so a long gap (sleep) doesn't turn into one large jump.
-        let elapsed = min(now.timeIntervalSince(state.date), 10)
-        if goal > state.rpm {
-            state.rpm = min(goal, state.rpm + Self.rampUpRPMPerSecond * elapsed)
-        } else {
-            state.rpm = max(goal, state.rpm - Self.rampDownRPMPerSecond * elapsed)
-        }
-        state.goal = goal
-        state.date = now
-        smoothing[fan.id] = state
-        return state.rpm.rounded()
+        var state = smoothing[fan.id] ?? FanSmoothing(fan: fan, temperature: temperature)
+        let rpm = state.step(behavior: behavior, fan: fan, temperature: temperature)
+        smoothing[fan.id] = rpm == nil ? nil : state
+        return rpm
     }
 
     // MARK: Fan control
@@ -402,17 +384,24 @@ final class HardwareMonitor {
         pendingModes[fan.id] ?? fan.mode
     }
 
+    // A shortcut can still fire while the controls are disabled. Taking over
+    // from the profile without sending anything would leave the fans manual
+    // with nothing in charge of them.
+
     func setMode(_ mode: FanMode, fan: FanInfo, rpm: Double) {
+        guard !isRemovingHelper else { return }
         takeOverFromProfile()
         sendMode(mode, fan: fan, rpm: rpm)
     }
 
     func setAllMax() {
+        guard !isRemovingHelper else { return }
         takeOverFromProfile()
         sendAllMax()
     }
 
     func setAllAutomatic() {
+        guard !isRemovingHelper else { return }
         takeOverFromProfile()
         sendAllAutomatic()
     }
@@ -444,7 +433,7 @@ final class HardwareMonitor {
     }
 
     private func runHelper(fans ids: [Int], mode: FanMode, _ arguments: [String]) {
-        guard !isChangingHelper else { return }
+        guard !RunMode.isReadOnly, !isRemovingHelper else { return }
         guard helperState == .ready else {
             errorMessage = String(localized: "Install the helper tool to control fan speed.")
             return
@@ -487,7 +476,6 @@ final class HardwareMonitor {
         isChangingHelper = true
         Task {
             defer { isChangingHelper = false }
-            await helperQueue?.value
             await runAsAdministrator { try HelperInstaller.install() }
             helperState = HelperInstaller.state()
         }
@@ -495,8 +483,12 @@ final class HardwareMonitor {
 
     func uninstallHelper() {
         isChangingHelper = true
+        isRemovingHelper = true
         Task {
-            defer { isChangingHelper = false }
+            defer {
+                isChangingHelper = false
+                isRemovingHelper = false
+            }
             await helperQueue?.value
             do {
                 try await HelperInstaller.runInBackground(["auto-all"])
@@ -536,7 +528,7 @@ final class HardwareMonitor {
     /// Hands fans back to the system. Called synchronously when the app quits
     /// so a manual speed never outlives the app.
     nonisolated static func restoreAutomaticFans() {
-        guard !WindowSnapshot.isActive,
+        guard !RunMode.isReadOnly,
               UserDefaults.standard.bool(forKey: PreferenceKey.restoreAutomaticOnQuit) else { return }
         // A `set` still running would otherwise land after the decision below,
         // and outlive the app. Its writes also apply asynchronously, so reading
