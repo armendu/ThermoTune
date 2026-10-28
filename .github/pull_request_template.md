@@ -5,7 +5,7 @@
 ## How it was tested
 
 - [ ] `make build` and `make release` succeed with no new warnings, and `make test` passes
-- [ ] Version raised with `make bump`
+- [ ] Version raised with `make bump`, and a `CHANGELOG.md` section added for it
 - [ ] Checked in the running app (`make run`); screenshots below if the UI changed (`make shot`)
 
 ### If this touches fans or the SMC

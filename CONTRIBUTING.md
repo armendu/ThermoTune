@@ -62,8 +62,10 @@ feat(app): temperature-curve profiles
 
 1. `make build` and `make release` both succeed with no new warnings, and `make test` passes. The
    tests need no special hardware; add one for logic you change where you can.
-2. `make bump` to raise the version. Every pull request does, so the version in the window title
-   says which build someone is running; CI checks it.
+2. `make bump` to raise the version, and add a section for that version to
+   [CHANGELOG.md](CHANGELOG.md) saying what changed for people who use the app. Every pull
+   request does both, so the version in the window title says which build someone is running
+   and the next release's notes write themselves; CI checks them.
 3. `make run` and look at what you changed. `make shot` saves screenshots of the app's windows
    to `build/screenshots/`, handy for the pull request description.
 4. **If your change touches fans**, try it on your own Mac and say which model in the pull
