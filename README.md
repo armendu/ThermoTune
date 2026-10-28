@@ -1,6 +1,7 @@
 # ThermoTune
 
 [![CI](https://github.com/armendu/ThermoTune/actions/workflows/ci.yml/badge.svg?branch=main)](https://github.com/armendu/ThermoTune/actions/workflows/ci.yml)
+[![Latest release](https://img.shields.io/github/v/release/armendu/ThermoTune)](https://github.com/armendu/ThermoTune/releases/latest)
 [![License: MIT](https://img.shields.io/badge/license-MIT-blue.svg)](LICENSE)
 ![macOS 15+](https://img.shields.io/badge/macOS-15%2B-lightgrey.svg)
 
@@ -70,22 +71,39 @@ no background daemons, no third-party code.
 
 - macOS 15 or newer
 - A Mac with fans. Apple silicon is tested; Intel is supported in the code but untested.
-- Xcode 16 or newer, to build it
 
 ## Install
 
-There are no prebuilt downloads yet; build it from source:
+Download `ThermoTune-<version>.dmg` from
+[Releases](https://github.com/armendu/ThermoTune/releases/latest), open it and drag ThermoTune
+to Applications.
+
+ThermoTune isn't signed with an Apple Developer ID, so macOS blocks it the first time. Open it
+once, then go to **System Settings › Privacy & Security** and click **Open Anyway**.
+
+Temperatures work straight away. To change fan speeds, click **Install Helper…** under the fans.
+macOS asks for your administrator password once, for the reason explained below. After an
+update, ThermoTune may say the helper is out of date; click **Update Helper…** to replace it.
+
+The version you're running is in the window title, and in **Settings › About**.
+
+### Build from source
+
+With Xcode 16 or newer:
 
 ```sh
 git clone https://github.com/armendu/ThermoTune.git
 cd ThermoTune
-make release
-open build/Build/Products/Release/ThermoTune.app
+make release   # Release build in build/Build/Products/Release
+make dmg       # the same, packaged as build/ThermoTune-<version>.dmg
 ```
 
-Copy `ThermoTune.app` into `/Applications` if you want to keep it. Temperatures work straight
-away. To change fan speeds, click **Install Helper…** under the fans. macOS asks for your
-administrator password once, for the reason explained below.
+### Releases
+
+Every pull request raises the version with `make bump` and adds a section for it to
+[CHANGELOG.md](CHANGELOG.md). When `development` is merged into `main`, the Release workflow
+tags the commit, builds the DMG and publishes it, with every changelog section since the last
+release as its notes.
 
 ## How it works
 

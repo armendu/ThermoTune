@@ -27,10 +27,17 @@ it.** `enforce_admins` is off, so a direct push to `main` from the repository ow
 through, git prints `Bypassed rule violations` and does it anyway. The rule is a guard rail for
 the normal path, not a lock. And **`build` is the only required check.**
 
-**Every pull request raises the version.** `make bump` adds one to the patch number
-(`PART=minor` or `PART=major` for the others), and CI fails a pull request whose
-`MARKETING_VERSION` isn't higher than its base branch's. The window title shows it, "ThermoTune
+**Every pull request raises the version and says what changed.** `make bump` adds one to the
+patch number (`PART=minor` or `PART=major` for the others), and the pull request adds a
+`## <version> (<date>)` section to `CHANGELOG.md`, written for people who use the app, not for
+reviewers. CI fails a pull request whose `MARKETING_VERSION` isn't higher than its base
+branch's, or has no changelog section for it. The window title shows the version, "ThermoTune
 v0.1.3", so the owner can tell which build is installed.
+
+**A merge into `main` is a release.** `.github/workflows/release.yml` runs on every push to
+`main`. If `v<version>` isn't tagged yet, it runs `make dmg`, tags the commit and publishes
+`ThermoTune-<version>.dmg` as a GitHub release, with every changelog section since the previous
+release as the notes. A push to `main` whose version is already released does nothing.
 
 **No AI attribution.** Commits and pull requests carry no `Co-Authored-By: Claude` trailer and
 no "Generated with Claude Code" line. The trailer makes GitHub list Claude as a contributor,
@@ -76,6 +83,7 @@ own lists every target.
 make build          # Debug build, a compile check
 make release        # Release build, what CI builds and what users run
 make test           # unit tests, hosted in a read-only copy of the app
+make dmg            # Release build packaged as build/ThermoTune-<version>.dmg, what releases ship
 make version        # the current MARKETING_VERSION
 make bump           # raise it, once per pull request (PART=minor|major)
 make run            # Release build, then launch it
@@ -124,7 +132,8 @@ hand, its object IDs are the readable `A1000000000000000000Fxxx` series. After e
 | Swift language mode | 5 | `SMC` is not `Sendable`; the monitor opens a second connection off the main thread instead of sharing one |
 | App Sandbox | off | IOKit access to `AppleSMC` is not possible from a sandbox |
 | Hardened runtime | off | |
-| Signing | ad hoc (`-`) | nobody has a Developer ID in this repo; there is no release pipeline |
+| Signing | ad hoc (`-`) | nobody has a Developer ID in this repo, so releases aren't notarized and people allow the app once in Privacy & Security |
+| Architectures | arm64 and x86_64 | Release builds are universal; the DMG is checked for both slices |
 
 The helper is embedded by the **Embed Helper** copy-files phase into `Contents/MacOS/`, and the
 app finds it with `Bundle.main.url(forAuxiliaryExecutable:)`.
@@ -195,6 +204,10 @@ installed helper normally comes from a Release build, so a Debug app always show
 Helper…". That is why `make run` and `make shot` build Release. It also means **any change to
 `Shared/` or `Helper/` makes every user re-enter their password** after updating; say so in the
 pull request.
+
+**Downloaded apps are quarantined.** Install clears the copied helper's extended attributes
+(`xattr -c`) before making it setuid root, so a quarantine flag from the DMG can't come along
+into `/Library/PrivilegedHelperTools`.
 
 **Quitting must give the fans back.** `applicationWillTerminate` runs `auto-all`, and a SIGTERM
 handler routes `kill`/`pkill` through it, because SIGTERM otherwise skips it, which is exactly
@@ -299,9 +312,16 @@ protecting it from heat.
 
 ## CI
 
-`.github/workflows/ci.yml` runs `make build`, `make release` and `make test` on a macOS runner for
-every pull request and every push to `main`, and on pull requests checks the version was raised.
-No hardware is involved; CI proves the project compiles and its logic holds, not that fans move.
+`.github/workflows/ci.yml` runs `make build`, `make release`, `make test` and `make dmg` on a
+macOS runner for every pull request and every push to `main`, and on pull requests checks the
+version was raised and has a changelog section. No hardware is involved; CI proves the project
+compiles, its logic holds and it packages, not that fans move.
+
+`make dmg` runs `Scripts/verify_release_app.sh` before packaging: the version matches
+`MARKETING_VERSION`, the helper is embedded, the App Sandbox is off (a sandboxed app can't open
+AppleSMC), both binaries are universal and the signature verifies. It keeps Xcode's ad hoc
+signature rather than re-signing, because re-signing would change the embedded helper's bytes,
+which the app compares with the installed one.
 
 Actions are pinned to commit SHAs, not tags: a tag is mutable, so `@v5` is a promise the
 action's owner can rewrite. The trailing comment is the human-readable version. Dependabot

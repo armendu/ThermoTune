@@ -1,0 +1,94 @@
+name: Release
+
+# A merge to main with an app version that has no release yet tags the commit
+# v<version>, builds ThermoTune-<version>.dmg and publishes it as a GitHub
+# release. Every pull request raises the version and adds a CHANGELOG.md
+# section for it, so the notes are every section since the last release.
+on:
+  push:
+    branches:
+      - main
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+# One release at a time, and never cancelled halfway through publishing.
+concurrency:
+  group: release
+  cancel-in-progress: false
+
+defaults:
+  run:
+    shell: bash
+
+jobs:
+  release:
+    name: Build DMG and publish
+    # The same image as CI, so a release builds with the toolchain the pull request did.
+    runs-on: macos-26
+    timeout-minutes: 30
+    permissions:
+      contents: write
+
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+
+      - name: Check for an unreleased version
+        id: version
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          version=$(sed -nE 's/.*MARKETING_VERSION = ([^;]+);.*/\1/p' ThermoTune.xcodeproj/project.pbxproj | sort -u)
+          if [ "$(echo "$version" | wc -l)" -ne 1 ] || [ -z "$version" ]; then
+            echo "Expected one MARKETING_VERSION, found: $version"
+            exit 1
+          fi
+          echo "VERSION=$version" >> "$GITHUB_ENV"
+          if git ls-remote --exit-code --tags origin "refs/tags/v$version" > /dev/null; then
+            echo "v$version is already released; nothing to do."
+            echo "release=false" >> "$GITHUB_OUTPUT"
+          else
+            previous=$(gh release list --limit 1 --json tagName --jq '.[0].tagName // ""')
+            echo "PREVIOUS=${previous#v}" >> "$GITHUB_ENV"
+            echo "Releasing v$version (previous release: ${previous:-none})."
+            echo "release=true" >> "$GITHUB_OUTPUT"
+          fi
+
+      - name: Build DMG
+        if: steps.version.outputs.release == 'true'
+        run: make dmg
+
+      - name: Write release notes
+        if: steps.version.outputs.release == 'true'
+        run: |
+          # Every CHANGELOG.md section from this version down to the last release,
+          # without this version's own heading (it is the release's title).
+          awk -v v="$VERSION" -v prev="$PREVIOUS" '
+            /^## / { heading = $2 }
+            /^## / && prev != "" && heading == prev { exit }
+            /^## / && heading == v { found = 1; next }
+            found { print }
+          ' CHANGELOG.md > build/release-notes.md
+          if ! grep -q '[^[:space:]]' build/release-notes.md; then
+            echo "CHANGELOG.md has no section for $VERSION"
+            exit 1
+          fi
+          cat >> build/release-notes.md <<'EOF'
+
+          ---
+
+          **Installing:** open the DMG and drag ThermoTune to Applications. ThermoTune isn't signed with an Apple Developer ID, so macOS blocks it the first time: open it once, then allow it in **System Settings › Privacy & Security › Open Anyway**. Temperatures work straight away; to change fan speeds, click **Install Helper…** and enter your administrator password once.
+
+          Apple silicon is tested; Intel Macs are supported in the code but untested.
+          EOF
+
+      - name: Tag and publish release
+        if: steps.version.outputs.release == 'true'
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          gh release create "v$VERSION" "build/ThermoTune-$VERSION.dmg" \
+            --target "$GITHUB_SHA" \
+            --title "ThermoTune $VERSION" \
+            --notes-file build/release-notes.md

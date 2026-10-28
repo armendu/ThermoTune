@@ -61,6 +61,10 @@ enum HelperInstaller {
     /// replacement is atomic: a helper call running meanwhile finishes with the
     /// old file instead of executing one half overwritten. The directory is
     /// root-owned, so nobody else can touch the copy before the rename.
+    ///
+    /// The copy's extended attributes are cleared: an app from a downloaded DMG
+    /// is quarantined, and a quarantined helper could be refused when the app
+    /// runs it, long after the person allowed the app itself.
     static func install() throws {
         guard let bundledURL else { throw HelperError.missingFromBundle }
         let src = shellQuoted(bundledURL.path)
@@ -69,6 +73,7 @@ enum HelperInstaller {
         let command = [
             "/bin/mkdir -p /Library/PrivilegedHelperTools",
             "/bin/cp -f \(src) \(tmp)",
+            "/usr/bin/xattr -c \(tmp)",
             "/usr/sbin/chown root:wheel \(tmp)",
             "/bin/chmod 4755 \(tmp)",
             "/bin/mv -f \(tmp) \(dst)",
