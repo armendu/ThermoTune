@@ -38,21 +38,72 @@ enum TemperatureUnit: String, CaseIterable, Identifiable {
     func convert(_ celsius: Double) -> Double {
         self == .celsius ? celsius : celsius * 9 / 5 + 32
     }
+
+    func toCelsius(_ value: Double) -> Double {
+        self == .celsius ? value : (value - 32) * 5 / 9
+    }
 }
 
-/// Which temperature a profile curve or the menu bar follows.
-enum SensorSource: String, CaseIterable, Identifiable, Codable {
+/// Which temperature a profile curve or the menu bar follows. The CPU and GPU
+/// readings are the hottest sensor in each group.
+enum SensorSource: Hashable, Identifiable {
     case cpu
     case gpu
     case hottest
+    /// One sensor, by SMC key.
+    case sensor(String)
 
-    var id: Self { self }
+    /// The grouped readings; a single sensor is picked from the sensor list.
+    static let groups: [SensorSource] = [.cpu, .gpu, .hottest]
+
+    var id: String { rawValue }
 
     var title: String {
         switch self {
         case .cpu: return "CPU"
         case .gpu: return "GPU"
         case .hottest: return "Hottest (CPU or GPU)"
+        case .sensor(let key): return "Sensor \(key)"
         }
+    }
+}
+
+// A string raw value, so `@AppStorage` and saved profiles keep reading the
+// values written before single sensors existed ("cpu", "gpu", "hottest").
+extension SensorSource: RawRepresentable, Codable {
+    private static let sensorPrefix = "sensor:"
+
+    init?(rawValue: String) {
+        switch rawValue {
+        case "cpu": self = .cpu
+        case "gpu": self = .gpu
+        case "hottest": self = .hottest
+        case let value where value.hasPrefix(Self.sensorPrefix) && value.count > Self.sensorPrefix.count:
+            self = .sensor(String(value.dropFirst(Self.sensorPrefix.count)))
+        default: return nil
+        }
+    }
+
+    var rawValue: String {
+        switch self {
+        case .cpu: return "cpu"
+        case .gpu: return "gpu"
+        case .hottest: return "hottest"
+        case .sensor(let key): return Self.sensorPrefix + key
+        }
+    }
+
+    init(from decoder: Decoder) throws {
+        let raw = try decoder.singleValueContainer().decode(String.self)
+        guard let source = Self(rawValue: raw) else {
+            throw DecodingError.dataCorrupted(.init(codingPath: decoder.codingPath,
+                                                    debugDescription: "Unknown sensor source \(raw)"))
+        }
+        self = source
+    }
+
+    func encode(to encoder: Encoder) throws {
+        var container = encoder.singleValueContainer()
+        try container.encode(rawValue)
     }
 }

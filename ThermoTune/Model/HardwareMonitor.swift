@@ -40,6 +40,7 @@ final class HardwareMonitor {
         case .cpu: return cpuSummary?.maximum
         case .gpu: return gpuSummary?.maximum
         case .hottest: return [cpuSummary?.maximum, gpuSummary?.maximum].compactMap { $0 }.max()
+        case .sensor(let key): return sensors.first { $0.key == key }?.value
         }
     }
 
@@ -143,6 +144,7 @@ final class HardwareMonitor {
         guard !WindowSnapshot.isActive, !isDiscoveringSensors, !isUninstalling, helperState == .ready,
               busyFans.isEmpty, pendingModes.isEmpty, !fans.isEmpty else { return }
         guard let profile = profiles.activeProfile else {
+            smoothing = [:]
             if profileHoldsFans {
                 profileHoldsFans = false
                 isOverheating = false
@@ -150,41 +152,102 @@ final class HardwareMonitor {
             }
             return
         }
-        profileHoldsFans = profile.kind != .automatic
+        let behaviors = fans.map { profile.behavior(forFan: $0.id) }
+        profileHoldsFans = behaviors.contains { $0.kind != .automatic }
 
-        switch profile.kind {
-        case .automatic:
+        if !profileHoldsFans {
+            smoothing = [:]
             if !fans.allSatisfy(\.isSystemControlled) { sendAllAutomatic() }
-        case .max:
+            return
+        }
+        if behaviors.allSatisfy({ $0.kind == .max }) {
+            smoothing = [:]
             if fans.contains(where: { $0.mode != .max }) { sendAllMax() }
-        case .fixed, .curve:
-            // With no temperature at all, nothing would notice the Mac
-            // overheating: macOS gets the fans until there is a reading again.
-            guard let hottest = temperature(.hottest) else {
-                if !fans.allSatisfy(\.isSystemControlled) { sendAllAutomatic() }
-                return
-            }
-            if hottest >= Self.overheatTemperature {
-                isOverheating = true
-            } else if hottest <= Self.overheatClearTemperature {
-                isOverheating = false
-            }
-            if isOverheating {
-                if fans.contains(where: { $0.mode != .max }) { sendAllMax() }
-                return
-            }
-            // GPU sensors can all drop out while it is powered down. Following
-            // the hottest reading meanwhile errs towards more cooling, and avoids
-            // a ~10 second hand-over to macOS and back each time.
-            let temperature = temperature(profile.source) ?? hottest
-            for fan in fans {
-                guard let rpm = profile.targetRPM(for: fan, temperature: temperature) else { continue }
-                // Skip small changes so a curve doesn't call the helper every tick.
-                if !fan.isManual || abs(fan.target - rpm) >= 100 {
-                    sendMode(.manual, fan: fan, rpm: rpm)
-                }
+            return
+        }
+
+        // Fixed and curve fans, possibly mixed with Max ones. With no temperature
+        // at all, nothing would notice the Mac overheating: macOS gets the fans
+        // until there is a reading again.
+        guard let hottest = temperature(.hottest) else {
+            smoothing = [:]
+            if !fans.allSatisfy(\.isSystemControlled) { sendAllAutomatic() }
+            return
+        }
+        if hottest >= Self.overheatTemperature {
+            isOverheating = true
+        } else if hottest <= Self.overheatClearTemperature {
+            isOverheating = false
+        }
+        if isOverheating {
+            smoothing = [:]
+            if fans.contains(where: { $0.mode != .max }) { sendAllMax() }
+            return
+        }
+
+        for (fan, behavior) in zip(fans, behaviors) {
+            // GPU sensors can all drop out while it is powered down, and a chosen
+            // sensor can stop reading. Following the hottest reading meanwhile
+            // errs towards more cooling, and avoids a ~10 second hand-over to
+            // macOS and back each time.
+            let temperature = temperature(behavior.source) ?? hottest
+            guard let rpm = smoothedRPM(for: fan, behavior: behavior, temperature: temperature) else { continue }
+            // Skip small changes so a curve doesn't call the helper every tick,
+            // but always land exactly on where the ramp ends.
+            if !fan.isManual || abs(fan.target - rpm) >= 100
+                || (rpm == smoothing[fan.id]?.goal && abs(fan.target - rpm) >= 1) {
+                sendMode(.manual, fan: fan, rpm: rpm)
             }
         }
+    }
+
+    // MARK: Smoothing
+
+    /// Per fan: the temperature the curve last followed, the speed being ramped
+    /// towards, and where the ramp has got to.
+    private struct Smoothing {
+        var temperature: Double
+        var goal: Double
+        var rpm: Double
+        var date: Date
+    }
+
+    /// A falling temperature has to drop this far before fans slow down, so a
+    /// reading wobbling across a curve point doesn't make them hunt.
+    static let hysteresis: Double = 3
+    /// Fans speed up quickly and slow down gently: a sudden load needs cooling
+    /// now, but a fan dropping 1,000 RPM at once is more noticeable than heat.
+    static let rampUpRPMPerSecond: Double = 1000
+    static let rampDownRPMPerSecond: Double = 150
+
+    @ObservationIgnored private var smoothing: [Int: Smoothing] = [:]
+
+    private func smoothedRPM(for fan: FanInfo, behavior: FanBehavior, temperature: Double) -> Double? {
+        let now = Date()
+        var state = smoothing[fan.id]
+            ?? Smoothing(temperature: temperature, goal: 0,
+                         rpm: fan.isManual ? fan.target : max(fan.actual, fan.minimum), date: now)
+
+        if temperature >= state.temperature {
+            state.temperature = temperature
+        } else if state.temperature - temperature > Self.hysteresis {
+            state.temperature = temperature + Self.hysteresis
+        }
+        guard let goal = behavior.targetRPM(for: fan, temperature: state.temperature) else {
+            smoothing[fan.id] = nil
+            return nil
+        }
+        // Bounded, so a long gap (sleep) doesn't turn into one large jump.
+        let elapsed = min(now.timeIntervalSince(state.date), 10)
+        if goal > state.rpm {
+            state.rpm = min(goal, state.rpm + Self.rampUpRPMPerSecond * elapsed)
+        } else {
+            state.rpm = max(goal, state.rpm - Self.rampDownRPMPerSecond * elapsed)
+        }
+        state.goal = goal
+        state.date = now
+        smoothing[fan.id] = state
+        return state.rpm.rounded()
     }
 
     // MARK: Fan control
@@ -215,6 +278,7 @@ final class HardwareMonitor {
     /// Ends the active profile without handing the fans back, because the
     /// caller is about to set them itself.
     private func takeOverFromProfile() {
+        smoothing = [:]
         profileHoldsFans = false
         isOverheating = false
         profiles.activeProfileID = nil

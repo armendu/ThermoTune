@@ -9,7 +9,7 @@ struct ProfilePicker: View {
             Text("None").tag(UUID?.none)
             Divider()
             ForEach(monitor.profiles.profiles) { profile in
-                Label(profile.name, systemImage: profile.kind.symbol).tag(Optional(profile.id))
+                Label(profile.name, systemImage: profile.symbol).tag(Optional(profile.id))
             }
         }
         .disabled(monitor.helperState != .ready)

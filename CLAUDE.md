@@ -205,6 +205,18 @@ temperature can be read. Uninstall blocks helper calls, waits for the queue, and
 back before removing the helper, refusing if it can't: once the helper is gone, nothing can. A
 new way for a profile to end goes through this, not around it.
 
+**A profile can't leave one fan on Auto while another is manual.** `Ftst = 1` suspends thermal
+control for every fan, so the "automatic" one would just be held at its minimum. Per-fan
+settings therefore offer only Fixed, Curve and Max (`FanBehavior.perFanKinds`).
+
+**Profile speed changes are smoothed in the app, not the helper.** `smoothedRPM` ramps towards
+the curve's speed (fast up, slow down) and makes a falling temperature drop 3° before fans slow.
+The ramp state resets whenever a profile ends or the user takes a fan over.
+
+**Saved profiles are migrated on read.** Before per-fan settings, a profile's fields sat at the
+top level with a two-point curve as `lowTemperature`/`highTemperature`; `FanProfile.init(from:)`
+still reads that shape, from UserDefaults and from version 1 export files.
+
 **Default profiles are saved on first launch.** `FanProfile.defaults` mints fresh UUIDs per
 process, so unsaved defaults had new IDs every launch and an active default profile was
 forgotten on restart.
