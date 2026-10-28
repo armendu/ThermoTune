@@ -9,7 +9,7 @@ SwiftUI app that reads the System Management Controller (SMC) directly: no kerne
 no background daemons, no third-party code.
 
 <p align="center">
-  <img src="docs/main-window.png" width="520" alt="ThermoTune's main window: CPU, GPU and fan tiles, an average-temperature chart, per-fan Auto/Manual/Max controls with each fan's top speed, and temperatures grouped by sensor type">
+  <img src="docs/main-window.png" width="720" alt="ThermoTune's main window: CPU, GPU and fan tiles above an average-temperature chart, then per-fan Auto/Manual/Max controls beside temperatures grouped by sensor type">
 </p>
 
 > [!WARNING]
