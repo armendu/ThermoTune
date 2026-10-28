@@ -51,8 +51,10 @@ no background daemons, no third-party code.
 - **Notifications:** when the safety net steps in, a fan isn't spinning, macOS starts slowing
   the Mac to cool it, the helper needs updating, or a temperature stays above a limit you set.
   The main window and the menu bar also show macOS's thermal pressure.
-- **Menu bar:** a live temperature in the menu bar, with a quick panel for profiles and fan
-  actions. ThermoTune keeps running there after you close its window.
+- **Menu bar:** a live temperature, fan speed or both in the menu bar, optionally coloured by
+  temperature and with a graph of the last 10 minutes, plus a quick panel for profiles and fan
+  actions. ThermoTune keeps running there after you close its window, and can hide its Dock icon
+  to run from the menu bar only.
 - **Preferences (⌘,):** launch at login, °C or °F, refresh rate, which temperature the menu bar
   shows, and what happens to the fans when you quit. The About tab has the version, license
   and links to the source.
