@@ -18,7 +18,7 @@ struct ThermoTuneApp: App {
             ContentView()
                 .environment(monitor)
         }
-        .defaultSize(width: 620, height: 800)
+        .defaultSize(width: 900, height: 640)
         .commands {
             CommandGroup(replacing: .appInfo) {
                 AboutMenuButton()

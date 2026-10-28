@@ -13,7 +13,7 @@ struct SensorsSection: View {
     }
 
     var body: some View {
-        Section {
+        Panel {
             if monitor.sensors.isEmpty {
                 Text(monitor.isDiscoveringSensors ? "Discovering sensors…" : "No sensors found.")
                     .foregroundStyle(.secondary)
@@ -23,7 +23,7 @@ struct SensorsSection: View {
             }
         } header: {
             HStack {
-                Text("Temperatures")
+                Text("Temperatures").font(.headline)
                 Spacer()
                 Button("All Sensors…") { showsAllSensors = true }
                     .buttonStyle(.link)
@@ -42,10 +42,7 @@ private struct GroupRow: View {
 
     private var title: String {
         switch group {
-        case .cpuPerformance: return "CPU Performance Cores"
-        case .cpuEfficiency: return "CPU Efficiency Cores"
         case .cpu: return "CPU Package"
-        case .other: return "Other (battery, SSD, chassis…)"
         default: return group.rawValue
         }
     }
@@ -61,6 +58,8 @@ private struct GroupRow: View {
         if let summary = TemperatureSummary(sensors) {
             HStack(spacing: 12) {
                 Text(title)
+                    .lineLimit(1)
+                    .help(group == .other ? "Battery, SSD, chassis and every other sensor" : title)
                 Text("\(sensors.count)")
                     .font(.caption.monospacedDigit())
                     .foregroundStyle(.secondary)
@@ -73,7 +72,7 @@ private struct GroupRow: View {
                     Text(summary.maximum.degrees)
                         .fontWeight(.semibold)
                         .foregroundStyle(Color.temperature(summary.maximum))
-                        .frame(width: 40, alignment: .trailing)
+                        .frame(width: 48, alignment: .trailing)
                 }
                 .padding(.horizontal, 6)
                 .padding(.vertical, 2)
