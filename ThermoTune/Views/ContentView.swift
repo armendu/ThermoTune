@@ -9,21 +9,11 @@ struct ContentView: View {
     static let sensorsWidth: CGFloat = 340
 
     var body: some View {
-        ScrollView {
-            VStack(spacing: 20) {
-                Panel {
-                    OverviewTiles()
-                    TemperatureChart()
-                }
-
-                HStack(alignment: .top, spacing: 20) {
-                    FansPanel()
-                        .frame(minWidth: Self.fansMinWidth, maxWidth: .infinity)
-                    SensorsSection()
-                        .frame(width: Self.sensorsWidth)
-                }
-            }
-            .padding(20)
+        // The columns stretch to fill a tall window; only a window too short
+        // for their rows scrolls.
+        ViewThatFits(in: .vertical) {
+            layout
+            ScrollView { layout }
         }
         .frame(minWidth: Self.fansMinWidth + Self.sensorsWidth + 60, minHeight: 480)
         .alert("ThermoTune", isPresented: errorBinding) {
@@ -31,6 +21,23 @@ struct ContentView: View {
         } message: {
             Text(monitor.errorMessage ?? "")
         }
+    }
+
+    private var layout: some View {
+        VStack(spacing: 20) {
+            Panel {
+                OverviewTiles()
+                TemperatureChart()
+            }
+
+            HStack(alignment: .top, spacing: 20) {
+                FansPanel()
+                    .frame(minWidth: Self.fansMinWidth, maxWidth: .infinity)
+                SensorsSection()
+                    .frame(width: Self.sensorsWidth)
+            }
+        }
+        .padding(20)
     }
 
     private var errorBinding: Binding<Bool> {
@@ -76,6 +83,7 @@ private struct FansPanel: View {
         } footer: {
             HelperFooter()
         }
+        .fillingHeight()
     }
 }
 

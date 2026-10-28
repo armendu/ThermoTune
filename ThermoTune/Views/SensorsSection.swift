@@ -32,7 +32,12 @@ struct SensorsSection: View {
                         AllSensorsView()
                     }
             }
+        } footer: {
+            // Also keeps this column's card ending level with the Fans card,
+            // which has a footer of its own.
+            Text("Hover over a count to see its sensors.")
         }
+        .fillingHeight()
     }
 }
 
