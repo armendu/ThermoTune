@@ -210,6 +210,12 @@ Preferences that way goes through the ⌘, menu item; sending `showSettingsWindo
 responder chain does nothing for SwiftUI's Settings scene. AppleScript to System Events is not
 authorized either.
 
+**Never `pkill ThermoTune` while testing.** The owner is often running the app at the same time,
+and `pkill -x ThermoTune` quits their copy too. It looked like a bug: they picked a profile and
+the app "just quit", because `make shot` began with exactly that pkill. `make shot` now starts
+its own copy, stops only that one by PID, and in snapshot mode never writes the fans, so it can
+run beside theirs. Stop anything else you launch by its PID.
+
 **Launch at login is untested.** `SMAppService.mainApp.register()` may refuse an ad-hoc signed
 app; the toggle surfaces whatever error it returns.
 

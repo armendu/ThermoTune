@@ -22,8 +22,9 @@ no background daemons, no third-party code.
 
 - **Temperatures:** finds every temperature sensor your Mac has. Shows the hottest and average
   reading for the CPU (performance and efficiency cores separately on Apple silicon) and the
-  GPU, plus a chart of the average CPU and GPU temperature over the last 1 to 60 minutes. Hover over a group's temperatures to see every sensor behind
-  them, or open **All Sensors…** for the full list.
+  GPU, plus a chart of the average CPU and GPU temperature over the last 1 to 60 minutes. Hover
+  over a group's sensor count to see every sensor behind it, or open **All Sensors…** for the
+  full list.
 - **Fan control:** see each fan's current and maximum speed, and set it to **Auto** (macOS
   decides), **Manual** (pick a speed with a slider) or **Max**. **All Max** and **All Auto**
   switch every fan at once.

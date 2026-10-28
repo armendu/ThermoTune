@@ -6,6 +6,7 @@ struct Panel<Header: View, Content: View, Footer: View>: View {
     private let header: Header
     private let content: Content
     private let footer: Footer
+    private var fillsHeight = false
 
     init(@ViewBuilder content: () -> Content,
          @ViewBuilder header: () -> Header,
@@ -30,12 +31,14 @@ struct Panel<Header: View, Content: View, Footer: View>: View {
                             Divider().padding(.horizontal, 10)
                         }
                         row
-                            .frame(maxWidth: .infinity, alignment: .leading)
+                            .frame(maxWidth: .infinity, maxHeight: fillsHeight ? .infinity : nil,
+                                   alignment: .leading)
                             .padding(.horizontal, 10)
                             .padding(.vertical, 8)
                     }
                 }
             }
+            .frame(maxHeight: fillsHeight ? .infinity : nil)
             .background(.quaternary.opacity(0.35), in: RoundedRectangle(cornerRadius: 8))
             .overlay(RoundedRectangle(cornerRadius: 8).strokeBorder(.separator, lineWidth: 0.5))
 
@@ -44,6 +47,14 @@ struct Panel<Header: View, Content: View, Footer: View>: View {
                 .foregroundStyle(.secondary)
                 .padding(.horizontal, 10)
         }
+    }
+
+    /// Stretches the rows to share whatever height the panel is offered,
+    /// instead of leaving it empty below them.
+    func fillingHeight() -> Self {
+        var panel = self
+        panel.fillsHeight = true
+        return panel
     }
 }
 

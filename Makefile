@@ -39,13 +39,13 @@ run: release ## build Release, then launch it (quits a running copy first)
 	-@pkill -TERM -x ThermoTune; sleep 1
 	open "$(RELEASE_APP)"
 
-# SIGTERM rather than SIGKILL: the app restores automatic fan control on SIGTERM, and a
-# killed app would leave any manual speed it had set in place.
+# shot starts a second copy beside any ThermoTune already running and stops only that copy:
+# a pkill here once quit the app someone was using. In snapshot mode the app never touches the
+# fans, so the two copies don't fight over them.
 shot: release ## save the app's windows to build/screenshots (TAB=general|profiles|helper|about adds Preferences)
-	-@pkill -TERM -x ThermoTune; sleep 1
 	@rm -rf "$(SHOTS)"
 	@THERMOTUNE_SNAPSHOT_DIR="$(CURDIR)/$(SHOTS)" THERMOTUNE_SETTINGS_TAB="$(TAB)" \
-		"$(RELEASE_APP)/Contents/MacOS/ThermoTune" >/dev/null 2>&1 & sleep 9; pkill -TERM -x ThermoTune; sleep 1
+		"$(RELEASE_APP)/Contents/MacOS/ThermoTune" >/dev/null 2>&1 & pid=$$!; sleep 9; kill -TERM $$pid; sleep 1
 	@ls "$(SHOTS)"
 
 open: ## open the project in Xcode

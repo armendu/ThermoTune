@@ -32,7 +32,12 @@ struct SensorsSection: View {
                         AllSensorsView()
                     }
             }
+        } footer: {
+            // Also keeps this column's card ending level with the Fans card,
+            // which has a footer of its own.
+            Text("Hover over a count to see its sensors.")
         }
+        .fillingHeight()
     }
 }
 
@@ -60,39 +65,37 @@ private struct GroupRow: View {
                 Text(title)
                     .lineLimit(1)
                     .help(group == .other ? "Battery, SSD, chassis and every other sensor" : title)
+                // The count is what opens the breakdown: it is the number the
+                // breakdown explains, one sensor per line.
                 Text("\(sensors.count)")
                     .font(.caption.monospacedDigit())
-                    .foregroundStyle(.secondary)
+                    .foregroundStyle(isHovering || showsBreakdown ? .primary : .secondary)
                     .padding(.horizontal, 5)
-                    .background(.quaternary, in: Capsule())
+                    .background(isHovering || showsBreakdown ? AnyShapeStyle(.tertiary) : AnyShapeStyle(.quaternary),
+                                in: Capsule())
+                    .padding(4)
+                    .contentShape(Rectangle())
+                    .padding(-4)
+                    .onHover(perform: hover)
+                    .onTapGesture {
+                        isPinned = true
+                        showsBreakdown = true
+                    }
+                    .popover(isPresented: $showsBreakdown, arrowEdge: .bottom) {
+                        SensorBreakdown(title: title, sensors: sensors)
+                    }
+                    .onChange(of: showsBreakdown) {
+                        if !showsBreakdown { isPinned = false }
+                    }
                 Spacer()
-                HStack(spacing: 12) {
-                    Text("avg \(summary.average.degrees)")
-                        .foregroundStyle(.secondary)
-                    Text(summary.maximum.degrees)
-                        .fontWeight(.semibold)
-                        .foregroundStyle(Color.temperature(summary.maximum))
-                        .frame(width: 48, alignment: .trailing)
-                }
-                .padding(.horizontal, 6)
-                .padding(.vertical, 2)
-                .background(isHovering || showsBreakdown ? Color.primary.opacity(0.08) : .clear,
-                            in: RoundedRectangle(cornerRadius: 5))
-                .contentShape(Rectangle())
-                .onHover(perform: hover)
-                .onTapGesture {
-                    isPinned = true
-                    showsBreakdown = true
-                }
-                .popover(isPresented: $showsBreakdown, arrowEdge: .trailing) {
-                    SensorBreakdown(title: title, sensors: sensors)
-                }
-                .onChange(of: showsBreakdown) {
-                    if !showsBreakdown { isPinned = false }
-                }
+                Text("avg \(summary.average.degrees)")
+                    .foregroundStyle(.secondary)
+                Text(summary.maximum.degrees)
+                    .fontWeight(.semibold)
+                    .foregroundStyle(Color.temperature(summary.maximum))
+                    .frame(width: 48, alignment: .trailing)
             }
             .monospacedDigit()
-            .padding(.trailing, -6)
         }
     }
 
