@@ -68,22 +68,22 @@ private struct FansPanel: View {
                 Text("Fans").font(.headline)
                 Spacer()
                 if monitor.helperState == .ready {
+                    // Push buttons, not links: these act on the fans, and macOS
+                    // keeps link styling for going somewhere.
                     Group {
                         ProfilePicker()
                             .fixedSize()
                         SettingsTabButton(title: "Edit…", tab: .profiles)
-                            .buttonStyle(.link)
                             .help("Create and edit fan profiles")
                         if monitor.fans.count > 1 {
                             Button("All Max") { monitor.setAllMax() }
-                                .buttonStyle(.link)
                                 .disabled(monitor.fans.allSatisfy { monitor.mode(of: $0) == .max })
                         }
                         Button("All Auto") { monitor.setAllAutomatic() }
-                            .buttonStyle(.link)
                             .disabled(monitor.fansAreSystemControlled)
                             .help("Hand every fan back to macOS")
                     }
+                    .controlSize(.small)
                     .disabled(!monitor.canControlFans)
                 }
             }
@@ -221,6 +221,8 @@ private struct Tile: View {
         .padding(.horizontal, 12)
         .padding(.vertical, 8)
         .background(.quaternary.opacity(0.5), in: RoundedRectangle(cornerRadius: 10))
+        // One VoiceOver element, "CPU, 47, °C, average · hottest 60°C", not four.
+        .accessibilityElement(children: .combine)
     }
 }
 

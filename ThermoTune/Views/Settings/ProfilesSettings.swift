@@ -8,6 +8,9 @@ struct ProfilesSettings: View {
     @State private var isExporting = false
     @State private var isImporting = false
     @State private var transferError: String?
+    // Neither can be undone, so both ask first.
+    @State private var isConfirmingDelete = false
+    @State private var isConfirmingRestore = false
 
     private var store: ProfileStore { monitor.profiles }
 
@@ -41,12 +44,7 @@ struct ProfilesSettings: View {
                     }
                     .help("New profile")
                     Button {
-                        if let selection {
-                            store.delete(selection)
-                            monitor.rules.profileDeleted(selection)
-                            monitor.hotKeys.prune(profileIDs: Set(store.profiles.map(\.id)))
-                        }
-                        selection = store.profiles.first?.id
+                        isConfirmingDelete = true
                     } label: {
                         Image(systemName: "minus").frame(width: 22, height: 18)
                     }
@@ -64,13 +62,7 @@ struct ProfilesSettings: View {
                         Button("Export Profiles…") { isExporting = true }
                         Button("Import Profiles…") { isImporting = true }
                         Divider()
-                        Button("Restore Default Profiles") {
-                            let old = store.profiles.map(\.id)
-                            store.restoreDefaults()
-                            old.forEach(monitor.rules.profileDeleted)
-                            monitor.hotKeys.prune(profileIDs: Set(store.profiles.map(\.id)))
-                            selection = store.profiles.first?.id
-                        }
+                        Button("Restore Default Profiles…") { isConfirmingRestore = true }
                     } label: {
                         Image(systemName: "ellipsis.circle")
                     }
@@ -112,12 +104,45 @@ struct ProfilesSettings: View {
                 transferError = error.localizedDescription
             }
         }
+        .confirmationDialog("Delete “\(selectedName)”?", isPresented: $isConfirmingDelete) {
+            Button("Delete", role: .destructive, action: deleteSelected)
+        } message: {
+            Text("This can't be undone. Rules and shortcuts that use it stop switching to it.")
+        }
+        .confirmationDialog("Restore the default profiles?", isPresented: $isConfirmingRestore) {
+            Button("Restore Defaults", role: .destructive, action: restoreDefaults)
+        } message: {
+            Text("Your own profiles are deleted, and rules and shortcuts that use them stop switching to them.")
+        }
         .alert("Profiles", isPresented: Binding(get: { transferError != nil },
                                                 set: { if !$0 { transferError = nil } })) {
             Button("OK") {}
         } message: {
             Text(transferError ?? "")
         }
+    }
+}
+
+extension ProfilesSettings {
+    private var selectedName: String {
+        store.profiles.first { $0.id == selection }?.name ?? ""
+    }
+
+    private func deleteSelected() {
+        if let selection {
+            store.delete(selection)
+            monitor.rules.profileDeleted(selection)
+            monitor.hotKeys.prune(profileIDs: Set(store.profiles.map(\.id)))
+        }
+        selection = store.profiles.first?.id
+    }
+
+    private func restoreDefaults() {
+        let old = store.profiles.map(\.id)
+        store.restoreDefaults()
+        old.forEach(monitor.rules.profileDeleted)
+        monitor.hotKeys.prune(profileIDs: Set(store.profiles.map(\.id)))
+        selection = store.profiles.first?.id
     }
 }
 

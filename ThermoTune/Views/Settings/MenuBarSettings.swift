@@ -47,7 +47,7 @@ struct MenuBarSettings: View {
                 }
                 .disabled(!showsTemperature)
                 Group {
-                    Toggle("Colour by temperature", isOn: $colored)
+                    Toggle("Color by temperature", isOn: $colored)
                     Toggle("Show a graph of the last 10 minutes", isOn: $graph)
                     Toggle("Compact", isOn: $compact)
                 }
