@@ -4,6 +4,15 @@ Every pull request raises the version (`make bump`) and adds a section here for 
 `development` is merged into `main`, the release takes every section since the last release as
 its notes.
 
+## 0.1.6 (2026-11-02)
+
+* The Temperatures list shows each group's average as its main reading, with the hottest sensor
+  beside it, the same way as the CPU and GPU readings above it. The menu bar panel's CPU and GPU
+  rows lead with the average too.
+* The menu bar panel's actions (Open ThermoTune, Settings, Quit and the fan commands) no longer
+  look unavailable. They're drawn like the items in macOS's own menu bar panels, highlight under
+  the pointer, and show their keyboard shortcuts.
+
 ## 0.1.5 (2026-11-02)
 
 * With the safety net set to act at any time and run the fans at full speed, a failure to reach
