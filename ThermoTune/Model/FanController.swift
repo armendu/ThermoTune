@@ -79,6 +79,10 @@ struct FanController {
     private(set) var isOverheating = false
     private(set) var overLimitSince: Date?
     private(set) var smoothing: [Int: FanSmoothing] = [:]
+    /// A Max trip's `max-all` failed and the fans are owed a hand-back. The
+    /// safety net waits for it: with no delay, it would otherwise trip again
+    /// first and retry the failing call on every refresh.
+    private var handBackDue = false
 
     /// One refresh: the safety net first, and the profile only if the safety
     /// net isn't acting, so the profile can't undo it. Even with no readings: a
@@ -121,7 +125,7 @@ struct FanController {
         }
 
         let holdsFans = profileHoldsFans || !fans.allSatisfy(\.isSystemControlled)
-        guard hottest >= safety.limit, holdsFans else {
+        guard hottest >= safety.limit, holdsFans, !handBackDue else {
             overLimitSince = nil
             return nil
         }
@@ -156,6 +160,8 @@ struct FanController {
         let fans = input.fans
         guard input.helperIsReady, !input.isRemovingHelper, !input.isDiscoveringSensors,
               input.isIdle, !fans.isEmpty else { return [] }
+        // From here the fans are either handed back or driven by a profile.
+        handBackDue = false
         let handBack: [Command] = fans.allSatisfy(\.isSystemControlled) ? [] : [.autoAll]
         guard let profile = input.profile else {
             smoothing = [:]
@@ -216,6 +222,7 @@ struct FanController {
         smoothing = [:]
         profileHoldsFans = false
         isOverheating = false
+        handBackDue = false
     }
 
     /// A helper call failed, and the profile is switched off. With
@@ -226,5 +233,6 @@ struct FanController {
         guard isOverheating else { return }
         isOverheating = false
         profileHoldsFans = true
+        handBackDue = true
     }
 }

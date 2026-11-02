@@ -142,6 +142,18 @@ struct FanControllerTests {
         #expect(controller.refresh(input(fans(.auto), hottest: 95, safety: fullSpeed, at: 30)) == .init())
     }
 
+    /// With no delay, the next refresh used to trip again before the hand-back
+    /// went out, retrying the failed `max-all` and alerting on every refresh.
+    @Test func helperErrorDuringAMaxTripWithNoDelayHandsBackOnce() {
+        var controller = FanController()
+        let noDelay = FanController.Safety(isEnabled: true, limit: 90, delay: 0, action: .max)
+        #expect(controller.refresh(input(fans(.manual(3000)), hottest: 95, safety: noDelay, at: 0)).commands == [.maxAll])
+
+        controller.helperFailed()
+        #expect(controller.refresh(input(fans(.manual(3000)), hottest: 95, safety: noDelay, at: 1)) == .init(commands: [.autoAll]))
+        #expect(controller.refresh(input(fans(.auto), hottest: 95, safety: noDelay, at: 2)) == .init())
+    }
+
     @Test func helperErrorOutsideATripLeavesNothingToHandBack() {
         var controller = FanController()
         controller.helperFailed()
