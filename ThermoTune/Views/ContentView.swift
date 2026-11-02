@@ -91,7 +91,7 @@ private struct FansPanel: View {
 
 /// Shown at the top of the Fans panel after the safety net has stepped in.
 private struct SafetyBanner: View {
-    let trip: HardwareMonitor.SafetyTrip
+    let trip: FanController.SafetyTrip
     @Environment(HardwareMonitor.self) private var monitor
 
     var body: some View {

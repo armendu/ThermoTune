@@ -222,7 +222,7 @@ a Fixed, Curve or Max profile in charge. If that profile ends by any route other
 taking a fan over (None, deleted, Restore Defaults, a helper error), the next refresh sends
 `auto-all`; otherwise the fans stay at the profile's last speed with thermal control suspended.
 Fixed and Curve profiles hand back to macOS when no temperature can be read. Past the safety
-net's limit (Settings › Safety, `checkSafetyNet`) any manual speed or profile is handed back, or
+net's limit (Settings › Safety, `FanController.checkSafetyNet`) any manual speed or profile is handed back, or
 run at full speed, depending on the setting; it runs before the profile each refresh so the profile
 can't undo it, and never acts when every fan is already at full speed. Switched off, it still hands
 the fans back at `backstopTemperature` (105 °C): there is no setting under which a profile holds a
@@ -230,7 +230,9 @@ hot laptop's fans down indefinitely. A full-speed trip ends with the profile car
 no profile (manual speeds), with the fans handed back: putting manual speeds back isn't attempted,
 and nothing at all would leave them at full speed for good. A helper error during a trip ends it the
 same way rather than retrying every refresh. Setting `profileHoldsFans` with no active profile is
-how any of these asks the next refresh to send `auto-all`. Uninstall blocks helper calls (`isRemovingHelper`), waits for
+how any of these asks the next refresh to send `auto-all`. These decisions live in `FanController`, a
+value type that sends nothing and is covered by `FanControllerTests`; `HardwareMonitor` gathers the
+readings and carries out what it returns. Change the decisions there, with a test. Uninstall blocks helper calls (`isRemovingHelper`), waits for
 the queue, and hands the fans back before removing the helper, refusing if it can't: once the
 helper is gone, nothing can. User actions, shortcuts and rules are ignored meanwhile rather than
 switching the profile with nothing sent. Install needs no gate: it renames the new helper over the old
@@ -296,7 +298,8 @@ app; the toggle surfaces whatever error it returns.
 ## Testing
 
 `make test` runs the unit tests in `ThermoTuneTests/` (Swift Testing): SMC encoding for every type,
-curves and their validation, profile decoding and migration, smoothing, rules, the CSV, sensor
+curves and their validation, profile decoding and migration, smoothing, the safety net and profile
+decisions (`FanController`), rules, the CSV, sensor
 names, and a check that every German string keeps its English placeholders. None needs hardware
 or root. They run inside the app as their host, so `RunMode.isReadOnly` (also on for `make shot`)
 keeps that copy from driving or handing back fans, posting notifications, registering shortcuts
