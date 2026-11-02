@@ -114,8 +114,7 @@ struct ProfilesSettings: View {
         } message: {
             Text("Your own profiles are deleted, and rules and shortcuts that use them stop switching to them.")
         }
-        .alert("Profiles", isPresented: Binding(get: { transferError != nil },
-                                                set: { if !$0 { transferError = nil } })) {
+        .alert("Profiles", isPresented: Binding(isPresent: $transferError)) {
             Button("OK") {}
         } message: {
             Text(transferError ?? "")
@@ -129,19 +128,12 @@ extension ProfilesSettings {
     }
 
     private func deleteSelected() {
-        if let selection {
-            store.delete(selection)
-            monitor.rules.profileDeleted(selection)
-            monitor.hotKeys.prune(profileIDs: Set(store.profiles.map(\.id)))
-        }
+        if let selection { monitor.deleteProfile(selection) }
         selection = store.profiles.first?.id
     }
 
     private func restoreDefaults() {
-        let old = store.profiles.map(\.id)
-        store.restoreDefaults()
-        old.forEach(monitor.rules.profileDeleted)
-        monitor.hotKeys.prune(profileIDs: Set(store.profiles.map(\.id)))
+        monitor.restoreDefaultProfiles()
         selection = store.profiles.first?.id
     }
 }

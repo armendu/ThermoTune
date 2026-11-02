@@ -84,7 +84,7 @@ make build          # Debug build, a compile check
 make release        # Release build, what CI builds and what users run
 make test           # unit tests, hosted in a read-only copy of the app
 make dmg            # Release build packaged as build/ThermoTune-<version>.dmg, what releases ship
-make version        # the current MARKETING_VERSION
+make version        # the current MARKETING_VERSION; everything that needs it asks this
 make bump           # raise it, once per pull request (PART=minor|major)
 make run            # Release build, then launch it
 make shot           # Release build, launch, PNGs of its windows in build/screenshots
@@ -226,12 +226,17 @@ net's limit (Settings › Safety, `checkSafetyNet`) any manual speed or profile 
 run at full speed, depending on the setting; it runs before the profile each refresh so the profile
 can't undo it, and never acts when every fan is already at full speed. Switched off, it still hands
 the fans back at `backstopTemperature` (105 °C): there is no setting under which a profile holds a
-hot laptop's fans down indefinitely. Uninstall blocks helper calls (`isRemovingHelper`), waits for
+hot laptop's fans down indefinitely. A full-speed trip ends with the profile carrying on, or, with
+no profile (manual speeds), with the fans handed back: putting manual speeds back isn't attempted,
+and nothing at all would leave them at full speed for good. A helper error during a trip ends it the
+same way rather than retrying every refresh. Setting `profileHoldsFans` with no active profile is
+how any of these asks the next refresh to send `auto-all`. Uninstall blocks helper calls (`isRemovingHelper`), waits for
 the queue, and hands the fans back before removing the helper, refusing if it can't: once the
-helper is gone, nothing can. User actions and shortcuts are ignored meanwhile rather than switching
-the profile off with nothing sent. Install needs no gate: it renames the new helper over the old
+helper is gone, nothing can. User actions, shortcuts and rules are ignored meanwhile rather than
+switching the profile with nothing sent. Install needs no gate: it renames the new helper over the old
 one, so a call already running finishes with the old file. A new way for a profile to end goes
-through this, not around it.
+through this, not around it, and deleting one goes through `HardwareMonitor.deleteProfile` or
+`restoreDefaultProfiles`, which also update rules and shortcuts.
 
 **A profile can't leave one fan on Auto while another is manual.** `Ftst = 1` suspends thermal
 control for every fan, so the "automatic" one would just be held at its minimum. Per-fan
@@ -247,9 +252,12 @@ arrived and send the last step even when it is under the usual 100 RPM threshold
 sat at the top level with a two-point curve as `lowTemperature`/`highTemperature`;
 `FanProfile.init(from:)` still reads that shape, from UserDefaults and from version 1 export files.
 Decoding is also the one place imported files are checked: curves are sorted and clamped
-(`FanBehavior.validCurve`), per-fan Automatic entries are dropped. A saved list with a profile that
-won't decode keeps the others and copies the raw data to `profilesBackup` instead of overwriting
-it. An older build reading the newer format still can't, so don't run an old copy beside a new one.
+(`FanBehavior.validCurve`), per-fan Automatic entries are dropped, and a fan with no entry of its
+own follows the first fan rather than an Automatic fallback. Profiles, rules and shortcuts are all
+read with `UserDefaults.lenientArray`/`lenientDictionary`: an entry that won't decode is skipped,
+not the whole list, and the raw data is copied to `<key>Backup` first, because the next save writes
+only what was read. An older build reading the newer format still can't, so don't run an old copy
+beside a new one.
 
 **Rules act on changes, not every refresh.** `ProfileRules.decide` only switches when the
 matching rule changes, so a profile picked by hand, or switched off by the safety net, holds

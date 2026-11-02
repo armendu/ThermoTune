@@ -111,10 +111,33 @@ struct FanProfileCodingTests {
         let good = FanProfile(name: "Good", behavior: FanBehavior(kind: .max))
         let goodJSON = String(decoding: try JSONEncoder().encode(good), as: UTF8.self)
         let data = Data("[\(goodJSON), {\"id\": \"not a uuid\"}]".utf8)
-        let (profiles, isComplete) = ProfileStore.decode(data)
+        let (profiles, isComplete) = Lenient<FanProfile>.array(from: data)
         #expect(profiles == [good])
         #expect(!isComplete)
-        #expect(ProfileStore.decode(try JSONEncoder().encode([good])).isComplete)
+        #expect(Lenient<FanProfile>.array(from: try JSONEncoder().encode([good])).isComplete)
+    }
+
+    /// What couldn't be read is kept under `<key>Backup`, since the next save
+    /// writes only what was.
+    @Test func unreadableEntriesAreBackedUp() throws {
+        let defaults = UserDefaults(suiteName: "ThermoTuneTests.\(UUID().uuidString)")!
+        let data = Data(#"{"allMax": {"keyCode": 1, "modifiers": 0, "key": "s"}, "future": {"chord": true}}"#.utf8)
+        defaults.set(data, forKey: "shortcuts")
+        let shortcuts = try #require(defaults.lenientDictionary(of: Shortcut.self, forKey: "shortcuts"))
+        #expect(shortcuts.keys.sorted() == ["allMax"])
+        #expect(defaults.data(forKey: "shortcutsBackup") == data)
+        #expect(defaults.lenientArray(of: ProfileRule.self, forKey: "nothing saved") == nil)
+    }
+
+    /// A fan without its own entry follows the first fan rather than falling back
+    /// to Automatic, which among manual fans only holds it at its minimum.
+    @Test func perFanProfileNeverLeavesAFanAutomatic() {
+        var profile = FanProfile(name: "Two fans", behavior: FanBehavior(kind: .automatic))
+        profile.perFan = [1: FanBehavior(kind: .fixed, fixedPercent: 30), 0: FanBehavior(kind: .max)]
+        #expect(profile.behavior(forFan: 2).kind == .max)
+        #expect(profile.behavior(forFan: 1).fixedPercent == 30)
+        profile.perFan = [:]
+        #expect(profile.behavior(forFan: 2).kind == .automatic)
     }
 
     @Test func archiveRecordsItsVersion() throws {

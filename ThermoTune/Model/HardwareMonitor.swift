@@ -41,6 +41,10 @@ final class HardwareMonitor {
 
     var canControlFans: Bool { helperState == .ready && !isRemovingHelper }
     var fansAreSystemControlled: Bool { fans.allSatisfy(\.isSystemControlled) }
+    /// Counting a mode just asked for, so All Max disables as soon as it's clicked.
+    var allFansAtMax: Bool { fans.allSatisfy { mode(of: $0) == .max } }
+    /// The fastest fan's speed, which the overview and the menu bar show.
+    var fastestFanRPM: Double? { fans.map(\.actual).max() }
 
     /// Per-core sensors when the Mac has them (Apple Silicon). The `TC*` package
     /// sensors there read well above the cores even at idle, so they would skew
@@ -213,7 +217,7 @@ final class HardwareMonitor {
     // MARK: Rules
 
     private func applyRules() {
-        guard !RunMode.isReadOnly, !isDiscoveringSensors, helperState == .ready else { return }
+        guard !RunMode.isReadOnly, !isDiscoveringSensors, canControlFans else { return }
         guard case .use(let id) = rules.decide(temperature: temperature) else { return }
         let profile = id.flatMap { id in profiles.profiles.first { $0.id == id } }
         if profile?.id != profiles.activeProfileID {
@@ -257,6 +261,10 @@ final class HardwareMonitor {
         if isOverheating {
             if hottest <= limit - Self.safetyClearMargin {
                 isOverheating = false
+                // A profile carries on from here. Manual speeds aren't put back:
+                // with nothing in charge, the fans would stay at full speed for
+                // good, so macOS gets them (`applyActiveProfile` lets go).
+                if profiles.activeProfile == nil { profileHoldsFans = true }
                 return false
             }
             if busyFans.isEmpty, pendingModes.isEmpty, fans.contains(where: { $0.mode != .max }) { sendAllMax() }
@@ -295,7 +303,25 @@ final class HardwareMonitor {
 
     // MARK: Profiles
 
+    // Deleting a profile goes through here, so rules and shortcuts never point
+    // at one that's gone.
+
+    func deleteProfile(_ id: UUID) {
+        profiles.delete(id)
+        rules.profileDeleted(id)
+        hotKeys.prune(profileIDs: Set(profiles.profiles.map(\.id)))
+    }
+
+    func restoreDefaultProfiles() {
+        let old = profiles.profiles.map(\.id)
+        profiles.restoreDefaults()
+        old.forEach(rules.profileDeleted)
+        hotKeys.prune(profileIDs: Set(profiles.profiles.map(\.id)))
+    }
+
     func activate(_ profile: FanProfile?) {
+        // A shortcut can still fire during an uninstall, with the controls disabled.
+        guard !isRemovingHelper else { return }
         if profile != nil, helperState != .ready {
             errorMessage = String(localized: "Install the helper tool to use fan profiles.")
             return
@@ -452,8 +478,13 @@ final class HardwareMonitor {
             } catch {
                 errorMessage = error.localizedDescription
                 for id in ids { pendingModes[id] = nil }
-                // With `profileHoldsFans` still set, the next refresh hands the
-                // fans back to macOS.
+                // With `profileHoldsFans` set, the next refresh hands the fans back
+                // to macOS. That includes a Max safety trip whose `max-all` failed:
+                // retrying it every refresh would only repeat the error.
+                if isOverheating {
+                    isOverheating = false
+                    profileHoldsFans = true
+                }
                 profiles.activeProfileID = nil
             }
             for id in ids { busyFans.remove(id) }
