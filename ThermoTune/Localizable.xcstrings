@@ -2635,16 +2635,6 @@
         }
       }
     },
-    "avg %@" : {
-      "localizations" : {
-        "de" : {
-          "stringUnit" : {
-            "state" : "needs_review",
-            "value" : "Ø %@"
-          }
-        }
-      }
-    },
     "fastest · %@" : {
       "localizations" : {
         "de" : {
@@ -2714,6 +2704,16 @@
           "stringUnit" : {
             "state" : "needs_review",
             "value" : "manuell"
+          }
+        }
+      }
+    },
+    "max %@" : {
+      "localizations" : {
+        "de" : {
+          "stringUnit" : {
+            "state" : "needs_review",
+            "value" : "max. %@"
           }
         }
       }

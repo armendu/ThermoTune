@@ -77,11 +77,13 @@ private struct GroupRow: View {
                         if !showsBreakdown { isPinned = false }
                     }
                 Spacer()
-                Text("avg \(summary.average.degrees)")
+                // The average leads, as on the tiles above: one hot sensor in a
+                // group of 140 says little about the group.
+                Text("max \(summary.maximum.degrees)")
                     .foregroundStyle(.secondary)
-                Text(summary.maximum.degrees)
+                Text(summary.average.degrees)
                     .fontWeight(.semibold)
-                    .foregroundStyle(Color.temperature(summary.maximum))
+                    .foregroundStyle(Color.temperature(summary.average))
                     .frame(width: 48, alignment: .trailing)
             }
             .monospacedDigit()
