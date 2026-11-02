@@ -80,7 +80,6 @@ final class HistoryLog {
 
     private func open(day: String, fanCount: Int) {
         close()
-        self.day = day
         let url = Self.directory.appendingPathComponent("ThermoTune \(day).csv")
         let fileManager = FileManager.default
         try? fileManager.createDirectory(at: Self.directory, withIntermediateDirectories: true)
@@ -89,6 +88,9 @@ final class HistoryLog {
         }
         handle = try? FileHandle(forWritingTo: url)
         _ = try? handle?.seekToEnd()
+        // Only once the file is open: with `day` set and no handle, every later
+        // sample would skip opening it and write nowhere for the rest of the day.
+        if handle != nil { self.day = day }
     }
 
     private func close() {

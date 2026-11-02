@@ -30,3 +30,12 @@ struct TemperatureDot: View {
             .frame(width: 6, height: 6)
     }
 }
+
+extension Binding where Value == Bool {
+    /// True while `optional` holds a value; setting it to false clears it. For an
+    /// alert or a file exporter that shows whenever there is something to show.
+    init<Wrapped>(isPresent optional: Binding<Wrapped?>) {
+        self.init(get: { optional.wrappedValue != nil },
+                  set: { if !$0 { optional.wrappedValue = nil } })
+    }
+}

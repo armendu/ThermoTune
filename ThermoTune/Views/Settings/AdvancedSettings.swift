@@ -5,6 +5,7 @@ struct AdvancedSettings: View {
     @Environment(HardwareMonitor.self) private var monitor
     @AppStorage(PreferenceKey.keepsLog) private var keepsLog = false
     @State private var exportedCSV: CSVDocument?
+    @State private var exportError: String?
 
     var body: some View {
         Form {
@@ -64,9 +65,16 @@ struct AdvancedSettings: View {
             }
         }
         .formStyle(.grouped)
-        .fileExporter(isPresented: Binding(get: { exportedCSV != nil }, set: { if !$0 { exportedCSV = nil } }),
+        .fileExporter(isPresented: Binding(isPresent: $exportedCSV),
                       document: exportedCSV, contentType: .commaSeparatedText,
-                      defaultFilename: "ThermoTune \(Date.now.formatted(.iso8601.year().month().day()))") { _ in }
+                      defaultFilename: "ThermoTune \(Date.now.formatted(.iso8601.year().month().day()))") { result in
+            if case .failure(let error) = result { exportError = error.localizedDescription }
+        }
+        .alert("Export History", isPresented: Binding(isPresent: $exportError)) {
+            Button("OK") {}
+        } message: {
+            Text(exportError ?? "")
+        }
         .frame(height: 520)
     }
 }

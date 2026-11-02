@@ -31,7 +31,7 @@ plist_value() {
 
 # Version: the bundle must carry the project's MARKETING_VERSION, which the
 # release workflow uses for the tag and the DMG name, and the window title shows.
-EXPECTED_VERSION=$(sed -nE 's/.*MARKETING_VERSION = ([^;]+);.*/\1/p' "$ROOT/ThermoTune.xcodeproj/project.pbxproj" | sort -u)
+EXPECTED_VERSION=$(make -s -C "$ROOT" version)
 ACTUAL_VERSION=$(plist_value "$INFO" CFBundleShortVersionString)
 [ "$ACTUAL_VERSION" = "$EXPECTED_VERSION" ] \
     || fail "version is '$ACTUAL_VERSION', expected MARKETING_VERSION '$EXPECTED_VERSION'"

@@ -4,6 +4,22 @@ Every pull request raises the version (`make bump`) and adds a section here for 
 `development` is merged into `main`, the release takes every section since the last release as
 its notes.
 
+## 0.1.3 (2026-11-02)
+
+* After a full-speed safety trip on fans set by hand, macOS gets the fans back once the Mac has
+  cooled down. They used to stay at full speed until changed by hand.
+* If full speed fails during a safety trip, the fans go back to macOS instead of ThermoTune
+  retrying, and showing the error, on every refresh.
+* A per-fan profile from a Mac with more fans set up than this one no longer leaves a fan held at
+  its minimum.
+* A rule or shortcut this version can't read is skipped, not the whole list, and the saved list
+  is kept so the next change can't lose it.
+* Errors show in the menu bar panel too, so they're seen when ThermoTune runs from the menu bar
+  only.
+* Exporting history reports a failure instead of ignoring it.
+* The daily log no longer stops for the rest of the day when its file can't be opened.
+* Shortcuts and rules no longer switch profiles while the helper is being uninstalled.
+
 ## 0.1.2 (2026-10-28)
 
 * A **Fans** menu in the menu bar with Set All Fans to Max, Hand All Fans to macOS and the

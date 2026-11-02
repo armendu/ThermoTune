@@ -35,7 +35,7 @@ struct GeneralSettings: View {
         .formStyle(.grouped)
         .frame(height: 340)
         .onChange(of: refreshInterval) { monitor.scheduleRefresh() }
-        .alert("Launch at Login", isPresented: Binding(get: { loginItemError != nil }, set: { if !$0 { loginItemError = nil } })) {
+        .alert("Launch at Login", isPresented: Binding(isPresent: $loginItemError)) {
             Button("OK") {}
         } message: {
             Text(loginItemError ?? "")
