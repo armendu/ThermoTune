@@ -55,8 +55,13 @@ shot: release ## save the app's windows to build/screenshots (TAB=general|profil
 open: ## open the project in Xcode
 	open $(PROJECT)
 
+# The one place MARKETING_VERSION is read: bump, the DMG check, CI and the release all use it.
+# Debug and Release each carry it, so it also fails when they disagree.
 version: ## print the app's version
-	@sed -n 's/.*MARKETING_VERSION = \(.*\);/\1/p' $(PROJECT)/project.pbxproj | head -1
+	@versions=$$(sed -n 's/.*MARKETING_VERSION = \(.*\);/\1/p' $(PROJECT)/project.pbxproj | sort -u); \
+	if [ -z "$$versions" ] || [ "$$(echo "$$versions" | wc -l | tr -d ' ')" != 1 ]; then \
+		echo "Expected one MARKETING_VERSION in $(PROJECT), found: $$versions" >&2; exit 1; fi; \
+	echo "$$versions"
 
 # Every pull request raises the version, and CI checks that it did, so the "v0.1.3" in the window
 # title says which build is installed. Patch by default; PART=minor or PART=major for the others.
