@@ -4,6 +4,12 @@ Every pull request raises the version (`make bump`) and adds a section here for 
 `development` is merged into `main`, the release takes every section since the last release as
 its notes.
 
+## 0.1.5 (2026-11-02)
+
+* With the safety net set to act at any time and run the fans at full speed, a failure to reach
+  full speed now hands the fans back to macOS once. It used to try full speed again, and show
+  the error again, on every refresh while the Mac stayed hot.
+
 ## 0.1.4 (2026-11-02)
 
 * No change in what ThermoTune does. The safety net and the profiles' fan decisions are now
