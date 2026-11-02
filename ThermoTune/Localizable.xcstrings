@@ -105,6 +105,22 @@
         }
       }
     },
+    "%@ avg · %@ max" : {
+      "localizations" : {
+        "de" : {
+          "stringUnit" : {
+            "state" : "needs_review",
+            "value" : "%1$@ Ø · %2$@ max."
+          }
+        },
+        "en" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "%1$@ avg · %2$@ max"
+          }
+        }
+      }
+    },
     "%@ has been at %@ or more for %lld seconds." : {
       "localizations" : {
         "de" : {
@@ -137,22 +153,6 @@
           "stringUnit" : {
             "state" : "needs_review",
             "value" : "%@ dreht sich nicht"
-          }
-        }
-      }
-    },
-    "%@ max · %@ avg" : {
-      "localizations" : {
-        "de" : {
-          "stringUnit" : {
-            "state" : "needs_review",
-            "value" : "%@ max. · %@ Ø"
-          }
-        },
-        "en" : {
-          "stringUnit" : {
-            "state" : "new",
-            "value" : "%1$@ max · %2$@ avg"
           }
         }
       }

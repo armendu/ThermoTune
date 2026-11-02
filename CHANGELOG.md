@@ -7,7 +7,8 @@ its notes.
 ## 0.1.6 (2026-11-02)
 
 * The Temperatures list shows each group's average as its main reading, with the hottest sensor
-  beside it, the same way as the CPU and GPU readings above it.
+  beside it, the same way as the CPU and GPU readings above it. The menu bar panel's CPU and GPU
+  rows lead with the average too.
 
 ## 0.1.5 (2026-11-02)
 

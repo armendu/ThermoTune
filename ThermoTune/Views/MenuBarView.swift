@@ -201,9 +201,9 @@ struct MenuBarView: View {
     private func row(_ source: SensorSource) -> some View {
         LabeledContent {
             if let summary = monitor.summary(source) {
-                Text("\(summary.maximum.degrees) max · \(summary.average.degrees) avg")
+                Text("\(summary.average.degrees) avg · \(summary.maximum.degrees) max")
                     .monospacedDigit()
-                    .foregroundStyle(Color.temperature(summary.maximum))
+                    .foregroundStyle(Color.temperature(summary.average))
             } else {
                 Text("–")
             }
