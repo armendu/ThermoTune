@@ -4,6 +4,12 @@ Every pull request raises the version (`make bump`) and adds a section here for 
 `development` is merged into `main`, the release takes every section since the last release as
 its notes.
 
+## 0.1.4 (2026-11-02)
+
+* No change in what ThermoTune does. The safety net and the profiles' fan decisions are now
+  checked by automated tests, including full-speed trips, the 105 °C backstop and profiles
+  ending, so later changes can't quietly break them.
+
 ## 0.1.3 (2026-11-02)
 
 * After a full-speed safety trip on fans set by hand, macOS gets the fans back once the Mac has
