@@ -5,7 +5,6 @@ import SwiftUI
 struct SensorBreakdown: View {
     let title: String
     let sensors: [TemperatureSensor]
-    @Environment(HardwareMonitor.self) private var monitor
 
     private static let rowHeight: CGFloat = 22
     private static let maxListHeight: CGFloat = 380
@@ -40,19 +39,8 @@ struct SensorBreakdown: View {
     }
 
     private func row(_ sensor: TemperatureSensor) -> some View {
-        HStack(spacing: 6) {
-            TemperatureDot(value: sensor.value)
-            Text(monitor.name(of: sensor.key))
-                .font(.caption)
-                .lineLimit(1)
-            Text(sensor.key)
-                .font(.caption2.monospaced())
-                .foregroundStyle(.tertiary)
-            Spacer(minLength: 6)
-            Text(sensor.value.degrees)
-                .font(.callout.monospacedDigit())
-        }
-        .frame(height: Self.rowHeight)
+        SensorReadingRow(sensor: sensor)
+            .frame(height: Self.rowHeight)
     }
 
     var body: some View {
@@ -101,6 +89,34 @@ struct SensorBreakdown: View {
             Text(value.degrees)
                 .font(.title3.weight(.semibold).monospacedDigit())
                 .foregroundStyle(Color.temperature(value))
+        }
+    }
+}
+
+/// One sensor's name, SMC key and reading: the key beside the name in the
+/// breakdown's compact rows, under it in All Sensors' tiles.
+struct SensorReadingRow: View {
+    let sensor: TemperatureSensor
+    var stacksKey = false
+    @Environment(HardwareMonitor.self) private var monitor
+
+    var body: some View {
+        HStack(spacing: 6) {
+            TemperatureDot(value: sensor.value)
+            let layout = stacksKey
+                ? AnyLayout(VStackLayout(alignment: .leading, spacing: 0))
+                : AnyLayout(HStackLayout(spacing: 6))
+            layout {
+                Text(monitor.name(of: sensor.key))
+                    .font(.caption)
+                    .lineLimit(1)
+                Text(sensor.key)
+                    .font(.caption2.monospaced())
+                    .foregroundStyle(.tertiary)
+            }
+            Spacer(minLength: stacksKey ? 4 : 6)
+            Text(sensor.value.degrees)
+                .font(.callout.monospacedDigit())
         }
     }
 }

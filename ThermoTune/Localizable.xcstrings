@@ -772,6 +772,16 @@
         }
       }
     },
+    "Export History" : {
+      "localizations" : {
+        "de" : {
+          "stringUnit" : {
+            "state" : "needs_review",
+            "value" : "Verlauf exportieren"
+          }
+        }
+      }
+    },
     "Export Profiles…" : {
       "localizations" : {
         "de" : {

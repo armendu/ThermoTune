@@ -22,7 +22,7 @@ struct MenuBarLabel: View {
     }
 
     private var fanText: String? {
-        guard let fastest = monitor.fans.map(\.actual).max() else { return nil }
+        guard let fastest = monitor.fastestFanRPM else { return nil }
         if fastest < 1 { return compact ? String(localized: "Off") : String(localized: "Fans off") }
         return compact ? String(format: "%.1fk", fastest / 1000) : "\(Int(fastest).formatted()) RPM"
     }
@@ -150,6 +150,21 @@ struct MenuBarView: View {
 
     var body: some View {
         VStack(alignment: .leading, spacing: 8) {
+            // Shortcuts, rules and the safety net can fail with no window open:
+            // without this, a menu-bar-only user would never see why.
+            if let error = monitor.errorMessage {
+                HStack(alignment: .firstTextBaseline) {
+                    Label(error, systemImage: "exclamationmark.triangle.fill")
+                        .foregroundStyle(.orange)
+                        .fixedSize(horizontal: false, vertical: true)
+                    Spacer(minLength: 0)
+                    Button("Dismiss", systemImage: "xmark.circle.fill") { monitor.errorMessage = nil }
+                        .labelStyle(.iconOnly)
+                        .foregroundStyle(.secondary)
+                }
+                .font(.callout)
+                Divider()
+            }
             row(.cpu)
             row(.gpu)
             ThermalStateBadge(state: monitor.thermalState)
@@ -165,16 +180,9 @@ struct MenuBarView: View {
             Divider()
 
             if monitor.helperState == .ready {
-                Group {
-                    ProfilePicker()
-                    Divider()
-                    Button("Set All Fans to Max") { monitor.setAllMax() }
-                        .disabled(monitor.fans.allSatisfy { monitor.mode(of: $0) == .max })
-                    if !monitor.fansAreSystemControlled {
-                        Button("Hand All Fans to macOS") { monitor.setAllAutomatic() }
-                    }
-                }
-                .disabled(!monitor.canControlFans)
+                // The same items as the Fans menu.
+                FanCommands()
+                Divider()
             }
             Button("Open ThermoTune") {
                 openWindow(id: ThermoTuneApp.mainWindowID)

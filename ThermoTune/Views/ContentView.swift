@@ -16,7 +16,7 @@ struct ContentView: View {
             ScrollView { layout }
         }
         .frame(minWidth: Self.fansMinWidth + Self.sensorsWidth + 60, minHeight: 480)
-        .alert("ThermoTune", isPresented: errorBinding) {
+        .alert("ThermoTune", isPresented: Binding(isPresent: Bindable(monitor).errorMessage)) {
             Button("OK") { monitor.errorMessage = nil }
         } message: {
             Text(monitor.errorMessage ?? "")
@@ -38,11 +38,6 @@ struct ContentView: View {
             }
         }
         .padding(20)
-    }
-
-    private var errorBinding: Binding<Bool> {
-        Binding(get: { monitor.errorMessage != nil },
-                set: { if !$0 { monitor.errorMessage = nil } })
     }
 }
 
@@ -77,7 +72,7 @@ private struct FansPanel: View {
                             .help("Create and edit fan profiles")
                         if monitor.fans.count > 1 {
                             Button("All Max") { monitor.setAllMax() }
-                                .disabled(monitor.fans.allSatisfy { monitor.mode(of: $0) == .max })
+                                .disabled(monitor.allFansAtMax)
                         }
                         Button("All Auto") { monitor.setAllAutomatic() }
                             .disabled(monitor.fansAreSystemControlled)
@@ -179,7 +174,7 @@ private struct FanTile: View {
     @Environment(HardwareMonitor.self) private var monitor
 
     var body: some View {
-        let fastest = monitor.fans.map(\.actual).max() ?? 0
+        let fastest = monitor.fastestFanRPM ?? 0
         let mode = monitor.fansAreSystemControlled ? String(localized: "automatic") : String(localized: "manual")
         Tile(title: String(localized: "Fans"), symbol: "fan",
              value: fastest < 1 ? String(localized: "Off") : Int(fastest).formatted(),

@@ -129,29 +129,15 @@ private struct AllSensorsView: View {
 
 private struct SensorGrid: View {
     let sensors: [TemperatureSensor]
-    @Environment(HardwareMonitor.self) private var monitor
 
     var body: some View {
         LazyVGrid(columns: [GridItem(.adaptive(minimum: 120), spacing: 8)], spacing: 8) {
             ForEach(sensors) { sensor in
-                HStack(spacing: 6) {
-                    TemperatureDot(value: sensor.value)
-                    VStack(alignment: .leading, spacing: 0) {
-                        Text(monitor.name(of: sensor.key))
-                            .font(.caption)
-                            .lineLimit(1)
-                        Text(sensor.key)
-                            .font(.caption2.monospaced())
-                            .foregroundStyle(.tertiary)
-                    }
-                    Spacer(minLength: 4)
-                    Text(sensor.value.degrees)
-                        .font(.callout.monospacedDigit())
-                }
-                .padding(.horizontal, 8)
-                .padding(.vertical, 5)
-                .background(.quaternary.opacity(0.4), in: RoundedRectangle(cornerRadius: 6))
-                .help("SMC key \(sensor.key): \(String(format: "%.1f", sensor.value)) °C")
+                SensorReadingRow(sensor: sensor, stacksKey: true)
+                    .padding(.horizontal, 8)
+                    .padding(.vertical, 5)
+                    .background(.quaternary.opacity(0.4), in: RoundedRectangle(cornerRadius: 6))
+                    .help("SMC key \(sensor.key): \(String(format: "%.1f", sensor.value)) °C")
             }
         }
     }
