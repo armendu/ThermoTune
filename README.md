@@ -61,7 +61,7 @@ no background daemons, no third-party code.
   temperature and with a graph of the last 10 minutes, plus a quick panel for profiles and fan
   actions. ThermoTune keeps running there after you close its window, and can hide its Dock icon
   to run from the menu bar only.
-- **Preferences (⌘,):** launch at login, °C or °F, refresh rate, which temperature the menu bar
+- **Settings (⌘,):** launch at login, °C or °F, refresh rate, which temperature the menu bar
   shows, and what happens to the fans when you quit. The About tab has the version, license
   and links to the source.
 
@@ -127,7 +127,7 @@ paused for every fan: a fan set to Auto meanwhile is held at its minimum speed, 
 until the last one goes back to Auto or you use **All Auto**.
 
 **Your fans are handed back when ThermoTune quits.** That includes being quit from the terminal
-with `kill`. You can turn this off in Preferences if you want a profile to keep running without
+with `kill`. You can turn this off in Settings if you want a profile to keep running without
 the app; it's re-applied the next time ThermoTune starts. If a crash ever leaves a fan in manual
 mode, run:
 

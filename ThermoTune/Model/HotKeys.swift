@@ -65,8 +65,7 @@ final class HotKeys {
     private static let signature: OSType = 0x5454_4b59 // "TTKY"
 
     init() {
-        shortcuts = UserDefaults.standard.data(forKey: PreferenceKey.shortcuts)
-            .flatMap { try? JSONDecoder().decode([String: Shortcut].self, from: $0) } ?? [:]
+        shortcuts = UserDefaults.standard.lenientDictionary(of: Shortcut.self, forKey: PreferenceKey.shortcuts) ?? [:]
     }
 
     func shortcut(for action: ShortcutAction) -> Shortcut? {

@@ -16,7 +16,7 @@ struct ContentView: View {
             ScrollView { layout }
         }
         .frame(minWidth: Self.fansMinWidth + Self.sensorsWidth + 60, minHeight: 480)
-        .alert("ThermoTune", isPresented: errorBinding) {
+        .alert("ThermoTune", isPresented: Binding(isPresent: Bindable(monitor).errorMessage)) {
             Button("OK") { monitor.errorMessage = nil }
         } message: {
             Text(monitor.errorMessage ?? "")
@@ -38,11 +38,6 @@ struct ContentView: View {
             }
         }
         .padding(20)
-    }
-
-    private var errorBinding: Binding<Bool> {
-        Binding(get: { monitor.errorMessage != nil },
-                set: { if !$0 { monitor.errorMessage = nil } })
     }
 }
 
@@ -68,22 +63,22 @@ private struct FansPanel: View {
                 Text("Fans").font(.headline)
                 Spacer()
                 if monitor.helperState == .ready {
+                    // Push buttons, not links: these act on the fans, and macOS
+                    // keeps link styling for going somewhere.
                     Group {
                         ProfilePicker()
                             .fixedSize()
                         SettingsTabButton(title: "Edit…", tab: .profiles)
-                            .buttonStyle(.link)
                             .help("Create and edit fan profiles")
                         if monitor.fans.count > 1 {
                             Button("All Max") { monitor.setAllMax() }
-                                .buttonStyle(.link)
-                                .disabled(monitor.fans.allSatisfy { monitor.mode(of: $0) == .max })
+                                .disabled(monitor.allFansAtMax)
                         }
                         Button("All Auto") { monitor.setAllAutomatic() }
-                            .buttonStyle(.link)
                             .disabled(monitor.fansAreSystemControlled)
                             .help("Hand every fan back to macOS")
                     }
+                    .controlSize(.small)
                     .disabled(!monitor.canControlFans)
                 }
             }
@@ -96,7 +91,7 @@ private struct FansPanel: View {
 
 /// Shown at the top of the Fans panel after the safety net has stepped in.
 private struct SafetyBanner: View {
-    let trip: HardwareMonitor.SafetyTrip
+    let trip: FanController.SafetyTrip
     @Environment(HardwareMonitor.self) private var monitor
 
     var body: some View {
@@ -179,7 +174,7 @@ private struct FanTile: View {
     @Environment(HardwareMonitor.self) private var monitor
 
     var body: some View {
-        let fastest = monitor.fans.map(\.actual).max() ?? 0
+        let fastest = monitor.fastestFanRPM ?? 0
         let mode = monitor.fansAreSystemControlled ? String(localized: "automatic") : String(localized: "manual")
         Tile(title: String(localized: "Fans"), symbol: "fan",
              value: fastest < 1 ? String(localized: "Off") : Int(fastest).formatted(),
@@ -221,6 +216,8 @@ private struct Tile: View {
         .padding(.horizontal, 12)
         .padding(.vertical, 8)
         .background(.quaternary.opacity(0.5), in: RoundedRectangle(cornerRadius: 10))
+        // One VoiceOver element, "CPU, 47, °C, average · hottest 60°C", not four.
+        .accessibilityElement(children: .combine)
     }
 }
 

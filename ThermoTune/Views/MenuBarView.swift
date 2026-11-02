@@ -22,7 +22,7 @@ struct MenuBarLabel: View {
     }
 
     private var fanText: String? {
-        guard let fastest = monitor.fans.map(\.actual).max() else { return nil }
+        guard let fastest = monitor.fastestFanRPM else { return nil }
         if fastest < 1 { return compact ? String(localized: "Off") : String(localized: "Fans off") }
         return compact ? String(format: "%.1fk", fastest / 1000) : "\(Int(fastest).formatted()) RPM"
     }
@@ -150,6 +150,22 @@ struct MenuBarView: View {
 
     var body: some View {
         VStack(alignment: .leading, spacing: 8) {
+            // Shortcuts, rules and the safety net can fail with no window open:
+            // without this, a menu-bar-only user would never see why.
+            if let error = monitor.errorMessage {
+                HStack(alignment: .firstTextBaseline) {
+                    Label(error, systemImage: "exclamationmark.triangle.fill")
+                        .foregroundStyle(.orange)
+                        .fixedSize(horizontal: false, vertical: true)
+                    Spacer(minLength: 0)
+                    Button("Dismiss", systemImage: "xmark.circle.fill") { monitor.errorMessage = nil }
+                        .labelStyle(.iconOnly)
+                        .buttonStyle(.borderless)
+                        .foregroundStyle(.secondary)
+                }
+                .font(.callout)
+                Divider()
+            }
             row(.cpu)
             row(.gpu)
             ThermalStateBadge(state: monitor.thermalState)
@@ -165,27 +181,20 @@ struct MenuBarView: View {
             Divider()
 
             if monitor.helperState == .ready {
-                Group {
-                    ProfilePicker()
-                    Divider()
-                    Button("Set All Fans to Max") { monitor.setAllMax() }
-                        .disabled(monitor.fans.allSatisfy { monitor.mode(of: $0) == .max })
-                    if !monitor.fansAreSystemControlled {
-                        Button("Reset Fans to Automatic") { monitor.setAllAutomatic() }
-                    }
-                }
-                .disabled(!monitor.canControlFans)
+                // The same items as the Fans menu.
+                FanCommands()
+                Divider()
             }
-            Button("Open ThermoTune…") {
+            Button("Open ThermoTune") {
                 openWindow(id: ThermoTuneApp.mainWindowID)
                 NSApp.activate()
             }
-            SettingsLink { Text("Preferences…") }
+            SettingsLink { MenuItemLabel("Settings…", shortcut: "⌘,") }
                 .keyboardShortcut(",")
-            Button("Quit ThermoTune") { NSApp.terminate(nil) }
+            Button { NSApp.terminate(nil) } label: { MenuItemLabel("Quit ThermoTune", shortcut: "⌘Q") }
                 .keyboardShortcut("q")
         }
-        .buttonStyle(.borderless)
+        .buttonStyle(MenuItemButtonStyle())
         .padding(12)
         .frame(width: 260)
     }
@@ -193,14 +202,69 @@ struct MenuBarView: View {
     private func row(_ source: SensorSource) -> some View {
         LabeledContent {
             if let summary = monitor.summary(source) {
-                Text("\(summary.maximum.degrees) max · \(summary.average.degrees) avg")
+                Text("\(summary.average.degrees) avg · \(summary.maximum.degrees) max")
                     .monospacedDigit()
-                    .foregroundStyle(Color.temperature(summary.maximum))
+                    .foregroundStyle(Color.temperature(summary.average))
             } else {
                 Text("–")
             }
         } label: {
             Label(source.title, systemImage: source.symbol)
+        }
+    }
+}
+
+/// An action in the menu bar panel, drawn like the items in the system's own
+/// panels (Wi-Fi, Bluetooth): primary text across the full width, highlighted
+/// under the pointer. `.borderless` drew them grey with no hover, so every
+/// action looked disabled.
+private struct MenuItemButtonStyle: ButtonStyle {
+    func makeBody(configuration: Configuration) -> some View {
+        MenuItem(configuration: configuration)
+    }
+
+    private struct MenuItem: View {
+        let configuration: Configuration
+        @Environment(\.isEnabled) private var isEnabled
+        @State private var isHovering = false
+
+        private var highlight: AnyShapeStyle {
+            guard isEnabled else { return AnyShapeStyle(.clear) }
+            if configuration.isPressed { return AnyShapeStyle(.tertiary) }
+            return isHovering ? AnyShapeStyle(.quaternary) : AnyShapeStyle(.clear)
+        }
+
+        var body: some View {
+            configuration.label
+                .foregroundStyle(isEnabled ? .primary : .tertiary)
+                .frame(maxWidth: .infinity, alignment: .leading)
+                .padding(.horizontal, 8)
+                .padding(.vertical, 4)
+                .background(highlight, in: RoundedRectangle(cornerRadius: 5))
+                .contentShape(Rectangle())
+                // Out into the panel's margin, so the text lines up with the
+                // readings above while the highlight spans the row.
+                .padding(.horizontal, -8)
+                .onHover { isHovering = $0 }
+        }
+    }
+}
+
+/// A menu item's title with its keyboard shortcut on the right, as menus show it.
+private struct MenuItemLabel: View {
+    let title: LocalizedStringKey
+    let shortcut: String
+
+    init(_ title: LocalizedStringKey, shortcut: String) {
+        self.title = title
+        self.shortcut = shortcut
+    }
+
+    var body: some View {
+        HStack {
+            Text(title)
+            Spacer()
+            Text(verbatim: shortcut).foregroundStyle(.secondary)
         }
     }
 }

@@ -46,7 +46,13 @@ struct FanProfile: Codable, Identifiable, Hashable {
     var isPerFan: Bool { !perFan.isEmpty }
 
     func behavior(forFan index: Int) -> FanBehavior {
-        perFan[index] ?? behavior
+        if let own = perFan[index] { return own }
+        // A fan with no entry of its own (the profile came from a Mac with fewer
+        // fans) can't fall back to Automatic while the others are manual: it
+        // would only be held at its minimum. It follows the first fan instead.
+        guard isPerFan, !FanBehavior.perFanKinds.contains(behavior.kind),
+              let first = perFan.min(by: { $0.key < $1.key }) else { return behavior }
+        return first.value
     }
 
     var symbol: String { isPerFan ? "square.split.2x1" : behavior.kind.symbol }
@@ -212,11 +218,7 @@ final class ProfileStore {
 
     init() {
         let defaults = UserDefaults.standard
-        if let data = defaults.data(forKey: PreferenceKey.profiles) {
-            let (saved, isComplete) = Self.decode(data)
-            // Whatever couldn't be read (written by a newer ThermoTune, or damaged)
-            // is kept aside rather than lost the next time the list is saved.
-            if !isComplete { defaults.set(data, forKey: PreferenceKey.profilesBackup) }
+        if let saved = defaults.lenientArray(of: FanProfile.self, forKey: PreferenceKey.profiles) {
             profiles = saved.isEmpty ? FanProfile.defaults : saved
             if saved.isEmpty { save() }
         } else {
@@ -225,14 +227,6 @@ final class ProfileStore {
             save()
         }
         activeProfileID = defaults.string(forKey: PreferenceKey.activeProfileID).flatMap(UUID.init)
-    }
-
-    /// The profiles in saved data, skipping any that can't be read instead of
-    /// dropping them all, and whether every one could be.
-    nonisolated static func decode(_ data: Data) -> (profiles: [FanProfile], isComplete: Bool) {
-        guard let entries = try? JSONDecoder().decode([Lenient<FanProfile>].self, from: data) else { return ([], false) }
-        let profiles = entries.compactMap(\.value)
-        return (profiles, profiles.count == entries.count)
     }
 
     func add() -> FanProfile {
@@ -287,15 +281,6 @@ final class ProfileStore {
         if let data = try? JSONEncoder().encode(profiles) {
             UserDefaults.standard.set(data, forKey: PreferenceKey.profiles)
         }
-    }
-}
-
-/// One element of a list that decodes to `nil` instead of failing the whole list.
-struct Lenient<Value: Decodable>: Decodable {
-    let value: Value?
-
-    init(from decoder: Decoder) throws {
-        value = try? Value(from: decoder)
     }
 }
 

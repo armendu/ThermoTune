@@ -8,9 +8,9 @@ enum PreferenceKey {
     static let showMenuBarExtra = "showMenuBarExtra"
     static let menuBarSource = "menuBarSource"
     static let chartWindowMinutes = "chartWindowMinutes"
+    /// Saved lists that couldn't all be read are kept as they were under
+    /// `<key>Backup`; see `UserDefaults.lenientArray`.
     static let profiles = "profiles"
-    /// Saved profiles that couldn't all be read, kept as they were.
-    static let profilesBackup = "profilesBackup"
     static let activeProfileID = "activeProfileID"
     static let safetyNetEnabled = "safetyNetEnabled"
     static let safetyLimit = "safetyLimit"
@@ -167,7 +167,7 @@ enum SafetyAction: String, CaseIterable, Identifiable {
     /// throttles the Mac as designed. The active profile is switched off.
     case automatic
     /// Every fan to full speed until the reading is 10° under the limit, then
-    /// the profile carries on.
+    /// the profile carries on, or macOS takes over if no profile was running.
     case max
 
     var id: Self { self }

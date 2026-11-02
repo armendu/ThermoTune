@@ -19,7 +19,7 @@ struct SensorsSection: View {
                 Text("Temperatures").font(.headline)
                 Spacer()
                 Button("All Sensors…") { showsAllSensors = true }
-                    .buttonStyle(.link)
+                    .controlSize(.small)
                     .disabled(monitor.sensors.isEmpty)
                     .popover(isPresented: $showsAllSensors, arrowEdge: .trailing) {
                         AllSensorsView()
@@ -65,10 +65,11 @@ private struct GroupRow: View {
                     .contentShape(Rectangle())
                     .padding(-4)
                     .onHover(perform: hover)
-                    .onTapGesture {
-                        isPinned = true
-                        showsBreakdown = true
-                    }
+                    .onTapGesture(perform: pin)
+                    // A tap gesture alone is invisible to VoiceOver.
+                    .accessibilityLabel("\(sensors.count) sensors")
+                    .accessibilityAddTraits(.isButton)
+                    .accessibilityAction { pin() }
                     .popover(isPresented: $showsBreakdown, arrowEdge: .bottom) {
                         SensorBreakdown(title: title, sensors: sensors)
                     }
@@ -76,15 +77,22 @@ private struct GroupRow: View {
                         if !showsBreakdown { isPinned = false }
                     }
                 Spacer()
-                Text("avg \(summary.average.degrees)")
+                // The average leads, as on the tiles above: one hot sensor in a
+                // group of 140 says little about the group.
+                Text("max \(summary.maximum.degrees)")
                     .foregroundStyle(.secondary)
-                Text(summary.maximum.degrees)
+                Text(summary.average.degrees)
                     .fontWeight(.semibold)
-                    .foregroundStyle(Color.temperature(summary.maximum))
+                    .foregroundStyle(Color.temperature(summary.average))
                     .frame(width: 48, alignment: .trailing)
             }
             .monospacedDigit()
         }
+    }
+
+    private func pin() {
+        isPinned = true
+        showsBreakdown = true
     }
 
     private func hover(_ hovering: Bool) {
@@ -123,29 +131,15 @@ private struct AllSensorsView: View {
 
 private struct SensorGrid: View {
     let sensors: [TemperatureSensor]
-    @Environment(HardwareMonitor.self) private var monitor
 
     var body: some View {
         LazyVGrid(columns: [GridItem(.adaptive(minimum: 120), spacing: 8)], spacing: 8) {
             ForEach(sensors) { sensor in
-                HStack(spacing: 6) {
-                    TemperatureDot(value: sensor.value)
-                    VStack(alignment: .leading, spacing: 0) {
-                        Text(monitor.name(of: sensor.key))
-                            .font(.caption)
-                            .lineLimit(1)
-                        Text(sensor.key)
-                            .font(.caption2.monospaced())
-                            .foregroundStyle(.tertiary)
-                    }
-                    Spacer(minLength: 4)
-                    Text(sensor.value.degrees)
-                        .font(.callout.monospacedDigit())
-                }
-                .padding(.horizontal, 8)
-                .padding(.vertical, 5)
-                .background(.quaternary.opacity(0.4), in: RoundedRectangle(cornerRadius: 6))
-                .help("SMC key \(sensor.key): \(String(format: "%.1f", sensor.value)) °C")
+                SensorReadingRow(sensor: sensor, stacksKey: true)
+                    .padding(.horizontal, 8)
+                    .padding(.vertical, 5)
+                    .background(.quaternary.opacity(0.4), in: RoundedRectangle(cornerRadius: 6))
+                    .help("SMC key \(sensor.key): \(String(format: "%.1f", sensor.value)) °C")
             }
         }
     }

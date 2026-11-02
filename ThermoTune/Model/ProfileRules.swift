@@ -63,8 +63,7 @@ final class ProfileRules {
     init(defaults: UserDefaults = .standard) {
         self.defaults = defaults
         isEnabled = defaults.bool(forKey: PreferenceKey.rulesEnabled)
-        rules = defaults.data(forKey: PreferenceKey.rules)
-            .flatMap { try? JSONDecoder().decode([ProfileRule].self, from: $0) } ?? []
+        rules = defaults.lenientArray(of: ProfileRule.self, forKey: PreferenceKey.rules) ?? []
         fallbackProfileID = defaults.string(forKey: PreferenceKey.rulesFallbackProfileID).flatMap(UUID.init)
     }
 

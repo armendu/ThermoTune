@@ -8,6 +8,7 @@ enum AppInfo {
     static let repositoryURL = URL(string: "https://github.com/armendu/ThermoTune")!
     static let licenseName = "MIT License"
     static let licenseURL = URL(string: "https://github.com/armendu/ThermoTune/blob/main/LICENSE")!
+    static let helpURL = URL(string: "https://github.com/armendu/ThermoTune#readme")!
     static let issuesURL = URL(string: "https://github.com/armendu/ThermoTune/issues/new/choose")!
     static let securityURL = URL(string: "https://github.com/armendu/ThermoTune/blob/main/SECURITY.md")!
 
