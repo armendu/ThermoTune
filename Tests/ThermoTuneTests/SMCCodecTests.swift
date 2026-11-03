@@ -74,6 +74,13 @@ struct FanInfoTests {
         #expect(fan(target: 6800, manual: true).isIn(.max))
     }
 
+    @Test func fanModeKeyHasTwoSpellings() {
+        #expect(SMC.fanModeKey(1, exists: { $0 == "F1Md" }) == "F1Md")
+        #expect(SMC.fanModeKey(1, exists: { $0 == "F1md" }) == "F1md")
+        #expect(SMC.fanModeKey(1, exists: { _ in true }) == "F1Md")
+        #expect(SMC.fanModeKey(1, exists: { $0 == "FS! " }) == nil)
+    }
+
     /// `Ftst = 1` with this fan automatic: macOS is not managing it.
     @Test func unlockedFanIsNotSystemControlled() {
         #expect(fan(target: 0, manual: false, unlocked: true).isSystemControlled == false)

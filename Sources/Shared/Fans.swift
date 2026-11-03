@@ -17,7 +17,8 @@ struct FanInfo: Identifiable, Equatable, Sendable {
 }
 
 extension SMC {
-    // Apple silicon uses per-fan `F<n>Md` modes, unlocked by `Ftst`; Intel uses the `FS! ` bitmask.
+    // Apple silicon uses per-fan mode keys, unlocked by `Ftst` where the Mac has it (not on
+    // M5); Intel uses the `FS! ` bitmask.
     private static let manualMode: Double = 1
     private static let autoMode: Double = 0
 
@@ -50,10 +51,15 @@ extension SMC {
     }
 
     private func hasManualMode(_ index: Int) -> Bool {
-        if let mode = try? read("F\(index)Md") {
+        if let key = Self.fanModeKey(index, exists: hasKey), let mode = try? read(key) {
             return mode == Self.manualMode
         }
         return manualModeMask & (1 << index) != 0
+    }
+
+    /// `F<n>Md`, or `F<n>md` on some M5 Macs; `nil` on Intel, which has `FS! ` instead.
+    static func fanModeKey(_ index: Int, exists: (String) -> Bool) -> String? {
+        ["F\(index)Md", "F\(index)md"].first(where: exists)
     }
 
     // MARK: Writes (require root)
@@ -143,8 +149,7 @@ extension SMC {
     }
 
     private func setMode(_ index: Int, manual: Bool) throws {
-        let key = "F\(index)Md"
-        guard hasKey(key) else {
+        guard let key = Self.fanModeKey(index, exists: hasKey) else {
             let mask = manualModeMask
             try write("FS! ", Double(manual ? mask | (1 << index) : mask & ~(1 << index)))
             return
