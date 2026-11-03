@@ -6,8 +6,8 @@ import Testing
 /// crashes or prints garbage when that string is shown.
 struct LocalizationTests {
     private static let catalogURL = URL(fileURLWithPath: #filePath)
-        .deletingLastPathComponent().deletingLastPathComponent()
-        .appendingPathComponent("ThermoTune/Localizable.xcstrings")
+        .deletingLastPathComponent().deletingLastPathComponent().deletingLastPathComponent()
+        .appendingPathComponent("Sources/ThermoTune/Resources/Localizable.xcstrings")
 
     private struct Catalog: Decodable {
         struct Entry: Decodable {

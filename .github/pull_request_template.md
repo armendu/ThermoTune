@@ -14,7 +14,7 @@
 - [ ] Fan changes behave as expected on that Mac
 - [ ] Ran `make fans-auto` afterwards, and `make helper-status` shows `manual=false unlocked=false` for every fan
 
-### If this touches `Helper/` or `Shared/`
+### If this touches `Sources/ThermoTuneHelper/` or `Sources/Shared/`
 
 - [ ] The helper still only accepts its documented commands and writes only fan keys
 - [ ] I understand users will be asked for their password again to update the helper

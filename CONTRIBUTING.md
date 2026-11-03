@@ -48,8 +48,9 @@ type(scope): summary in the imperative, lower case, no full stop
 ```
 
 - **Types:** feat, fix, docs, test, build, ci, refactor, perf, chore, revert
-- **Scopes:** `smc` (Shared/), `helper` (Helper/ and the installer), `app` (ThermoTune/Model),
-  `ui` (ThermoTune/Views), `build`, `ci`. Leave the scope off if a change spans everything.
+- **Scopes:** `smc` (Sources/Shared/), `helper` (Sources/ThermoTuneHelper/ and the installer),
+  `app` (Sources/ThermoTune/Model), `ui` (Sources/ThermoTune/Views), `build`, `ci`. Leave the
+  scope off if a change spans everything.
 - Keep the subject under about 72 characters.
 - Use the body to explain *why*, when that isn't obvious from the diff.
 
@@ -79,19 +80,19 @@ Mac's temperature.
 
 The helper runs as root on users' machines, so changes there get extra scrutiny:
 
-- `Shared/` is compiled into the helper. Keep it to Foundation and IOKit: no UI frameworks and no
+- `Sources/Shared/` is compiled into the helper. Keep it to Foundation and IOKit: no UI frameworks and no
   third-party dependencies.
 - The helper only accepts `status`, `set`, `auto`, `max-all` and `auto-all`, validates every
   argument, and writes only fan keys. Adding a command, a key it may write, or loosening an
   argument check is a security change; explain why in the pull request.
-- Any change to `Shared/` or `Helper/` changes the helper binary, so every user will be asked
+- Any change to `Sources/Shared/` or `Sources/ThermoTuneHelper/` changes the helper binary, so every user will be asked
   for their password again after updating. Mention it in the pull request.
 
 ## Translations
 
 ThermoTune ships in English and German. The German was written without a native speaker's
 review, so corrections are very welcome, and so are new languages: open
-`ThermoTune/Localizable.xcstrings` in Xcode, add a language, and fill in the column. CLAUDE.md
+`Sources/ThermoTune/Resources/Localizable.xcstrings` in Xcode, add a language, and fill in the column. CLAUDE.md
 explains how to keep the catalog in step with the code.
 
 ## Code style
