@@ -32,10 +32,8 @@ struct FanProfile: Codable, Identifiable, Hashable {
 
     var id = UUID()
     var name: String
-    /// What every fan does, unless `perFan` has an entry for it.
     var behavior: FanBehavior
-    /// Per-fan overrides, keyed by fan index. Empty means every fan follows
-    /// `behavior`. Never `.automatic`: see `FanBehavior.perFanKinds`.
+    /// Keyed by fan index. Never `.automatic`: see `FanBehavior.perFanKinds`.
     var perFan: [Int: FanBehavior] = [:]
 
     init(name: String, behavior: FanBehavior) {
@@ -47,9 +45,8 @@ struct FanProfile: Codable, Identifiable, Hashable {
 
     func behavior(forFan index: Int) -> FanBehavior {
         if let own = perFan[index] { return own }
-        // A fan with no entry of its own (the profile came from a Mac with fewer
-        // fans) can't fall back to Automatic while the others are manual: it
-        // would only be held at its minimum. It follows the first fan instead.
+        // A fan without its own entry (a profile from a Mac with fewer fans) follows
+        // the first fan: an Automatic fallback would only be held at its minimum.
         guard isPerFan, !FanBehavior.perFanKinds.contains(behavior.kind),
               let first = perFan.min(by: { $0.key < $1.key }) else { return behavior }
         return first.value
@@ -66,9 +63,8 @@ struct FanProfile: Codable, Identifiable, Hashable {
         FanProfile(name: String(localized: "Full Speed"), behavior: FanBehavior(kind: .max)),
     ]
 
-    // Profiles saved before per-fan settings and multi-point curves kept the
-    // behaviour's fields at the top level, with a two-point curve as
-    // `lowTemperature`/`highTemperature`. They are read into `behavior`.
+    // Older profiles kept these fields at the top level, with a two-point curve as
+    // `lowTemperature`/`highTemperature`.
     private enum CodingKeys: String, CodingKey {
         case id, name, behavior, perFan
         case kind, fixedPercent, source, lowTemperature, highTemperature
@@ -90,11 +86,9 @@ struct FanProfile: Codable, Identifiable, Hashable {
                 curve: [.init(low, 0), .init(max(high, low + 1), 100)]
             )
         }
-        // JSON object keys are strings, so the fan index is stored as one. "1"
-        // and "01" are the same fan, so duplicates keep the first rather than trap.
+        // JSON keys are strings, and "1" and "01" are the same fan: keep the first.
         let perFan = try container.decodeIfPresent([String: FanBehavior].self, forKey: .perFan) ?? [:]
         self.perFan = Dictionary(perFan.compactMap { key, value in
-            // An automatic fan among manual ones would only be held at its minimum.
             guard let index = Int(key), index >= 0, FanBehavior.perFanKinds.contains(value.kind) else { return nil }
             return (index, value)
         }, uniquingKeysWith: { first, _ in first })
@@ -112,8 +106,7 @@ struct FanProfile: Codable, Identifiable, Hashable {
     }
 }
 
-/// A point on a temperature curve: at `temperature` (°C) the fan runs at
-/// `percent` of its range between minimum and maximum speed.
+/// At `temperature` (°C) the fan runs at `percent` of its min…max range.
 struct CurvePoint: Codable, Hashable {
     var temperature: Double
     var percent: Double
@@ -124,24 +117,19 @@ struct CurvePoint: Codable, Hashable {
     }
 }
 
-/// What one fan, or every fan, does under a profile.
 struct FanBehavior: Codable, Hashable {
     var kind: FanProfile.Kind
-    /// Fixed speed as a percentage of the fan's min…max range.
     var fixedPercent: Double = 50
     var source: SensorSource = .cpu
-    /// Sorted by temperature, at least two points. Below the first point the fan
-    /// runs at the first point's speed, above the last at the last point's.
+    /// Sorted, at least two points. Outside them the fan holds the nearest point's speed.
     var curve: [CurvePoint] = FanBehavior.newCurve
 
     static let newCurve: [CurvePoint] = [.init(50, 0), .init(70, 40), .init(90, 100)]
 
-    /// Kinds a single fan can have when fans differ. Automatic isn't one: on
-    /// Apple silicon, one manual fan suspends thermal control for all of them,
-    /// so a fan left "automatic" would just be held at its minimum.
+    /// Automatic isn't one: one manual fan suspends thermal control for all of
+    /// them, so an "automatic" fan would just be held at its minimum.
     static let perFanKinds: [FanProfile.Kind] = [.fixed, .curve, .max]
 
-    /// Fraction (0…1) of the fan's range asked for at a temperature.
     func speedFraction(at temperature: Double?) -> Double? {
         switch kind {
         case .automatic: return nil
@@ -174,9 +162,7 @@ extension FanBehavior {
         case kind, fixedPercent, source, curve
     }
 
-    // Saved and imported profiles are checked as they are read: a hand-edited or
-    // damaged file must not reach the fan engine with an unsorted curve or a
-    // speed outside 0…100%.
+    // Checked as they're read, so a hand-edited or damaged file can't reach the fans.
     init(from decoder: Decoder) throws {
         let container = try decoder.container(keyedBy: CodingKeys.self)
         let fixedPercent = try container.decodeIfPresent(Double.self, forKey: .fixedPercent) ?? 50
@@ -186,8 +172,7 @@ extension FanBehavior {
                   curve: Self.validCurve(try container.decodeIfPresent([CurvePoint].self, forKey: .curve) ?? Self.newCurve))
     }
 
-    /// Sorted by temperature, points at least a degree apart, percentages within
-    /// 0…100, and at least two points; anything less is replaced by `newCurve`.
+    /// Sorted, a degree apart, within 0…100%, and at least two points, or `newCurve`.
     static func validCurve(_ points: [CurvePoint]) -> [CurvePoint] {
         var curve: [CurvePoint] = []
         // Filtered before sorting: NaN compares false both ways and scrambles the order.
@@ -200,7 +185,6 @@ extension FanBehavior {
     }
 }
 
-/// Persists profiles and which one is active in UserDefaults.
 @MainActor
 @Observable
 final class ProfileStore {
@@ -248,8 +232,7 @@ final class ProfileStore {
         if activeProfileID == id { activeProfileID = nil }
     }
 
-    /// Adds profiles from an exported file. They get new IDs, so importing the
-    /// same file twice, or one exported from this Mac, never replaces a profile.
+    /// Imports get new IDs, so importing a file twice never replaces a profile.
     @discardableResult
     func importProfiles(_ imported: [FanProfile]) -> [FanProfile] {
         let added = imported.map { profile in
@@ -284,10 +267,9 @@ final class ProfileStore {
     }
 }
 
-/// The file format for exported profiles. `version` is bumped whenever a field
-/// changes meaning, so a later ThermoTune can still read an older file.
+/// Exported profiles. `version` changes whenever a field changes meaning.
 struct ProfileArchive: Codable {
-    /// 2: per-fan settings and multi-point curves. Version 1 files still import.
+    /// 2: per-fan settings and multi-point curves. Version 1 still imports.
     static let currentVersion = 2
 
     var app = AppInfo.name

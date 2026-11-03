@@ -1,12 +1,8 @@
 import Foundation
 
-// ThermoTune helper.
-//
-// The app installs this binary setuid-root in /Library/PrivilegedHelperTools so
-// fan speeds can be changed without asking for a password every time. Any local
-// user can run it, so the commands in `usage` are the security boundary: each
-// argument is validated, rpm is clamped to the fan's own range, and only fan
-// keys are ever written.
+// Installed setuid root so fan changes don't ask for a password each time. Any
+// local user can run it, so its commands are the security boundary: arguments
+// validated, rpm clamped to the fan's own range, only fan keys written.
 
 func fail(_ message: String, code: Int32 = 1) -> Never {
     FileHandle.standardError.write(Data((message + "\n").utf8))
@@ -16,7 +12,7 @@ func fail(_ message: String, code: Int32 = 1) -> Never {
 let usage = "usage: ThermoTuneHelper status | set <fan> <rpm> | max-all | auto <fan> | auto-all"
 let args = Array(CommandLine.arguments.dropFirst())
 
-// Promote the real uid as well so the SMC user client sees a root task.
+// The real uid too, so the SMC user client sees a root task.
 if geteuid() == 0 { _ = setuid(0) }
 
 do {

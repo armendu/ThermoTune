@@ -21,7 +21,6 @@ struct FanBehaviorTests {
         #expect(curve.speedFraction(at: 70) == 0.4)
         #expect(try #require(curve.speedFraction(at: 80)).isApproximately(0.7))
         #expect(curve.speedFraction(at: 120) == 1)
-        // A curve follows a temperature; without one there is no speed.
         #expect(curve.speedFraction(at: nil) == nil)
     }
 
@@ -77,8 +76,7 @@ struct FanProfileCodingTests {
         #expect(decoded.behavior(forFan: 5) == profile.behavior)
     }
 
-    /// One fan automatic while the others are manual would sit at its minimum,
-    /// so a file asking for it loses that entry instead.
+    /// One fan automatic among manual ones would sit at its minimum, so the entry is dropped.
     @Test func perFanAutomaticIsDropped() throws {
         let profile = try decode("""
             {"id": "6F2C3D4E-0000-4000-8000-000000000003", "name": "Odd", "behavior": {"kind": "curve"},
@@ -87,7 +85,7 @@ struct FanProfileCodingTests {
         #expect(profile.perFan.keys.sorted() == [0])
     }
 
-    /// "1" and "01" are the same fan. `Dictionary(uniqueKeysWithValues:)` trapped on that.
+    /// "1" and "01" are the same fan; `Dictionary(uniqueKeysWithValues:)` trapped on that.
     @Test func duplicateFanIndicesDontCrash() throws {
         let profile = try decode("""
             {"id": "6F2C3D4E-0000-4000-8000-000000000004", "name": "Dup", "behavior": {"kind": "curve"},
@@ -117,8 +115,7 @@ struct FanProfileCodingTests {
         #expect(Lenient<FanProfile>.array(from: try JSONEncoder().encode([good])).isComplete)
     }
 
-    /// What couldn't be read is kept under `<key>Backup`, since the next save
-    /// writes only what was.
+    /// The next save writes only what was read, so the rest is kept under `<key>Backup`.
     @Test func unreadableEntriesAreBackedUp() throws {
         let defaults = UserDefaults(suiteName: "ThermoTuneTests.\(UUID().uuidString)")!
         let data = Data(#"{"allMax": {"keyCode": 1, "modifiers": 0, "key": "s"}, "future": {"chord": true}}"#.utf8)
@@ -129,8 +126,7 @@ struct FanProfileCodingTests {
         #expect(defaults.lenientArray(of: ProfileRule.self, forKey: "nothing saved") == nil)
     }
 
-    /// A fan without its own entry follows the first fan rather than falling back
-    /// to Automatic, which among manual fans only holds it at its minimum.
+    /// It follows the first fan rather than an Automatic fallback held at its minimum.
     @Test func perFanProfileNeverLeavesAFanAutomatic() {
         var profile = FanProfile(name: "Two fans", behavior: FanBehavior(kind: .automatic))
         profile.perFan = [1: FanBehavior(kind: .fixed, fixedPercent: 30), 0: FanBehavior(kind: .max)]

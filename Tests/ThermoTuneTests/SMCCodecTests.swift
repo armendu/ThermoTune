@@ -2,9 +2,7 @@ import Foundation
 import Testing
 @testable import ThermoTune
 
-/// `SMC.decode` and `SMC.encode` for every type the app reads or writes. Byte
-/// order differs by type, and a wrong conversion compiles and runs: these are
-/// the cheapest place to catch either.
+/// Byte order differs by type, and a wrong conversion compiles and runs.
 struct SMCCodecTests {
     @Test func floatIsLittleEndian() {
         let bits = Float(72.5).bitPattern
@@ -27,8 +25,7 @@ struct SMCCodecTests {
         #expect(SMC.decode([0x01, 0x80], type: "fp88") == 1.5)
     }
 
-    /// `#KEY` on the development machine. `.map(Double.init)` once decoded this
-    /// as 1.2e-320, through `Double(bitPattern:)`, and key enumeration found nothing.
+    /// `#KEY` here. `.map(Double.init)` once decoded this as 1.2e-320.
     @Test func integersAreValuesNotBitPatterns() {
         #expect(SMC.decode([0x00, 0x00, 0x09, 0x76], type: "ui32") == 2422)
         #expect(SMC.decode([0x01, 0x02], type: "ui16") == 258)
@@ -70,8 +67,7 @@ struct FanInfoTests {
         #expect(fan(target: 6800, manual: true).mode == .max)
     }
 
-    /// A manual speed at the top of the range reads back as Max. It must still
-    /// count as the manual mode that was asked for, or it stays pending.
+    /// A manual speed at the top of the range reads back as Max, and must still count as manual.
     @Test func manualAtFullSpeedCountsAsManual() {
         #expect(fan(target: 6800, manual: true).isIn(.manual))
         #expect(!fan(target: 3000, manual: false).isIn(.manual))

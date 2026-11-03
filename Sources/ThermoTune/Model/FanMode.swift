@@ -17,8 +17,7 @@ enum FanMode: String, CaseIterable, Identifiable {
 }
 
 extension FanInfo {
-    /// `name`, translated. `FanInfo` lives in Shared/, which the helper also
-    /// builds, so localisation stays on the app side.
+    /// Localised here, not in Shared/, which the helper also builds.
     var title: String { String(localized: "Fan \(id + 1)") }
 
     var mode: FanMode {
@@ -26,14 +25,12 @@ extension FanInfo {
         return target >= maximum - 1 ? .max : .manual
     }
 
-    /// Whether the fan reads back in a requested mode. A manual speed at the top
-    /// of the range reads back as Max, which still counts as manual.
+    /// A manual speed at the top of the range reads back as Max, and still counts as manual.
     func isIn(_ requested: FanMode) -> Bool {
         requested == .manual ? isManual : mode == requested
     }
 
-    /// The same fan with a NaN or infinite reading as 0. Every RPM label converts
-    /// to `Int`, which traps on those, and a crash skips handing the fans back.
+    /// `Int(_:)` traps on NaN or infinity, and a crash skips handing the fans back.
     var withFiniteReadings: FanInfo {
         var fan = self
         for keyPath in [\FanInfo.actual, \.minimum, \.maximum, \.target] where !fan[keyPath: keyPath].isFinite {

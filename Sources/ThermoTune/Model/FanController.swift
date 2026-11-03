@@ -1,27 +1,21 @@
 import Foundation
 
-/// Decides what the safety net and the active profile do with the fans, from
-/// one refresh's readings. It calls nothing and holds no references, so the
-/// tests can take it through a trip, a profile ending or a helper error;
-/// `HardwareMonitor` gathers the input and carries out the decision.
+/// What the safety net and the active profile do with the fans, decided from one
+/// refresh's readings. Pure, so it can be tested; `HardwareMonitor` acts on it.
 struct FanController {
-    /// For the `.max` action: back to the profile once the hottest reading is
-    /// this far under the limit.
+    /// A Max trip ends once the hottest reading is this far under the limit.
     static let safetyClearMargin: Double = 10
-    /// The limit even with the safety net off, and the highest it can be set to.
+    /// The limit with the safety net off, and the highest it can be set to.
     static let backstopTemperature: Double = 105
     static let backstopDelay: TimeInterval = 10
 
-    /// A trip of the safety net, shown in the main window until dismissed.
     struct SafetyTrip: Equatable {
         let date: Date
         let temperature: Double
         let action: SafetyAction
     }
 
-    /// The safety net's settings as they apply. Switched off, it still has a
-    /// fixed backstop: nothing should hold a laptop's fans down at a
-    /// temperature where it is about to throttle.
+    /// Switched off, the safety net still applies the backstop.
     struct Safety: Equatable {
         let limit: Double
         let delay: TimeInterval
@@ -43,17 +37,14 @@ struct FanController {
 
     struct Input {
         var fans: [FanInfo]
-        /// The hottest reading of every source that has one.
         var temperatures: [SensorSource: Double]
         var profile: FanProfile?
         var safety: Safety
         var now: Date
-        /// The helper is installed and current, and this copy may drive fans.
         var helperIsReady = true
         var isRemovingHelper = false
         var isDiscoveringSensors = false
-        /// No helper call is running, and none is waiting for the SMC to report
-        /// the mode it asked for.
+        /// No helper call running, and no requested mode still waiting to read back.
         var isIdle = true
     }
 
@@ -65,43 +56,33 @@ struct FanController {
 
     struct Decision: Equatable {
         var commands: [Command] = []
-        /// The safety net tripped: show it, and post the alert.
         var trip: SafetyTrip?
-        /// Switch the active profile off. The commands say what the fans do instead.
         var endsProfile = false
     }
 
-    /// A Fixed, Curve or Max profile is driving the fans. If it stops other than
-    /// by the user taking a fan over (None, deleted, a helper error), the fans go
-    /// back to macOS instead of staying at the profile's last speed.
+    /// Set while a profile drives the fans. Set with no profile, it makes the next
+    /// refresh hand them back: whenever ThermoTune stops driving them, macOS gets them.
     private(set) var profileHoldsFans = false
-    /// The `.max` safety action is holding every fan at full speed.
+    /// A Max trip is holding every fan at full speed.
     private(set) var isOverheating = false
     private(set) var overLimitSince: Date?
     private(set) var smoothing: [Int: FanSmoothing] = [:]
-    /// A Max trip's `max-all` failed and the fans are owed a hand-back. The
-    /// safety net waits for it: with no delay, it would otherwise trip again
-    /// first and retry the failing call on every refresh.
+    /// A failed Max trip still owes a hand-back. Without it, a zero-delay safety
+    /// net would trip again first and retry the failing call every refresh.
     private var handBackDue = false
 
-    /// One refresh: the safety net first, and the profile only if the safety
-    /// net isn't acting, so the profile can't undo it. Even with no readings: a
-    /// profile that has lost its sensors must let go of the fans rather than
-    /// hold its last speed.
+    /// The safety net runs first so the profile can't undo it, and runs even with
+    /// no readings, so a profile that lost its sensors lets go of the fans.
     mutating func refresh(_ input: Input) -> Decision {
         checkSafetyNet(input) ?? Decision(commands: applyProfile(input))
     }
 
     // MARK: Safety net
 
-    /// Manual speeds and Fixed or Curve profiles stay where they are however hot
-    /// the Mac gets. Once the hottest reading has stayed at the limit for the
-    /// chosen time while ThermoTune holds the fans, this takes them off it.
-    /// Returns `nil` when it isn't acting this refresh.
+    /// `nil` when the safety net isn't acting this refresh.
     private mutating func checkSafetyNet(_ input: Input) -> Decision? {
-        // No helper calls can go out during an uninstall. A trip holds as it is
-        // meanwhile: clearing it would let the profile slow the fans, however hot
-        // the Mac still is.
+        // Nothing can be sent during an uninstall; clearing a trip then would let
+        // the profile slow the fans afterwards, however hot the Mac still is.
         if input.isRemovingHelper { return isOverheating ? Decision() : nil }
         let fans = input.fans
         guard input.helperIsReady, !fans.isEmpty, let hottest = input.temperatures[.hottest] else {
@@ -114,9 +95,7 @@ struct FanController {
         if isOverheating {
             if hottest <= safety.limit - Self.safetyClearMargin {
                 isOverheating = false
-                // A profile carries on from here. Manual speeds aren't put back:
-                // with nothing in charge, the fans would stay at full speed for
-                // good, so macOS gets them (`applyProfile` lets go).
+                // A profile carries on. Manual speeds aren't restored: macOS gets the fans.
                 if input.profile == nil { profileHoldsFans = true }
                 return nil
             }
@@ -131,8 +110,7 @@ struct FanController {
         }
         let since = overLimitSince ?? input.now
         overLimitSince = since
-        // Fans already all at full speed can't cool any harder, and handing them
-        // back would let macOS slow them down.
+        // Fans all at full speed can't cool harder, and handing them back would let them slow.
         guard input.now.timeIntervalSince(since) >= safety.delay, input.isIdle,
               fans.contains(where: { $0.mode != .max }) else { return nil }
 
@@ -144,8 +122,7 @@ struct FanController {
             return Decision(commands: [.autoAll], trip: trip, endsProfile: true)
         case .max:
             isOverheating = true
-            // So the profile ramps down from full speed when the trip clears,
-            // instead of jumping back to where its ramp was before.
+            // The profile ramps down from full speed afterwards, not from its old ramp.
             smoothing = [:]
             return Decision(commands: [.maxAll], trip: trip)
         }
@@ -153,14 +130,10 @@ struct FanController {
 
     // MARK: Profiles
 
-    /// Brings the fans in line with the active profile. Runs after every refresh
-    /// so curves follow temperature and the profile is re-applied if macOS takes
-    /// control back.
     mutating func applyProfile(_ input: Input) -> [Command] {
         let fans = input.fans
         guard input.helperIsReady, !input.isRemovingHelper, !input.isDiscoveringSensors,
               input.isIdle, !fans.isEmpty else { return [] }
-        // From here the fans are either handed back or driven by a profile.
         handBackDue = false
         let handBack: [Command] = fans.allSatisfy(\.isSystemControlled) ? [] : [.autoAll]
         guard let profile = input.profile else {
@@ -182,23 +155,18 @@ struct FanController {
             return fans.contains(where: { $0.mode != .max }) ? [.maxAll] : []
         }
 
-        // Fixed and curve fans, possibly mixed with Max ones. With no temperature
-        // at all, nothing would notice the Mac overheating: macOS gets the fans
-        // until there is a reading again.
+        // With no temperature at all nothing would notice overheating, so macOS gets the fans.
         guard let hottest = input.temperatures[.hottest] else {
             smoothing = [:]
             return handBack
         }
         var commands: [Command] = []
         for (fan, behavior) in zip(fans, behaviors) {
-            // GPU sensors can all drop out while it is powered down, and a chosen
-            // sensor can stop reading. Following the hottest reading meanwhile
-            // errs towards more cooling, and avoids a ~10 second hand-over to
-            // macOS and back each time.
+            // A source that stops reading (a powered-down GPU) follows the hottest
+            // reading: more cooling, and no ~10 s hand-over to macOS and back.
             let temperature = input.temperatures[behavior.source] ?? hottest
             guard let rpm = smoothedRPM(for: fan, behavior: behavior, temperature: temperature, now: input.now) else { continue }
-            // Skip small changes so a curve doesn't call the helper every tick,
-            // but always land exactly on where the ramp ends.
+            // Small changes are skipped, except the ramp's last step.
             if !fan.isManual || abs(fan.target - rpm) >= 100
                 || (rpm == smoothing[fan.id]?.goal && abs(fan.target - rpm) >= 1) {
                 commands.append(.set(fan: fan.id, rpm: rpm))
@@ -216,8 +184,7 @@ struct FanController {
 
     // MARK: Events
 
-    /// The user is setting the fans themselves, so the profile ends without
-    /// handing them back.
+    /// The user sets the fans themselves: the profile ends without handing them back.
     mutating func takeOver() {
         smoothing = [:]
         profileHoldsFans = false
@@ -225,10 +192,7 @@ struct FanController {
         handBackDue = false
     }
 
-    /// A helper call failed, and the profile is switched off. With
-    /// `profileHoldsFans` set, the next refresh hands the fans back to macOS.
-    /// That includes a Max safety trip whose `max-all` failed: retrying it every
-    /// refresh would only repeat the error.
+    /// A failed Max trip hands the fans back on the next refresh rather than retrying.
     mutating func helperFailed() {
         guard isOverheating else { return }
         isOverheating = false

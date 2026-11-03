@@ -75,8 +75,7 @@ struct FanRow: View {
         .onChange(of: fan.target) { syncTarget() }
     }
 
-    /// Current speed with the fan's ceiling, so a running fan always shows how
-    /// far it could go: "2,321 / 6,800 RPM", or "Off · max 6,800 RPM".
+    /// "2,321 / 6,800 RPM", or "Off · max 6,800 RPM".
     private var speedText: Text {
         let maximum = Int(fan.maximum).formatted()
         if fan.actual < 1 {

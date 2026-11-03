@@ -68,8 +68,7 @@ struct FanControllerTests {
         #expect(controller.refresh(input(fans(.auto), hottest: 100, at: 60)) == .init())
     }
 
-    /// Fans at full speed can't cool any harder, and handing them back would let
-    /// macOS slow them down.
+    /// Fans at full speed can't cool harder, and handing them back would let them slow.
     @Test func neverTripsWhenEveryFanIsAlreadyAtMax() {
         var controller = FanController()
         _ = controller.refresh(input(fans(.max), hottest: 100, at: 0))
@@ -100,24 +99,22 @@ struct FanControllerTests {
         #expect(!trip.endsProfile)
         #expect(controller.isOverheating)
 
-        // Still hot: nothing more to send, and the curve doesn't get a say.
+        // Still hot: nothing to send, and the curve doesn't get a say.
         #expect(controller.refresh(input(fans(.max), hottest: 85, profile: balanced, safety: fullSpeed, at: 12)) == .init())
         // macOS took a fan back meanwhile: full speed again.
         #expect(controller.refresh(input(fans(.manual(4000)), hottest: 85, profile: balanced, safety: fullSpeed, at: 13))
                 .commands == [.maxAll])
 
-        // 80° is 10 under: the curve takes over again, ramping down from full speed.
+        // 80° is 10 under: the curve takes over again.
         let after = controller.refresh(input(fans(.max), hottest: 80, profile: balanced, safety: fullSpeed, at: 14))
         #expect(!controller.isOverheating)
         #expect(after.trip == nil)
-        // The ramp starts from full speed, where the fans already are.
         #expect(after.commands.isEmpty)
         let ramp = controller.refresh(input(fans(.max), hottest: 80, profile: balanced, safety: fullSpeed, at: 20))
         #expect(ramp.commands == [.set(fan: 0, rpm: 5100), .set(fan: 1, rpm: 5100)])
     }
 
-    /// Manual speeds aren't put back after a full-speed trip: with nothing in
-    /// charge, the fans would stay at full speed for good.
+    /// Manual speeds aren't restored after a full-speed trip: macOS gets the fans.
     @Test func maxTripOnManualSpeedsEndsByHandingTheFansBack() {
         var controller = FanController()
         _ = controller.refresh(input(fans(.manual(3000)), hottest: 95, safety: fullSpeed, at: 0))
@@ -142,8 +139,7 @@ struct FanControllerTests {
         #expect(controller.refresh(input(fans(.auto), hottest: 95, safety: fullSpeed, at: 30)) == .init())
     }
 
-    /// With no delay, the next refresh used to trip again before the hand-back
-    /// went out, retrying the failed `max-all` and alerting on every refresh.
+    /// With no delay, the next refresh used to trip again and retry the failed `max-all`.
     @Test func helperErrorDuringAMaxTripWithNoDelayHandsBackOnce() {
         var controller = FanController()
         let noDelay = FanController.Safety(isEnabled: true, limit: 90, delay: 0, action: .max)
@@ -181,8 +177,7 @@ struct FanControllerTests {
         #expect(safety.delay == 5)
     }
 
-    /// No helper calls go out during an uninstall, and a trip holds rather than
-    /// letting the profile slow the fans.
+    /// Nothing goes out during an uninstall, and a trip holds.
     @Test func tripHoldsWhileTheHelperIsRemoved() {
         var controller = FanController()
         let balanced = profile(curve)
@@ -196,7 +191,6 @@ struct FanControllerTests {
 
     // MARK: Profiles
 
-    /// With no temperature at all nothing would notice the Mac overheating.
     @Test func fixedAndCurveProfilesHandBackWithNoTemperature() {
         for behavior in [FanBehavior(kind: .fixed, fixedPercent: 50), curve] {
             var controller = FanController()
@@ -226,7 +220,7 @@ struct FanControllerTests {
         var mixed = profile(FanBehavior(kind: .fixed))
         mixed.perFan = [0: FanBehavior(kind: .max), 1: curve]
         var controller = FanController()
-        // Both start from their minimum, the stopped fans' speed, and ramp from there.
+        // Both ramp from their minimum, the stopped fans' speed.
         let first = controller.refresh(input(fans(.auto), hottest: 70, profile: mixed, at: 0))
         #expect(first.commands == [.set(fan: 0, rpm: 2000), .set(fan: 1, rpm: 2000)])
         let later = controller.refresh(input(fans(.manual(2000)), hottest: 70, profile: mixed, at: 10))

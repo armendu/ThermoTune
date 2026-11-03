@@ -1,7 +1,6 @@
 import SwiftUI
 
-/// Every sensor behind one temperature group, hottest first. Shown when hovering
-/// a group's sensor count in the Temperatures section.
+/// Every sensor behind one temperature group, hottest first.
 struct SensorBreakdown: View {
     let title: String
     let sensors: [TemperatureSensor]
@@ -63,8 +62,7 @@ struct SensorBreakdown: View {
 
             Divider()
 
-            // Only long lists scroll (the Other group runs past a hundred sensors); a
-            // ScrollView around a short one would just add a scroller that does nothing.
+            // Only long lists scroll; around a short one a ScrollView adds a useless scroller.
             if needsScrolling {
                 ScrollView { list }
                     .frame(height: Self.maxListHeight)
@@ -93,8 +91,7 @@ struct SensorBreakdown: View {
     }
 }
 
-/// One sensor's name, SMC key and reading: the key beside the name in the
-/// breakdown's compact rows, under it in All Sensors' tiles.
+/// The key beside the name in compact rows, under it in All Sensors' tiles.
 struct SensorReadingRow: View {
     let sensor: TemperatureSensor
     var stacksKey = false

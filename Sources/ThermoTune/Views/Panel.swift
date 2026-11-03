@@ -1,7 +1,6 @@
 import SwiftUI
 
-/// A titled group of rows styled like a grouped `Form` section. The main window
-/// puts these side by side, which a `Form` can't do: its sections only stack.
+/// Styled like a grouped `Form` section, which can't sit side by side.
 struct Panel<Header: View, Content: View, Footer: View>: View {
     private let header: Header
     private let content: Content
@@ -18,8 +17,7 @@ struct Panel<Header: View, Content: View, Footer: View>: View {
 
     var body: some View {
         VStack(alignment: .leading, spacing: 6) {
-            // The height of a pop-up button, so a header with controls and one
-            // without line up when two panels sit side by side.
+            // A pop-up button's height, so headers with and without controls line up.
             header
                 .frame(minHeight: 24)
                 .padding(.horizontal, 10)
@@ -49,8 +47,7 @@ struct Panel<Header: View, Content: View, Footer: View>: View {
         }
     }
 
-    /// Stretches the rows to share whatever height the panel is offered,
-    /// instead of leaving it empty below them.
+    /// Rows share the panel's height instead of leaving it empty below them.
     func fillingHeight() -> Self {
         var panel = self
         panel.fillsHeight = true

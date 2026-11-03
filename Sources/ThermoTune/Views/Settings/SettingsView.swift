@@ -1,8 +1,7 @@
 import SwiftUI
 
-/// Which tab Settings shows. Stored only so menu items in other scenes (About,
-/// Edit Profiles…) can pick the tab before opening Settings; it is reset to
-/// General whenever Settings closes, so plain ⌘, always lands on General.
+/// Stored only so items outside Settings can pick its tab before opening it; reset
+/// when Settings closes, so plain ⌘, always lands on General.
 enum SettingsTab: String {
     case general, profiles, automation, safety, menuBar, advanced, about
     static let storageKey = "settingsTab"
@@ -12,7 +11,6 @@ enum SettingsTab: String {
     }
 }
 
-/// Opens Settings on a given tab, for menu items and buttons outside Settings.
 struct SettingsTabButton: View {
     let title: LocalizedStringKey
     let tab: SettingsTab

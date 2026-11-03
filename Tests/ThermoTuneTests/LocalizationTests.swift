@@ -1,9 +1,8 @@
 import Foundation
 import Testing
 
-/// Checks the String Catalog itself, read from the source tree: a translation
-/// with a different placeholder than its English string compiles, and then
-/// crashes or prints garbage when that string is shown.
+/// A translation with different placeholders than its English string compiles,
+/// then crashes or prints garbage when shown.
 struct LocalizationTests {
     private static let catalogURL = URL(fileURLWithPath: #filePath)
         .deletingLastPathComponent().deletingLastPathComponent().deletingLastPathComponent()
@@ -21,8 +20,7 @@ struct LocalizationTests {
         let strings: [String: Entry]
     }
 
-    /// Placeholder types in argument order, with positional ones (`%2$@`) put
-    /// back in their position.
+    /// Types in argument order, with positional ones (`%2$@`) put back in place.
     static func placeholders(_ string: String) -> [String] {
         let pattern = #/%(?:(\d+)\$)?(lld|ld|d|@|\.?\d*f)/#
         var positional: [(Int, String)] = []

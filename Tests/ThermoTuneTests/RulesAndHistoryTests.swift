@@ -2,8 +2,7 @@ import Foundation
 import Testing
 @testable import ThermoTune
 
-/// Each test gets its own defaults suite: the test host is the real app, and
-/// `.standard` would be the user's own settings.
+/// Each test has its own defaults suite: the test host is the real app.
 @MainActor
 struct ProfileRulesTests {
     private let cool = UUID(), full = UUID(), fallback = UUID()
@@ -51,8 +50,7 @@ struct ProfileRulesTests {
         #expect(rules.decide { _ in 99 } == .keep)
     }
 
-    /// A later temperature rule keeps tracking its reading while an earlier rule
-    /// wins, so it doesn't come back stale when that rule stops matching.
+    /// A later temperature rule keeps tracking its reading while an earlier one wins.
     @Test func laterRulesKeepTheirHysteresis() {
         let rules = makeRules([hot(.cpu, 50, use: cool), hot(.gpu, 80, use: full)])
         func reading(cpu: Double, gpu: Double) -> (SensorSource) -> Double? {

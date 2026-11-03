@@ -1,11 +1,11 @@
 import SwiftUI
 
 extension Double {
-    /// A Celsius reading as a whole number in the unit chosen in Preferences, without the unit.
+    /// In the unit chosen in Settings, without the unit.
     var degreesNumber: String {
         "\(Int(TemperatureUnit.current.convert(self).rounded()))"
     }
-    /// A Celsius reading formatted in the unit chosen in Preferences, unit included.
+    /// In the unit chosen in Settings, unit included.
     var degrees: String { degreesNumber + TemperatureUnit.current.symbol }
     var rpm: String { self < 1 ? String(localized: "Off") : "\(Int(rounded()).formatted()) RPM" }
 }
@@ -20,7 +20,6 @@ extension Color {
     }
 }
 
-/// The colour-coded dot beside a single sensor's reading.
 struct TemperatureDot: View {
     let value: Double
 
@@ -32,8 +31,7 @@ struct TemperatureDot: View {
 }
 
 extension Binding where Value == Bool {
-    /// True while `optional` holds a value; setting it to false clears it. For an
-    /// alert or a file exporter that shows whenever there is something to show.
+    /// True while `optional` holds a value; setting it to false clears it.
     init<Wrapped>(isPresent optional: Binding<Wrapped?>) {
         self.init(get: { optional.wrappedValue != nil },
                   set: { if !$0 { optional.wrappedValue = nil } })

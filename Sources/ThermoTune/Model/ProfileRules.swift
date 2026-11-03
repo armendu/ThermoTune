@@ -2,15 +2,13 @@ import AppKit
 import IOKit.ps
 import Observation
 
-/// "When this is true, use that profile." Rules are checked in order and the
-/// first match wins.
+/// "When this is true, use that profile." The first match wins.
 struct ProfileRule: Codable, Identifiable, Hashable {
     enum Condition: Codable, Hashable {
         case onBattery
         case onPowerAdapter
         case appRunning(bundleID: String, name: String)
-        /// Matches at `limit` (°C) and keeps matching until the reading is
-        /// `ProfileRules.temperatureMargin` under it, so it doesn't flap.
+        /// Keeps matching until `ProfileRules.temperatureMargin` under `limit` (°C).
         case temperatureAbove(source: SensorSource, limit: Double)
 
         var title: String {
@@ -26,15 +24,12 @@ struct ProfileRule: Codable, Identifiable, Hashable {
     var id = UUID()
     var isEnabled = true
     var condition: Condition
-    /// The profile to switch to; `nil` is None, which hands the fans to macOS.
+    /// `nil` is None, which hands the fans to macOS.
     var profileID: UUID?
 }
 
-/// The rules, and which one currently matches.
-///
-/// Rules act only when the matching rule changes: picking a profile by hand, or
-/// the safety net switching one off, holds until the conditions change, instead
-/// of being undone on the next refresh.
+/// Rules act only when the matching rule changes, so a profile picked by hand,
+/// or switched off by the safety net, isn't undone on the next refresh.
 @MainActor
 @Observable
 final class ProfileRules {
@@ -50,7 +45,7 @@ final class ProfileRules {
     var rules: [ProfileRule] {
         didSet { save() }
     }
-    /// Used when no rule matches; `nil` leaves the profile as it is.
+    /// When no rule matches; `nil` leaves the profile as it is.
     var fallbackProfileID: UUID? {
         didSet { defaults.set(fallbackProfileID?.uuidString, forKey: PreferenceKey.rulesFallbackProfileID) }
     }
@@ -69,17 +64,13 @@ final class ProfileRules {
 
     enum Decision: Equatable {
         case keep
-        /// Switch to this profile; `nil` is None.
         case use(UUID?)
     }
 
-    /// Whether to switch profile now: only when the matching rule has changed
-    /// since the last call (or on the first call).
     func decide(temperature: (SensorSource) -> Double?) -> Decision {
         guard isEnabled else { return .keep }
-        // Every rule is checked, not only those up to the first match, so each
-        // temperature rule's hysteresis follows the reading while an earlier
-        // rule wins. Power and running apps are looked up once, and only if asked.
+        // Every rule is checked, so later temperature rules keep their hysteresis
+        // while an earlier one wins.
         let state = SystemState()
         let match = rules.filter { $0.isEnabled && matches($0, state: state, temperature: temperature) }.first
         defer {
@@ -91,7 +82,6 @@ final class ProfileRules {
         return fallbackProfileID.map { .use($0) } ?? .keep
     }
 
-    /// A profile was deleted: rules pointing at it switch to None.
     func profileDeleted(_ id: UUID) {
         for index in rules.indices where rules[index].profileID == id {
             rules[index].profileID = nil
@@ -121,7 +111,6 @@ final class ProfileRules {
         }
     }
 
-    /// What the conditions check, read at most once per decision.
     private final class SystemState {
         lazy var isOnBattery = PowerSource.isOnBattery
         lazy var runningApps = Set(NSWorkspace.shared.runningApplications.compactMap(\.bundleIdentifier))
@@ -129,7 +118,7 @@ final class ProfileRules {
 }
 
 enum PowerSource {
-    /// Desktops, which have no battery, always count as on the power adapter.
+    /// Desktops have no battery, so they always count as on the power adapter.
     static var isOnBattery: Bool {
         guard let info = IOPSCopyPowerSourcesInfo()?.takeRetainedValue(),
               let type = IOPSGetProvidingPowerSourceType(info)?.takeUnretainedValue() else { return false }

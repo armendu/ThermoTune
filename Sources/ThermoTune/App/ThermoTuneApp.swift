@@ -10,7 +10,7 @@ struct ThermoTuneApp: App {
 
     init() {
         PreferenceKey.registerDefaults()
-        // A tab left over from a quit with Settings open, or from `make shot TAB=…`.
+        // Left over from a quit with Settings open, or from `make shot TAB=…`.
         SettingsTab.reset()
         _monitor = State(initialValue: HardwareMonitor(profiles: ProfileStore()))
     }
@@ -22,13 +22,10 @@ struct ThermoTuneApp: App {
         }
         .defaultSize(width: 900, height: 640)
         .commands {
-            // The About tab rather than the standard panel, so there is one
-            // About screen to keep current.
+            // The About tab, not the standard panel: one About screen to keep current.
             CommandGroup(replacing: .appInfo) {
                 SettingsTabButton(title: "About \(AppInfo.name)", tab: .about)
             }
-            // Every fan action in the window and the menu bar item, also in the
-            // menu bar, where macOS apps keep their commands.
             CommandMenu("Fans") {
                 FanCommands()
                     .environment(monitor)
@@ -65,8 +62,7 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
             UserDefaults.standard.set(true, forKey: PreferenceKey.showMenuBarExtra)
             DockIcon.apply()
         }
-        // `kill`/`pkill` send SIGTERM, which would otherwise skip
-        // applicationWillTerminate and leave fans under manual control.
+        // SIGTERM (`kill`) would otherwise skip applicationWillTerminate and leave fans manual.
         signal(SIGTERM, SIG_IGN)
         terminationSource = DispatchSource.makeSignalSource(signal: SIGTERM, queue: .main)
         terminationSource?.setEventHandler { NSApp.terminate(nil) }

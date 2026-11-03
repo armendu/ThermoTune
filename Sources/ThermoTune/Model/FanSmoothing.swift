@@ -1,36 +1,29 @@
 import Foundation
 
-/// One fan's ramp towards what its profile asks for: the temperature the curve
-/// last followed, the speed being ramped towards, and where the ramp has got to.
+/// One fan's ramp towards what its profile asks for.
 struct FanSmoothing {
-    /// A falling temperature has to drop this far before fans slow down, so a
-    /// reading wobbling across a curve point doesn't make them hunt.
+    /// A falling reading must drop this far before fans slow, so they don't hunt.
     static let hysteresis: Double = 3
-    /// Fans speed up quickly and slow down gently: a sudden load needs cooling
-    /// now, but a fan dropping 1,000 RPM at once is more noticeable than heat.
+    /// Up quickly for a sudden load, down gently, since a sudden drop is noticeable.
     static let rampUpRPMPerSecond: Double = 1000
     static let rampDownRPMPerSecond: Double = 150
-    /// The longest gap one step covers, so a long one (sleep) doesn't turn into
-    /// one large jump.
+    /// So a long gap (sleep) isn't one large jump.
     static let maximumStep: TimeInterval = 10
 
     private(set) var temperature: Double
-    /// Rounded, like the speeds `step` returns, so the caller can tell when the
-    /// ramp has arrived.
+    /// Rounded like `step`'s speeds, so the caller can tell the ramp has arrived.
     private(set) var goal: Double = 0
     private(set) var rpm: Double
     private(set) var date: Date
 
-    /// Starts from where the fan is now: its manual target, or its current speed
-    /// (at least its minimum, since a stopped fan can't be set below it).
+    /// From the manual target, or the current speed but at least the minimum.
     init(fan: FanInfo, temperature: Double, date: Date = .now) {
         self.temperature = temperature
         rpm = fan.isManual ? fan.target : max(fan.actual, fan.minimum)
         self.date = date
     }
 
-    /// Advances the ramp to `now` and returns the speed to ask for, rounded to
-    /// a whole RPM, or `nil` when the behaviour sets no speed.
+    /// The speed to ask for now, or `nil` when the behaviour sets none.
     mutating func step(behavior: FanBehavior, fan: FanInfo, temperature reading: Double,
                        now: Date = .now) -> Double? {
         if reading >= temperature {

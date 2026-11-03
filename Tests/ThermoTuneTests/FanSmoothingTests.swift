@@ -32,8 +32,7 @@ struct FanSmoothingTests {
         #expect(ramp.step(behavior: curve, fan: manual, temperature: 50, now: start + 2) == 5700)
     }
 
-    /// A falling reading has to drop more than 3° before the fans follow it, and
-    /// then they follow it from 3° above.
+    /// A falling reading must drop more than 3° first, then is followed from 3° above.
     @Test func hysteresisHoldsSmallDrops() {
         var ramp = FanSmoothing(fan: fan, temperature: 70, date: start)
         _ = ramp.step(behavior: curve, fan: fan, temperature: 70, now: start)
@@ -43,8 +42,7 @@ struct FanSmoothingTests {
         #expect(ramp.temperature == 63)
     }
 
-    /// The goal is a whole RPM like the speeds returned, so the caller can see
-    /// the ramp has arrived: 2000 + 4000 × 0.4 × … isn't always whole.
+    /// Rounded like the speeds returned, so the caller can see the ramp has arrived.
     @Test func goalIsRounded() {
         var ramp = FanSmoothing(fan: fan, temperature: 50, date: start)
         let fixed = FanBehavior(kind: .fixed, fixedPercent: 33.33)

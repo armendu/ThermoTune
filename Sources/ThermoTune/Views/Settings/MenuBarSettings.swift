@@ -66,7 +66,7 @@ struct MenuBarSettings: View {
     }
 }
 
-/// Menu-bar-only mode: an accessory app has no Dock icon and no app menu.
+/// Menu-bar-only mode: an accessory app has no Dock icon.
 enum DockIcon {
     static func apply() {
         let hidden = UserDefaults.standard.bool(forKey: PreferenceKey.hideDockIcon)

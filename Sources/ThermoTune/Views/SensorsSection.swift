@@ -1,6 +1,5 @@
 import SwiftUI
 
-/// One compact row per sensor group, with every individual sensor in a popover.
 struct SensorsSection: View {
     @Environment(HardwareMonitor.self) private var monitor
     @State private var showsAllSensors = false
@@ -26,8 +25,7 @@ struct SensorsSection: View {
                     }
             }
         } footer: {
-            // Also keeps this column's card ending level with the Fans card,
-            // which has a footer of its own.
+            // Also keeps this card ending level with the Fans card, which has a footer.
             Text("Hover over a count to see its sensors.")
         }
         .fillingHeight()
@@ -42,8 +40,7 @@ private struct GroupRow: View {
 
     @State private var isHovering = false
     @State private var showsBreakdown = false
-    /// Set by a click, so the breakdown stays open when the pointer moves into it
-    /// (the Other group has too many sensors to read without scrolling).
+    /// Set by a click, so the breakdown stays open when the pointer moves into it.
     @State private var isPinned = false
     @State private var hoverDelay: Task<Void, Never>?
 
@@ -53,8 +50,7 @@ private struct GroupRow: View {
                 Text(title)
                     .lineLimit(1)
                     .help(group == .other ? "Battery, SSD, chassis and every other sensor" : title)
-                // The count is what opens the breakdown: it is the number the
-                // breakdown explains, one sensor per line.
+                // The count opens the breakdown: it's the number the breakdown explains.
                 Text("\(sensors.count)")
                     .font(.caption.monospacedDigit())
                     .foregroundStyle(isHovering || showsBreakdown ? .primary : .secondary)
@@ -77,8 +73,7 @@ private struct GroupRow: View {
                         if !showsBreakdown { isPinned = false }
                     }
                 Spacer()
-                // The average leads, as on the tiles above: one hot sensor in a
-                // group of 140 says little about the group.
+                // The average leads: one hot sensor in 140 says little about the group.
                 Text("max \(summary.maximum.degrees)")
                     .foregroundStyle(.secondary)
                 Text(summary.average.degrees)
@@ -99,7 +94,7 @@ private struct GroupRow: View {
         isHovering = hovering
         hoverDelay?.cancel()
         if hovering {
-            // A short delay, so sweeping the pointer across the list doesn't flash popovers.
+            // A short delay, so sweeping the pointer across doesn't flash popovers.
             hoverDelay = Task {
                 try? await Task.sleep(for: .milliseconds(350))
                 if !Task.isCancelled { showsBreakdown = true }

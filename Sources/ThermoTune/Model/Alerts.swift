@@ -2,9 +2,8 @@ import Foundation
 import Observation
 import UserNotifications
 
-/// Posts the notifications chosen in Settings › Safety. Each alert fires once
-/// per episode and re-arms only once its condition has clearly ended, so a
-/// reading hovering at a limit doesn't post one notification per refresh.
+/// Each alert fires once, and again only after its condition has clearly ended,
+/// so a reading hovering at a limit doesn't post on every refresh.
 @MainActor
 @Observable
 final class Alerts: NSObject {
@@ -17,15 +16,14 @@ final class Alerts: NSObject {
     @ObservationIgnored private var thermalFired = false
     @ObservationIgnored private var helperFired = false
 
-    /// A fan given a target gets this long to spin up before it counts as stalled.
+    /// How long a fan given a target has to spin up before it counts as stalled.
     static let stallGrace: TimeInterval = 15
 
     override init() {
         super.init()
         guard !RunMode.isReadOnly else { return }
         UNUserNotificationCenter.current().delegate = self
-        // Several alerts are on by default, and they post nothing until macOS
-        // has been asked, so ask at launch rather than on a first visit to Settings.
+        // Alerts that are on by default post nothing until macOS has asked, so ask at launch.
         Task {
             await updateAuthorization()
             if authorization == .notDetermined, Self.anyEnabled { requestAuthorization() }
@@ -46,7 +44,6 @@ final class Alerts: NSObject {
         authorization = await UNUserNotificationCenter.current().notificationSettings().authorizationStatus
     }
 
-    /// Asks macOS for permission to post notifications.
     func requestAuthorization() {
         guard !RunMode.isReadOnly else { return }
         Task {
@@ -55,7 +52,6 @@ final class Alerts: NSObject {
         }
     }
 
-    /// Checks every alert against one refresh's readings.
     func evaluate(_ monitor: HardwareMonitor) {
         guard !RunMode.isReadOnly else { return }
         let defaults = UserDefaults.standard
@@ -130,7 +126,7 @@ final class Alerts: NSObject {
         content.title = title
         content.body = body
         content.sound = .default
-        // A stable identifier per alert, so a new one replaces the last instead of stacking.
+        // One identifier per alert, so a new one replaces the last.
         UNUserNotificationCenter.current().add(UNNotificationRequest(identifier: id, content: content, trigger: nil))
     }
 }

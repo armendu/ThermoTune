@@ -1,7 +1,6 @@
 import Foundation
 
-/// Readings as CSV: one row per refresh, temperatures in °C whatever the
-/// display unit, so files from different Macs and settings line up.
+/// Temperatures in °C whatever the display unit, so files from different Macs line up.
 enum HistoryCSV {
     static func header(fanCount: Int) -> String {
         (["time", "cpu_avg_c", "cpu_max_c", "gpu_avg_c", "gpu_max_c"]
@@ -18,7 +17,6 @@ enum HistoryCSV {
             + [token(sample.thermalState), profile]).joined(separator: ",")
     }
 
-    /// The same in every language, so logs from different Macs line up.
     static func token(_ state: ProcessInfo.ThermalState) -> String {
         switch state {
         case .nominal: return "nominal"
@@ -42,8 +40,7 @@ enum HistoryCSV {
     }()
 }
 
-/// Appends every refresh to a daily CSV file in ~/Library/Logs/ThermoTune when
-/// "Keep a log file" is on.
+/// A daily CSV file in ~/Library/Logs/ThermoTune, when "Keep a log file" is on.
 final class HistoryLog {
     static let directory = FileManager.default.homeDirectoryForCurrentUser
         .appendingPathComponent("Library/Logs/ThermoTune", isDirectory: true)
@@ -53,7 +50,7 @@ final class HistoryLog {
 
     private static let dayFormatter: DateFormatter = {
         let formatter = DateFormatter()
-        // Gregorian whatever the user's calendar, so file names sort and match the timestamps.
+        // Gregorian whatever the user's calendar, so file names sort.
         formatter.locale = Locale(identifier: "en_US_POSIX")
         formatter.calendar = Calendar(identifier: .gregorian)
         formatter.dateFormat = "yyyy-MM-dd"
@@ -67,10 +64,8 @@ final class HistoryLog {
         }
         let today = Self.dayFormatter.string(from: sample.date)
         if today != day { open(day: today, fanCount: sample.fanRPMs.count) }
-        // The throwing `write(contentsOf:)`: the older `write(_:)` raises an
-        // Objective-C exception on a full disk, and a crash would skip handing
-        // the fans back on quit. A failed write closes the file, and the next
-        // sample tries to open it again.
+        // `write(_:)` raises an exception on a full disk, and a crash would skip handing
+        // the fans back. A failed write closes the file; the next sample reopens it.
         do {
             try handle?.write(contentsOf: Data((HistoryCSV.row(sample) + "\n").utf8))
         } catch {
@@ -88,8 +83,7 @@ final class HistoryLog {
         }
         handle = try? FileHandle(forWritingTo: url)
         _ = try? handle?.seekToEnd()
-        // Only once the file is open: with `day` set and no handle, every later
-        // sample would skip opening it and write nowhere for the rest of the day.
+        // Set only once open, or later samples would skip opening it for the rest of the day.
         if handle != nil { self.day = day }
     }
 

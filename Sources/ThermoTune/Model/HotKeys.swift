@@ -2,13 +2,12 @@ import AppKit
 import Carbon.HIToolbox
 import Observation
 
-/// A key combination for a global shortcut.
 struct Shortcut: Codable, Hashable {
-    /// The virtual key code (`kVK_…`).
+    /// `kVK_…`
     var keyCode: UInt32
-    /// `NSEvent.ModifierFlags` raw value, device-independent bits only.
+    /// Device-independent `NSEvent.ModifierFlags` bits.
     var modifiers: UInt
-    /// The key as typed when recorded, for display.
+    /// As typed when recorded, for display.
     var key: String
 
     var title: String {
@@ -32,7 +31,6 @@ struct Shortcut: Codable, Hashable {
     }
 }
 
-/// What a global shortcut does.
 enum ShortcutAction: Hashable {
     case profile(UUID)
     case allMax
@@ -47,13 +45,12 @@ enum ShortcutAction: Hashable {
     }
 }
 
-/// Registers global shortcuts with Carbon's `RegisterEventHotKey`, which works
-/// in any app without Accessibility permission and needs no dependency.
+/// Carbon's `RegisterEventHotKey` works in any app without Accessibility permission.
 @MainActor
 @Observable
 final class HotKeys {
     private(set) var shortcuts: [String: Shortcut]
-    /// Shortcuts macOS wouldn't register, usually because something else owns them.
+    /// Usually because another app owns the combination.
     private(set) var failed: Set<String> = []
 
     @ObservationIgnored private var registered: [String: EventHotKeyRef] = [:]
@@ -73,7 +70,6 @@ final class HotKeys {
     }
 
     func set(_ shortcut: Shortcut?, for action: ShortcutAction) {
-        // One combination does one thing.
         if let shortcut {
             for (key, existing) in shortcuts where existing.keyCode == shortcut.keyCode && existing.modifiers == shortcut.modifiers {
                 shortcuts[key] = nil
@@ -83,7 +79,6 @@ final class HotKeys {
         save()
     }
 
-    /// Drops shortcuts for profiles that no longer exist.
     func prune(profileIDs: Set<UUID>) {
         let stale = shortcuts.keys.filter { key in
             key.hasPrefix("profile:") && UUID(uuidString: String(key.dropFirst(8))).map { !profileIDs.contains($0) } ?? true

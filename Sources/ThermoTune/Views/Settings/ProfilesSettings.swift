@@ -8,7 +8,7 @@ struct ProfilesSettings: View {
     @State private var isExporting = false
     @State private var isImporting = false
     @State private var transferError: String?
-    // Neither can be undone, so both ask first.
+    // Neither can be undone.
     @State private var isConfirmingDelete = false
     @State private var isConfirmingRestore = false
 
@@ -138,7 +138,6 @@ extension ProfilesSettings {
     }
 }
 
-/// Every profile as one JSON file, to back up or move to another Mac.
 private struct ProfilesDocument: FileDocument {
     static var readableContentTypes: [UTType] { [.json] }
 
@@ -186,7 +185,6 @@ private struct ProfilesDocument: FileDocument {
 private struct ProfileEditor: View {
     @Binding var profile: FanProfile
     @Environment(HardwareMonitor.self) private var monitor
-    /// The fan being edited when fans have their own settings.
     @State private var fanIndex = 0
 
     private var isActive: Bool { monitor.profiles.activeProfileID == profile.id }
@@ -249,8 +247,7 @@ private struct ProfileEditor: View {
                     profile.perFan = [:]
                     return
                 }
-                // Start every fan from the shared settings, swapping Automatic
-                // for a curve since it can't be set per fan.
+                // Every fan starts from the shared settings, with Automatic swapped for a curve.
                 var start = profile.behavior
                 if !FanBehavior.perFanKinds.contains(start.kind) { start.kind = .curve }
                 profile.perFan = Dictionary(uniqueKeysWithValues: fans.map { ($0.id, start) })
@@ -266,11 +263,9 @@ private struct ProfileEditor: View {
     }
 }
 
-/// The settings of one behaviour: its kind, and the speed or curve that goes with it.
 private struct BehaviorEditor: View {
     @Binding var behavior: FanBehavior
     let kinds: [FanProfile.Kind]
-    /// The fan shown in RPM previews.
     let fan: FanInfo?
     @Environment(HardwareMonitor.self) private var monitor
 
@@ -322,7 +317,6 @@ private struct BehaviorEditor: View {
     }
 }
 
-/// CPU, GPU or the hottest of the two, or any single sensor.
 private struct SourcePicker: View {
     @Binding var source: SensorSource
     @Environment(HardwareMonitor.self) private var monitor
@@ -341,7 +335,7 @@ private struct SourcePicker: View {
                     }
                 }
             }
-            // A saved sensor that isn't reading right now still needs a tag to show.
+            // A saved sensor that isn't reading right now still needs a tag.
             if case .sensor(let key) = source, !monitor.sensors.contains(where: { $0.key == key }) {
                 Text("\(key) (no reading)").tag(source)
             }
@@ -349,9 +343,7 @@ private struct SourcePicker: View {
     }
 }
 
-/// A temperature curve: drag points to move them, double-click to add one,
-/// select one and press Remove to delete it. The rows below edit the same
-/// points precisely.
+/// Drag points to move them, double-click to add one.
 private struct CurveEditor: View {
     @Binding var curve: [CurvePoint]
     let current: Double?
@@ -362,9 +354,9 @@ private struct CurveEditor: View {
     @State private var dragging: Int?
 
     private var unit: TemperatureUnit { .current }
-    /// The editable range, in °C.
+    /// °C
     private static let temperatures: ClosedRange<Double> = 20...110
-    /// Points keep at least this far apart, so the curve stays a function.
+    /// So the curve stays a function.
     private static let minimumGap: Double = 1
 
     var body: some View {
@@ -459,7 +451,7 @@ private struct CurveEditor: View {
         .accessibilityValue(curve.map { "\(Int($0.percent))% at \($0.temperature.degrees)" }.joined(separator: ", "))
     }
 
-    /// The curve with flat lines out to the chart's edges, as the fan behaves.
+    /// Flat out to the chart's edges, as the fan behaves.
     private var extended: [CurvePoint] {
         guard let first = curve.first, let last = curve.last else { return [] }
         return [CurvePoint(Self.temperatures.lowerBound, first.percent)] + curve
@@ -501,7 +493,7 @@ private struct CurveEditor: View {
                 set: { move(index, to: CurvePoint(curve[index].temperature, $0)) })
     }
 
-    /// Moves a point, keeping it between its neighbours so the order never changes.
+    /// Clamped between its neighbours, so the order never changes.
     private func move(_ index: Int, to point: CurvePoint) {
         guard curve.indices.contains(index) else { return }
         let low = index > 0 ? curve[index - 1].temperature + Self.minimumGap : Self.temperatures.lowerBound
@@ -510,7 +502,7 @@ private struct CurveEditor: View {
                                   min(max(point.percent.rounded(), 0), 100))
     }
 
-    /// Adds a point at `value`, or halfway along the widest gap when there's none.
+    /// Halfway along the widest gap when there's no `value`.
     private func addPoint(near value: CurvePoint?) {
         var point = value ?? {
             let gaps = zip(curve, curve.dropFirst()).enumerated().max {
@@ -537,7 +529,6 @@ private struct CurveEditor: View {
         return CurvePoint(unit.toCelsius(temperature), percent)
     }
 
-    /// The point within 14 pt of `location`, if any.
     private func nearestPoint(to location: CGPoint, proxy: ChartProxy) -> Int? {
         curve.indices
             .compactMap { index -> (Int, CGFloat)? in

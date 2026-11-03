@@ -1,13 +1,11 @@
 import Foundation
 import Observation
 
-/// Polls the SMC for fan and temperature readings, drives the active fan
-/// profile, and forwards fan changes to the privileged helper.
+/// Polls the SMC, drives the active profile, and sends fan changes to the helper.
 @MainActor
 @Observable
 final class HardwareMonitor {
-    /// One refresh's readings, for the chart and the CSV history. `cpu` and
-    /// `gpu` are averages, which is what the chart plots.
+    /// One refresh's readings. `cpu` and `gpu` are averages.
     struct Sample: Identifiable {
         let id = UUID()
         let date: Date
@@ -24,16 +22,12 @@ final class HardwareMonitor {
     private(set) var sensors: [TemperatureSensor] = []
     private(set) var history: [Sample] = []
     private(set) var isDiscoveringSensors = true
-    /// Readable names by SMC key; see `TemperatureSensor.names(for:)`.
     private(set) var sensorNames: [String: String] = [:]
     private(set) var helperState = HelperInstaller.state()
     /// An install or uninstall is waiting on the password prompt.
     private(set) var isChangingHelper = false
-    /// An uninstall is under way. Fan changes are held off meanwhile: one landing
-    /// after its final `auto-all` would leave a fan manual with no helper left to
-    /// undo it. An install needs no such gate, because the new helper replaces
-    /// the old one in a single rename: a call already running finishes with the
-    /// old one, and the profile and safety net keep working behind the prompt.
+    /// Fan changes are held off during an uninstall: one landing after its final
+    /// `auto-all` would leave a fan manual with no helper left to undo it.
     private(set) var isRemovingHelper = false
     private(set) var busyFans: Set<Int> = []
     private(set) var pendingModes: [Int: FanMode] = [:]
@@ -43,12 +37,10 @@ final class HardwareMonitor {
     var fansAreSystemControlled: Bool { fans.allSatisfy(\.isSystemControlled) }
     /// Counting a mode just asked for, so All Max disables as soon as it's clicked.
     var allFansAtMax: Bool { fans.allSatisfy { mode(of: $0) == .max } }
-    /// The fastest fan's speed, which the overview and the menu bar show.
     var fastestFanRPM: Double? { fans.map(\.actual).max() }
 
-    /// Per-core sensors when the Mac has them (Apple Silicon). The `TC*` package
-    /// sensors there read well above the cores even at idle, so they would skew
-    /// the CPU reading and temperature-curve profiles.
+    /// Per-core sensors where there are any: the `TC*` package sensors read well
+    /// above the cores, even at idle.
     var cpuSensors: [TemperatureSensor] {
         let cores = sensors.filter { $0.group == .cpuPerformance || $0.group == .cpuEfficiency }
         return cores.isEmpty ? sensors.filter(\.isCPU) : cores
@@ -57,7 +49,6 @@ final class HardwareMonitor {
     var cpuSummary: TemperatureSummary? { TemperatureSummary(cpuSensors) }
     var gpuSummary: TemperatureSummary? { TemperatureSummary(gpuSensors) }
 
-    /// Every group that has sensors, in display order.
     var sensorGroups: [(group: TemperatureSensor.Group, sensors: [TemperatureSensor])] {
         let grouped = Dictionary(grouping: sensors, by: \.group)
         return TemperatureSensor.Group.allCases.compactMap { group in
@@ -78,8 +69,6 @@ final class HardwareMonitor {
         summary(source)?.maximum
     }
 
-    /// The average of a group's sensors rather than its hottest; a single
-    /// sensor is its own average.
     func averageTemperature(_ source: SensorSource) -> Double? {
         switch source {
         case .cpu: return cpuSummary?.average
@@ -93,7 +82,6 @@ final class HardwareMonitor {
         sensorNames[key] ?? key
     }
 
-    /// Long enough for the chart's widest time range (an hour).
     static let historyDuration: TimeInterval = 3600
 
     let profiles: ProfileStore
@@ -142,16 +130,14 @@ final class HardwareMonitor {
         let timer = Timer(timeInterval: interval, repeats: true) { [weak self] _ in
             Task { @MainActor in self?.refresh() }
         }
-        // `.common`, not the default mode, so readings and the active profile
-        // keep updating while a menu is held open.
+        // `.common`, so readings keep updating while a menu is held open.
         RunLoop.main.add(timer, forMode: .common)
         self.timer = timer
     }
 
     private func discoverSensors() {
         Task {
-            // Enumerating ~2,000 SMC keys takes a moment, so do it off the main
-            // thread on a separate connection.
+            // ~2,000 keys: off the main thread, on a connection of its own.
             let keys = await Task.detached(priority: .userInitiated) {
                 (try? SMC())?.discoverTemperatureKeys() ?? []
             }.value
@@ -168,9 +154,8 @@ final class HardwareMonitor {
         for fan in fans where !busyFans.contains(fan.id) {
             if let pending = pendingModes[fan.id], fan.isIn(pending) { pendingModes[fan.id] = nil }
         }
-        // Sensors can read 0 (or below) instead of failing, most likely while
-        // powered down. That is no reading, not a temperature: averaged in, it
-        // dragged the GPU line on the chart to 0° and the axis down to -25°.
+        // A sensor reading 0 or below (powered down) is no reading: averaged in, it
+        // dragged the chart down to -25°.
         sensors = sensorKeys.compactMap { key in
             guard let value = try? smc.read(key), value.isFinite, value > 1 else { return nil }
             return TemperatureSensor(key: key, value: value)
@@ -207,8 +192,6 @@ final class HardwareMonitor {
         safetyTrip = nil
     }
 
-    /// What `FanController` decides from: this refresh's readings, the
-    /// settings, and whether a helper call can go out.
     private func controllerInput() -> FanController.Input {
         var temperatures: [SensorSource: Double] = [:]
         for source in SensorSource.groups + sensors.map({ .sensor($0.key) }) {
@@ -243,8 +226,7 @@ final class HardwareMonitor {
 
     // MARK: Profiles
 
-    // Deleting a profile goes through here, so rules and shortcuts never point
-    // at one that's gone.
+    // Deletions also update rules and shortcuts.
 
     func deleteProfile(_ id: UUID) {
         profiles.delete(id)
@@ -276,15 +258,13 @@ final class HardwareMonitor {
 
     // MARK: Fan control
 
-    /// The mode to show for a fan: a just-requested mode wins until the SMC
-    /// reports it, since entering manual mode can take ~10 seconds.
+    /// A requested mode wins until the SMC reports it, ~10 s for manual.
     func mode(of fan: FanInfo) -> FanMode {
         pendingModes[fan.id] ?? fan.mode
     }
 
-    // A shortcut can still fire while the controls are disabled. Taking over
-    // from the profile without sending anything would leave the fans manual
-    // with nothing in charge of them.
+    // Shortcuts can fire while the controls are disabled. Taking over then would
+    // leave the fans manual with nothing in charge.
 
     func setMode(_ mode: FanMode, fan: FanInfo, rpm: Double) {
         guard !isRemovingHelper else { return }
@@ -304,8 +284,7 @@ final class HardwareMonitor {
         sendAllAutomatic()
     }
 
-    /// Ends the active profile without handing the fans back, because the
-    /// caller is about to set them itself.
+    /// The caller is about to set the fans, so they aren't handed back.
     private func takeOverFromProfile() {
         controller.takeOver()
         profiles.activeProfileID = nil
@@ -338,8 +317,7 @@ final class HardwareMonitor {
             busyFans.insert(id)
             pendingModes[id] = mode
         }
-        // Run helper commands one at a time: concurrent unlocks would each wait
-        // out the SMC's ~10 second hand-over.
+        // One at a time: concurrent unlocks would each wait out the ~10 s hand-over.
         let previous = helperQueue
         let run = Task {
             await previous?.value
@@ -396,8 +374,7 @@ final class HardwareMonitor {
                     return
                 }
             }
-            // The profile stays until the helper is really gone, so cancelling
-            // the password prompt leaves things as they were.
+            // The profile stays until the helper is gone, so cancelling the prompt changes nothing.
             if await runAsAdministrator({ try HelperInstaller.uninstall() }) {
                 takeOverFromProfile()
             }
@@ -406,8 +383,7 @@ final class HardwareMonitor {
         }
     }
 
-    /// Runs an install or uninstall off the main thread. Dismissing the password
-    /// prompt is not an error worth an alert.
+    /// Off the main thread. A dismissed password prompt isn't an error.
     @discardableResult
     private func runAsAdministrator(_ work: @escaping @Sendable () throws -> Void) async -> Bool {
         do {
@@ -420,15 +396,12 @@ final class HardwareMonitor {
         return false
     }
 
-    /// Hands fans back to the system. Called synchronously when the app quits
-    /// so a manual speed never outlives the app.
+    /// Runs as the app quits, so a manual speed never outlives it.
     nonisolated static func restoreAutomaticFans() {
         guard !RunMode.isReadOnly,
               UserDefaults.standard.bool(forKey: PreferenceKey.restoreAutomaticOnQuit) else { return }
-        // A `set` still running would otherwise land after the decision below,
-        // and outlive the app. Its writes also apply asynchronously, so reading
-        // the fans just after one can still show them automatic: hand back
-        // regardless.
+        // Wait for a running call, and hand back regardless if one ran recently: its
+        // writes may not have landed, so the fans can still read automatic.
         let helperRanRecently = HelperInstaller.waitForRecentCalls(timeout: 30)
         // Any installed root helper can run `auto-all`, even one out of date.
         guard HelperInstaller.isInstalledAsRoot else { return }

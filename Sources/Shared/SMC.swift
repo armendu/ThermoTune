@@ -44,10 +44,8 @@ extension UInt32 {
     }
 }
 
-/// Thin wrapper around the AppleSMC user client.
-///
-/// The kernel expects an 80-byte `SMCKeyData_t` struct. Rather than relying on
-/// Swift's struct layout, the packet is built as a raw buffer with the C offsets.
+/// The kernel expects an 80-byte `SMCKeyData_t`. It's built as a raw buffer at
+/// the C offsets: a Swift mirror of the struct would lay fields out differently.
 final class SMC {
     private enum Command: UInt8 {
         case readBytes = 5
@@ -166,8 +164,7 @@ final class SMC {
             guard b.count >= count else { return nil }
             return b.prefix(count).reduce(0) { $0 << 8 | UInt64($1) }
         }
-        // Closures, never `.map(Double.init)`: on an integer that resolves to
-        // `Double(bitPattern:)`, which compiles and turns every reading to garbage.
+        // Closures: `.map(Double.init)` on an integer resolves to `Double(bitPattern:)`.
         switch type {
         case "flt ":
             guard b.count >= 4 else { return nil }

@@ -1,6 +1,6 @@
 import SwiftUI
 
-/// The Fans menu in the menu bar, and the same actions in the menu bar item's panel.
+/// The Fans menu, also shown in the menu bar item's panel.
 struct FanCommands: View {
     @Environment(HardwareMonitor.self) private var monitor
 

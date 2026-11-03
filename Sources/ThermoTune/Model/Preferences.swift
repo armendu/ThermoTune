@@ -1,6 +1,5 @@
 import Foundation
 
-/// UserDefaults keys shared by `@AppStorage` in views and the model layer.
 enum PreferenceKey {
     static let temperatureUnit = "temperatureUnit"
     static let refreshInterval = "refreshInterval"
@@ -8,8 +7,7 @@ enum PreferenceKey {
     static let showMenuBarExtra = "showMenuBarExtra"
     static let menuBarSource = "menuBarSource"
     static let chartWindowMinutes = "chartWindowMinutes"
-    /// Saved lists that couldn't all be read are kept as they were under
-    /// `<key>Backup`; see `UserDefaults.lenientArray`.
+    /// Lists that couldn't all be read are kept under `<key>Backup`.
     static let profiles = "profiles"
     static let activeProfileID = "activeProfileID"
     static let safetyNetEnabled = "safetyNetEnabled"
@@ -88,16 +86,13 @@ enum TemperatureUnit: String, CaseIterable, Identifiable {
     }
 }
 
-/// Which temperature a profile curve or the menu bar follows. The CPU and GPU
-/// readings are the hottest sensor in each group.
+/// The CPU and GPU readings are each group's hottest sensor.
 enum SensorSource: Hashable, Identifiable {
     case cpu
     case gpu
     case hottest
-    /// One sensor, by SMC key.
     case sensor(String)
 
-    /// The grouped readings; a single sensor is picked from the sensor list.
     static let groups: [SensorSource] = [.cpu, .gpu, .hottest]
 
     var id: String { rawValue }
@@ -121,8 +116,7 @@ enum SensorSource: Hashable, Identifiable {
     }
 }
 
-// A string raw value, so `@AppStorage` and saved profiles keep reading the
-// values written before single sensors existed ("cpu", "gpu", "hottest").
+// A string raw value, so values saved before single sensors existed still read.
 extension SensorSource: RawRepresentable, Codable {
     private static let sensorPrefix = "sensor:"
 
@@ -161,13 +155,10 @@ extension SensorSource: RawRepresentable, Codable {
     }
 }
 
-/// What the safety net does once a reading has stayed over its limit.
 enum SafetyAction: String, CaseIterable, Identifiable {
-    /// Let go of the fans: macOS's own thermal management ramps them and
-    /// throttles the Mac as designed. The active profile is switched off.
+    /// macOS manages the fans again, and the active profile is switched off.
     case automatic
-    /// Every fan to full speed until the reading is 10° under the limit, then
-    /// the profile carries on, or macOS takes over if no profile was running.
+    /// Full speed until 10° under the limit, then the profile carries on, or macOS takes over.
     case max
 
     var id: Self { self }
@@ -180,7 +171,6 @@ enum SafetyAction: String, CaseIterable, Identifiable {
     }
 }
 
-/// What the menu bar item shows.
 enum MenuBarContent: String, CaseIterable, Identifiable {
     case temperature
     case fanSpeed

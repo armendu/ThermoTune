@@ -1,7 +1,7 @@
 import SwiftUI
 
-/// The menu bar item. Plain text and symbols draw as a template, so they follow
-/// the menu bar's light or dark look; colour and the graph need an image.
+/// Plain text and symbols draw as a template, following the menu bar's look;
+/// colour and the graph need an image.
 struct MenuBarLabel: View {
     @Environment(HardwareMonitor.self) private var monitor
     @AppStorage(PreferenceKey.menuBarSource) private var source: SensorSource = .cpu
@@ -39,7 +39,7 @@ struct MenuBarLabel: View {
     private var symbol: String { content == .fanSpeed ? "fan" : "thermometer.medium" }
 
     var body: some View {
-        // Read so a change of unit redraws the label straight away, not at the next refresh.
+        // Read so a change of unit redraws the label straight away.
         let _ = unit
         if content != .icon, colored || graph {
             Image(nsImage: rendered)
@@ -54,10 +54,8 @@ struct MenuBarLabel: View {
         }
     }
 
-    /// The last ten minutes of the reading the label shows, for the graph.
     private var graphValues: [Double] {
         let start = Date.now.addingTimeInterval(-600)
-        // History is in time order, so only its tail needs looking at.
         return monitor.history.reversed().prefix { $0.date >= start }.reversed().compactMap { sample in
             let cpu = usesAverage ? sample.cpu : sample.cpuMaximum
             let gpu = usesAverage ? sample.gpu : sample.gpuMaximum
@@ -69,8 +67,7 @@ struct MenuBarLabel: View {
         }
     }
 
-    /// The last image drawn, keyed by everything that went into it. With colour
-    /// on and no graph, most refreshes change nothing worth drawing again.
+    /// With colour on and no graph, most refreshes change nothing worth redrawing.
     @MainActor private static var cache: (key: String, image: NSImage)?
 
     private var rendered: NSImage {
@@ -95,7 +92,7 @@ struct MenuBarLabel: View {
                             style: StrokeStyle(lineWidth: 1.5, lineCap: .round, lineJoin: .round))
                     .frame(width: 26, height: 12)
             }
-            // Only the temperature takes the colour; a red fan speed would say nothing.
+            // Only the temperature takes the colour.
             if content != .fanSpeed, let temperatureText {
                 Text(temperatureText)
                     .foregroundStyle(colored ? AnyShapeStyle(Color.temperature(temperature ?? 0)) : AnyShapeStyle(.black))
@@ -110,20 +107,17 @@ struct MenuBarLabel: View {
         .font(.system(size: 13, weight: .medium).monospacedDigit())
         .foregroundStyle(colored ? AnyShapeStyle(.primary) : AnyShapeStyle(.black))
         .padding(.vertical, 2)
-        // The status bar follows the appearance of what's behind it; the app's
-        // appearance is the nearest available guess for the parts not coloured.
+        // The status bar follows what's behind it; the app's appearance is the nearest guess.
         .environment(\.colorScheme, isDark ? .dark : .light)
 
         let renderer = ImageRenderer(content: view)
         renderer.scale = NSScreen.main?.backingScaleFactor ?? 2
         let image = renderer.nsImage ?? NSImage()
-        // Without colour it stays a template, so macOS tints it like any other item.
         image.isTemplate = !colored
         return image
     }
 }
 
-/// A line through `values`, scaled to fill the frame.
 struct Sparkline: Shape {
     let values: [Double]
 
@@ -150,8 +144,7 @@ struct MenuBarView: View {
 
     var body: some View {
         VStack(alignment: .leading, spacing: 8) {
-            // Shortcuts, rules and the safety net can fail with no window open:
-            // without this, a menu-bar-only user would never see why.
+            // Failures can happen with no window open, in menu-bar-only mode.
             if let error = monitor.errorMessage {
                 HStack(alignment: .firstTextBaseline) {
                     Label(error, systemImage: "exclamationmark.triangle.fill")
@@ -181,7 +174,6 @@ struct MenuBarView: View {
             Divider()
 
             if monitor.helperState == .ready {
-                // The same items as the Fans menu.
                 FanCommands()
                 Divider()
             }
@@ -214,10 +206,8 @@ struct MenuBarView: View {
     }
 }
 
-/// An action in the menu bar panel, drawn like the items in the system's own
-/// panels (Wi-Fi, Bluetooth): primary text across the full width, highlighted
-/// under the pointer. `.borderless` drew them grey with no hover, so every
-/// action looked disabled.
+/// Drawn like the items in the system's own panels (Wi-Fi, Bluetooth):
+/// `.borderless` drew them grey with no hover, so they all looked disabled.
 private struct MenuItemButtonStyle: ButtonStyle {
     func makeBody(configuration: Configuration) -> some View {
         MenuItem(configuration: configuration)
@@ -242,15 +232,13 @@ private struct MenuItemButtonStyle: ButtonStyle {
                 .padding(.vertical, 4)
                 .background(highlight, in: RoundedRectangle(cornerRadius: 5))
                 .contentShape(Rectangle())
-                // Out into the panel's margin, so the text lines up with the
-                // readings above while the highlight spans the row.
+                // Into the margin: the text lines up with the readings, the highlight spans the row.
                 .padding(.horizontal, -8)
                 .onHover { isHovering = $0 }
         }
     }
 }
 
-/// A menu item's title with its keyboard shortcut on the right, as menus show it.
 private struct MenuItemLabel: View {
     let title: LocalizedStringKey
     let shortcut: String

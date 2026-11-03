@@ -97,7 +97,6 @@ private struct CSVDocument: FileDocument {
     }
 }
 
-/// Install or Update, whichever the helper needs.
 struct HelperInstallButton: View {
     @Environment(HardwareMonitor.self) private var monitor
 

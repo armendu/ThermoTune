@@ -4,13 +4,11 @@ import SwiftUI
 struct ContentView: View {
     @Environment(HardwareMonitor.self) private var monitor
 
-    /// Wide enough for a fan row's name, speed and mode picker on one line.
     static let fansMinWidth: CGFloat = 450
     static let sensorsWidth: CGFloat = 340
 
     var body: some View {
-        // The columns stretch to fill a tall window; only a window too short
-        // for their rows scrolls.
+        // Columns stretch to fill a tall window; only one too short for them scrolls.
         ViewThatFits(in: .vertical) {
             layout
             ScrollView { layout }
@@ -63,8 +61,7 @@ private struct FansPanel: View {
                 Text("Fans").font(.headline)
                 Spacer()
                 if monitor.helperState == .ready {
-                    // Push buttons, not links: these act on the fans, and macOS
-                    // keeps link styling for going somewhere.
+                    // Push buttons, not links: these act on the fans.
                     Group {
                         ProfilePicker()
                             .fixedSize()
@@ -89,7 +86,6 @@ private struct FansPanel: View {
     }
 }
 
-/// Shown at the top of the Fans panel after the safety net has stepped in.
 private struct SafetyBanner: View {
     let trip: FanController.SafetyTrip
     @Environment(HardwareMonitor.self) private var monitor
@@ -114,8 +110,7 @@ private struct SafetyBanner: View {
     }
 }
 
-/// macOS's own measure of how hard it is working to stay cool. From Serious up,
-/// it slows the Mac down.
+/// macOS's thermal pressure. From Serious up, it slows the Mac down.
 struct ThermalStateBadge: View {
     let state: ProcessInfo.ThermalState
 
@@ -216,7 +211,7 @@ private struct Tile: View {
         .padding(.horizontal, 12)
         .padding(.vertical, 8)
         .background(.quaternary.opacity(0.5), in: RoundedRectangle(cornerRadius: 10))
-        // One VoiceOver element, "CPU, 47, °C, average · hottest 60°C", not four.
+        // One VoiceOver element, not four.
         .accessibilityElement(children: .combine)
     }
 }
@@ -246,13 +241,11 @@ private struct TemperatureChart: View {
         let id: String
         let date: Date
         let series: String
-        /// A run of readings with no gap; each is drawn as its own line.
         let segment: String
         let value: Double
     }
 
-    /// Readings further apart than this (the Mac slept, or the series had no
-    /// reading) start a new line, rather than one drawn straight across the gap.
+    /// Readings further apart than this (the Mac slept) start a new line.
     private var maximumGap: TimeInterval { max(refreshInterval * 3, 10) }
 
     private var points: [Point] {
@@ -277,10 +270,8 @@ private struct TemperatureChart: View {
         return points
     }
 
-    /// The y-axis range and the values labelled on it. The range is rounded out
-    /// around the readings so the lines sit inside the chart, and stretched to a
-    /// whole number of steps so both ends get a label: left to Swift Charts, the
-    /// bottom gridline was often unlabelled and the lines couldn't be read off.
+    /// Rounded out around the readings, to a whole number of steps so both ends get
+    /// a label: Swift Charts often left the bottom gridline unlabelled.
     private func yAxis(_ points: [Point]) -> (domain: ClosedRange<Double>, ticks: [Double]) {
         let values = points.map(\.value)
         var low = max((((values.min() ?? unit.convert(30)) - 5) / 10).rounded(.down) * 10, 0)

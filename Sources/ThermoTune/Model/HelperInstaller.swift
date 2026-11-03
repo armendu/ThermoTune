@@ -1,8 +1,7 @@
 import Foundation
 import os
 
-/// Installs and runs the setuid-root `ThermoTuneHelper`, which performs all SMC
-/// writes. Reading sensors needs no privileges; changing fan speed does.
+/// Installs and runs the setuid-root helper, which makes every SMC write.
 enum HelperInstaller {
     enum State {
         case notInstalled
@@ -12,7 +11,6 @@ enum HelperInstaller {
 
     enum HelperError: LocalizedError {
         case missingFromBundle
-        /// The administrator password prompt was dismissed.
         case cancelled
         case failed(String)
 
@@ -27,8 +25,7 @@ enum HelperInstaller {
 
     static let installURL = URL(fileURLWithPath: "/Library/PrivilegedHelperTools/com.armend.ThermoTune.Helper")
 
-    /// Where the app installed its helper before it was renamed to ThermoTune.
-    /// Removed during install so no stale setuid-root copy is left behind.
+    /// The helper's name before the rename; removed on install.
     static let legacyInstallURL = URL(fileURLWithPath: "/Library/PrivilegedHelperTools/com.armend.FanControl.Helper")
 
     static var bundledURL: URL? {
@@ -45,8 +42,7 @@ enum HelperInstaller {
         return .ready
     }
 
-    /// An installed helper that runs as root, whether or not it matches the one
-    /// in this build.
+    /// Any root helper, current or not: even an old one can run `auto-all`.
     static var isInstalledAsRoot: Bool {
         guard let attributes = try? FileManager.default.attributesOfItem(atPath: installURL.path) else { return false }
         let owner = (attributes[.ownerAccountID] as? NSNumber)?.intValue
@@ -54,17 +50,9 @@ enum HelperInstaller {
         return owner == 0 && mode & 0o4000 != 0
     }
 
-    /// Copies the helper into place and marks it setuid root. Shows the standard
-    /// macOS administrator password prompt.
-    ///
-    /// The copy is made beside the installed helper and renamed over it, so the
-    /// replacement is atomic: a helper call running meanwhile finishes with the
-    /// old file instead of executing one half overwritten. The directory is
-    /// root-owned, so nobody else can touch the copy before the rename.
-    ///
-    /// The copy's extended attributes are cleared: an app from a downloaded DMG
-    /// is quarantined, and a quarantined helper could be refused when the app
-    /// runs it, long after the person allowed the app itself.
+    /// Asks for the administrator password. The copy is renamed over the old
+    /// helper, so a call already running finishes with the old file, and its
+    /// quarantine flag is cleared, which could otherwise get it refused later.
     static func install() throws {
         guard let bundledURL else { throw HelperError.missingFromBundle }
         let src = shellQuoted(bundledURL.path)
@@ -91,13 +79,11 @@ enum HelperInstaller {
         try runProcess(installURL, arguments)
     }
 
-    /// How long after a helper call its SMC writes may still be landing. Until
-    /// then, reading the fans back can still show the state from before it.
+    /// Until this long after a call, the fans can still read back the old state.
     static let writeSettleTime: TimeInterval = 5
 
-    /// Runs the installed helper off the main thread. The call counts as running
-    /// from the moment it is made on the main actor, not from when a background
-    /// thread picks it up, so quitting in between still waits for it.
+    /// Counts as running from the call on the main actor, so quitting before a
+    /// background thread picks it up still waits for it.
     @MainActor
     static func runInBackground(_ arguments: [String]) async throws {
         runningCalls.enter()
@@ -110,9 +96,8 @@ enum HelperInstaller {
         }.value
     }
 
-    /// Blocks until no `runInBackground` call is running, or the timeout passes.
-    /// Returns whether one was running or ended within `writeSettleTime`, i.e.
-    /// whether the fans can't yet be trusted to read back what it wrote.
+    /// Whether a call was running or ended within `writeSettleTime`: whether the
+    /// fans can't yet be trusted to read back what it wrote.
     static func waitForRecentCalls(timeout: TimeInterval) -> Bool {
         let wasRunning = runningCalls.wait(timeout: .now()) == .timedOut
         _ = runningCalls.wait(timeout: .now() + timeout)

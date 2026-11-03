@@ -6,23 +6,18 @@ struct FanInfo: Identifiable, Equatable, Sendable {
     var minimum: Double
     var maximum: Double
     var target: Double
-    /// This fan's own mode is manual.
     var isManual: Bool
-    /// The `Ftst` unlock is on. That suspends macOS thermal control for every fan,
-    /// so a fan whose own mode is automatic is still not being managed: it is held
-    /// at its minimum speed until every fan is back on automatic.
+    /// `Ftst` is on: thermal control is suspended for every fan, so even a fan whose
+    /// own mode is automatic is held at its minimum.
     var isControlUnlocked: Bool
 
     var name: String { "Fan \(id + 1)" }
 
-    /// True when macOS is managing this fan, i.e. nothing needs handing back.
     var isSystemControlled: Bool { !isManual && !isControlUnlocked }
 }
 
 extension SMC {
-    // Apple Silicon (M1+) uses per-fan `F<n>Md` mode keys. Newer firmware also
-    // requires the `Ftst` key to be set before it accepts a manual mode. Intel
-    // Macs use the `FS! ` bitmask instead.
+    // Apple silicon uses per-fan `F<n>Md` modes, unlocked by `Ftst`; Intel uses the `FS! ` bitmask.
     private static let manualMode: Double = 1
     private static let autoMode: Double = 0
 
@@ -50,7 +45,6 @@ extension SMC {
         (try? read("Ftst")) == 1
     }
 
-    /// Intel's `FS! `: one manual-mode bit per fan.
     private var manualModeMask: Int {
         Int((try? read("FS! ")) ?? 0)
     }
@@ -75,8 +69,7 @@ extension SMC {
             isManual = true
             try write("F\(index)Tg", rpm)
         } catch {
-            // A fan left manual at whatever target it had, or `Ftst` left set
-            // with no fan manual, is a fan nobody is managing.
+            // A fan left manual, or `Ftst` left set with no fan manual, is a fan nobody manages.
             if isManual { try? setMode(index, manual: false) }
             try? relockIfAllAutomatic(except: index)
             throw error
@@ -103,9 +96,8 @@ extension SMC {
         try relockIfAllAutomatic(except: index)
     }
 
-    /// The way back to macOS control, used by All Auto, quitting and `make
-    /// fans-auto`, so one failed write must not stop the rest: every fan is
-    /// tried and `Ftst` is always cleared, then the first error is reported.
+    /// The way back to macOS control, so one failed write must not stop the rest:
+    /// every fan is tried and `Ftst` is always cleared, then the first error is thrown.
     func setAllFansAuto() throws {
         var firstError: Error?
         let count: Int
@@ -119,9 +111,8 @@ extension SMC {
         if let firstError { throw firstError }
     }
 
-    /// A fan's speed range, read fresh for a write. `fan(_:)` shows a failed read
-    /// as 0, but clamping to 0...0 would park the fan at 0 RPM with thermal
-    /// control suspended.
+    /// Read fresh: `fan(_:)` shows a failed read as 0, and clamping to 0...0 would
+    /// park the fan at 0 RPM with thermal control suspended.
     private func speedRange(_ index: Int) throws -> ClosedRange<Double> {
         guard let minimum = try? read("F\(index)Mn"), let maximum = try? read("F\(index)Mx"),
               minimum >= 0, maximum > 0, minimum <= maximum else {
@@ -130,8 +121,7 @@ extension SMC {
         return minimum...maximum
     }
 
-    /// `fanCount()` reads a failed `FNum` as no fans, which suits display. A write
-    /// over every fan would then touch none and still report success.
+    /// Strict, unlike `fanCount()`: a write over "no fans" would touch none and still succeed.
     private func writableFanCount() throws -> Int {
         let count = Int(try read("FNum"))
         guard count > 0 else { throw SMCError.noFans }
@@ -144,9 +134,8 @@ extension SMC {
         }
     }
 
-    /// Clears `Ftst` once no fan is left in manual mode. `index` is the fan that
-    /// was just switched: SMC writes apply asynchronously, so reading its mode
-    /// back right away can still report the old value.
+    /// `index` was just written, and writes land asynchronously, so its read-back
+    /// can still show the old mode.
     private func relockIfAllAutomatic(except index: Int) throws {
         if hasKey("Ftst"), !(0..<fanCount()).contains(where: { $0 != index && hasManualMode($0) }) {
             try write("Ftst", 0)
@@ -160,9 +149,8 @@ extension SMC {
             try write("FS! ", Double(manual ? mask | (1 << index) : mask & ~(1 << index)))
             return
         }
-        // After `Ftst` is set, Apple Silicon SMCs reject manual mode with 0x82
-        // (bad command) until thermal management has handed over, which takes
-        // roughly 8-10 seconds on an M3 Pro.
+        // After `Ftst` is set the SMC answers 0x82 until thermal management hands over,
+        // about 5-10 seconds.
         let deadline = Date().addingTimeInterval(20)
         while true {
             do {
@@ -176,9 +164,8 @@ extension SMC {
 
     // MARK: Temperatures
 
-    /// Most `T*` keys are junk (constant zeros, negatives, `ioft` types). This runs
-    /// once at launch, so a real sensor that happens to read outside 5…130 °C then
-    /// is never found; that trade-off is deliberate.
+    /// Most `T*` keys are junk. Runs once at launch, so a sensor reading outside
+    /// 5…130 °C then is never found; that's deliberate.
     func discoverTemperatureKeys() -> [String] {
         allKeys().filter { key in
             guard key.hasPrefix("T"),
