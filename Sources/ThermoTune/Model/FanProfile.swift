@@ -1,0 +1,278 @@
+import Foundation
+import Observation
+
+/// A named fan behaviour: the same for every fan, or set per fan.
+struct FanProfile: Codable, Identifiable, Hashable {
+    enum Kind: String, Codable, CaseIterable, Identifiable {
+        case automatic
+        case fixed
+        case curve
+        case max
+
+        var id: Self { self }
+
+        var title: String {
+            switch self {
+            case .automatic: return String(localized: "System Automatic")
+            case .fixed: return String(localized: "Fixed Speed")
+            case .curve: return String(localized: "Temperature Curve")
+            case .max: return String(localized: "Full Speed")
+            }
+        }
+
+        var symbol: String {
+            switch self {
+            case .automatic: return "a.circle"
+            case .fixed: return "gauge.with.dots.needle.33percent"
+            case .curve: return "chart.line.uptrend.xyaxis"
+            case .max: return "wind"
+            }
+        }
+    }
+
+    var id = UUID()
+    var name: String
+    var behavior: FanBehavior
+    /// Keyed by fan index. Never `.automatic`: see `FanBehavior.perFanKinds`.
+    var perFan: [Int: FanBehavior] = [:]
+
+    init(name: String, behavior: FanBehavior) {
+        self.name = name
+        self.behavior = behavior
+    }
+
+    var isPerFan: Bool { !perFan.isEmpty }
+
+    func behavior(forFan index: Int) -> FanBehavior {
+        if let own = perFan[index] { return own }
+        // A fan without its own entry (a profile from a Mac with fewer fans) follows
+        // the first fan: an Automatic fallback would only be held at its minimum.
+        guard isPerFan, !FanBehavior.perFanKinds.contains(behavior.kind),
+              let first = perFan.min(by: { $0.key < $1.key }) else { return behavior }
+        return first.value
+    }
+
+    var symbol: String { isPerFan ? "square.split.2x1" : behavior.kind.symbol }
+
+    static let defaults: [FanProfile] = [
+        FanProfile(name: String(localized: "Automatic"), behavior: FanBehavior(kind: .automatic)),
+        FanProfile(name: String(localized: "Balanced"), behavior: FanBehavior(kind: .curve, source: .hottest,
+                                                           curve: [.init(60, 0), .init(90, 100)])),
+        FanProfile(name: String(localized: "Cool"), behavior: FanBehavior(kind: .curve, source: .hottest,
+                                                       curve: [.init(45, 0), .init(75, 100)])),
+        FanProfile(name: String(localized: "Full Speed"), behavior: FanBehavior(kind: .max)),
+    ]
+
+    // Older profiles kept these fields at the top level, with a two-point curve as
+    // `lowTemperature`/`highTemperature`.
+    private enum CodingKeys: String, CodingKey {
+        case id, name, behavior, perFan
+        case kind, fixedPercent, source, lowTemperature, highTemperature
+    }
+
+    init(from decoder: Decoder) throws {
+        let container = try decoder.container(keyedBy: CodingKeys.self)
+        id = try container.decode(UUID.self, forKey: .id)
+        name = try container.decode(String.self, forKey: .name)
+        if let behavior = try container.decodeIfPresent(FanBehavior.self, forKey: .behavior) {
+            self.behavior = behavior
+        } else {
+            let low = try container.decodeIfPresent(Double.self, forKey: .lowTemperature) ?? 55
+            let high = try container.decodeIfPresent(Double.self, forKey: .highTemperature) ?? 85
+            behavior = FanBehavior(
+                kind: try container.decode(Kind.self, forKey: .kind),
+                fixedPercent: try container.decodeIfPresent(Double.self, forKey: .fixedPercent) ?? 50,
+                source: try container.decodeIfPresent(SensorSource.self, forKey: .source) ?? .cpu,
+                curve: [.init(low, 0), .init(max(high, low + 1), 100)]
+            )
+        }
+        // JSON keys are strings, and "1" and "01" are the same fan: keep the first.
+        let perFan = try container.decodeIfPresent([String: FanBehavior].self, forKey: .perFan) ?? [:]
+        self.perFan = Dictionary(perFan.compactMap { key, value in
+            guard let index = Int(key), index >= 0, FanBehavior.perFanKinds.contains(value.kind) else { return nil }
+            return (index, value)
+        }, uniquingKeysWith: { first, _ in first })
+    }
+
+    func encode(to encoder: Encoder) throws {
+        var container = encoder.container(keyedBy: CodingKeys.self)
+        try container.encode(id, forKey: .id)
+        try container.encode(name, forKey: .name)
+        try container.encode(behavior, forKey: .behavior)
+        if !perFan.isEmpty {
+            try container.encode(Dictionary(uniqueKeysWithValues: perFan.map { (String($0.key), $0.value) }),
+                                 forKey: .perFan)
+        }
+    }
+}
+
+/// At `temperature` (°C) the fan runs at `percent` of its min…max range.
+struct CurvePoint: Codable, Hashable {
+    var temperature: Double
+    var percent: Double
+
+    init(_ temperature: Double, _ percent: Double) {
+        self.temperature = temperature
+        self.percent = percent
+    }
+}
+
+struct FanBehavior: Codable, Hashable {
+    var kind: FanProfile.Kind
+    var fixedPercent: Double = 50
+    var source: SensorSource = .cpu
+    /// Sorted, at least two points. Outside them the fan holds the nearest point's speed.
+    var curve: [CurvePoint] = FanBehavior.newCurve
+
+    static let newCurve: [CurvePoint] = [.init(50, 0), .init(70, 40), .init(90, 100)]
+
+    /// Automatic isn't one: one manual fan suspends thermal control for all of
+    /// them, so an "automatic" fan would just be held at its minimum.
+    static let perFanKinds: [FanProfile.Kind] = [.fixed, .curve, .max]
+
+    func speedFraction(at temperature: Double?) -> Double? {
+        switch kind {
+        case .automatic: return nil
+        case .max: return 1
+        case .fixed: return min(max(fixedPercent / 100, 0), 1)
+        case .curve:
+            guard let temperature, let first = curve.first, let last = curve.last else { return nil }
+            let percent: Double
+            if temperature <= first.temperature {
+                percent = first.percent
+            } else if temperature >= last.temperature {
+                percent = last.percent
+            } else {
+                let upper = curve.firstIndex { $0.temperature >= temperature }!
+                let a = curve[upper - 1], b = curve[upper]
+                let t = (temperature - a.temperature) / max(b.temperature - a.temperature, 0.001)
+                percent = a.percent + (b.percent - a.percent) * t
+            }
+            return min(max(percent / 100, 0), 1)
+        }
+    }
+
+    func targetRPM(for fan: FanInfo, temperature: Double?) -> Double? {
+        speedFraction(at: temperature).map { fan.minimum + (fan.maximum - fan.minimum) * $0 }
+    }
+}
+
+extension FanBehavior {
+    private enum CodingKeys: String, CodingKey {
+        case kind, fixedPercent, source, curve
+    }
+
+    // Checked as they're read, so a hand-edited or damaged file can't reach the fans.
+    init(from decoder: Decoder) throws {
+        let container = try decoder.container(keyedBy: CodingKeys.self)
+        let fixedPercent = try container.decodeIfPresent(Double.self, forKey: .fixedPercent) ?? 50
+        self.init(kind: try container.decode(FanProfile.Kind.self, forKey: .kind),
+                  fixedPercent: min(max(fixedPercent, 0), 100),
+                  source: try container.decodeIfPresent(SensorSource.self, forKey: .source) ?? .cpu,
+                  curve: Self.validCurve(try container.decodeIfPresent([CurvePoint].self, forKey: .curve) ?? Self.newCurve))
+    }
+
+    /// Sorted, a degree apart, within 0…100%, and at least two points, or `newCurve`.
+    static func validCurve(_ points: [CurvePoint]) -> [CurvePoint] {
+        var curve: [CurvePoint] = []
+        // Filtered before sorting: NaN compares false both ways and scrambles the order.
+        let finite = points.filter { $0.temperature.isFinite && $0.percent.isFinite }
+        for point in finite.sorted(by: { $0.temperature < $1.temperature }) {
+            if let last = curve.last, point.temperature - last.temperature < 1 { continue }
+            curve.append(CurvePoint(point.temperature, min(max(point.percent, 0), 100)))
+        }
+        return curve.count >= 2 ? curve : newCurve
+    }
+}
+
+@MainActor
+@Observable
+final class ProfileStore {
+    var profiles: [FanProfile] {
+        didSet { save() }
+    }
+
+    var activeProfileID: UUID? {
+        didSet { UserDefaults.standard.set(activeProfileID?.uuidString, forKey: PreferenceKey.activeProfileID) }
+    }
+
+    var activeProfile: FanProfile? {
+        profiles.first { $0.id == activeProfileID }
+    }
+
+    init() {
+        let defaults = UserDefaults.standard
+        if let saved = defaults.lenientArray(of: FanProfile.self, forKey: PreferenceKey.profiles) {
+            profiles = saved.isEmpty ? FanProfile.defaults : saved
+            if saved.isEmpty { save() }
+        } else {
+            // Save right away so the defaults keep stable IDs across launches.
+            profiles = FanProfile.defaults
+            save()
+        }
+        activeProfileID = defaults.string(forKey: PreferenceKey.activeProfileID).flatMap(UUID.init)
+    }
+
+    func add() -> FanProfile {
+        let profile = FanProfile(name: uniqueName(String(localized: "New Profile")), behavior: FanBehavior(kind: .curve))
+        profiles.append(profile)
+        return profile
+    }
+
+    func duplicate(_ profile: FanProfile) -> FanProfile {
+        var copy = profile
+        copy.id = UUID()
+        copy.name = uniqueName(String(localized: "\(profile.name) Copy"))
+        profiles.insert(copy, at: (profiles.firstIndex(of: profile) ?? profiles.count - 1) + 1)
+        return copy
+    }
+
+    func delete(_ id: UUID) {
+        profiles.removeAll { $0.id == id }
+        if activeProfileID == id { activeProfileID = nil }
+    }
+
+    /// Imports get new IDs, so importing a file twice never replaces a profile.
+    @discardableResult
+    func importProfiles(_ imported: [FanProfile]) -> [FanProfile] {
+        let added = imported.map { profile in
+            var copy = profile
+            copy.id = UUID()
+            copy.name = uniqueName(profile.name)
+            profiles.append(copy)
+            return copy
+        }
+        return added
+    }
+
+    func restoreDefaults() {
+        activeProfileID = nil
+        profiles = FanProfile.defaults.map { profile in
+            var fresh = profile
+            fresh.id = UUID()
+            return fresh
+        }
+    }
+
+    private func uniqueName(_ base: String) -> String {
+        let names = Set(profiles.map(\.name))
+        guard names.contains(base) else { return base }
+        return (2...).lazy.map { "\(base) \($0)" }.first { !names.contains($0) }!
+    }
+
+    private func save() {
+        if let data = try? JSONEncoder().encode(profiles) {
+            UserDefaults.standard.set(data, forKey: PreferenceKey.profiles)
+        }
+    }
+}
+
+/// Exported profiles. `version` changes whenever a field changes meaning.
+struct ProfileArchive: Codable {
+    /// 2: per-fan settings and multi-point curves. Version 1 still imports.
+    static let currentVersion = 2
+
+    var app = AppInfo.name
+    var version = Self.currentVersion
+    var profiles: [FanProfile]
+}

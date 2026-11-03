@@ -53,9 +53,9 @@
 			path = ThermoTune;
 			sourceTree = "<group>";
 		};
-		A1000000000000000000F007 /* Helper */ = {
+		A1000000000000000000F007 /* ThermoTuneHelper */ = {
 			isa = PBXFileSystemSynchronizedRootGroup;
-			path = Helper;
+			path = ThermoTuneHelper;
 			sourceTree = "<group>";
 		};
 		A1000000000000000000F008 /* Shared */ = {
@@ -98,12 +98,28 @@
 		A1000000000000000000F002 = {
 			isa = PBXGroup;
 			children = (
-				A1000000000000000000F006 /* ThermoTune */,
-				A1000000000000000000F007 /* Helper */,
-				A1000000000000000000F008 /* Shared */,
-				A1000000000000000000F065 /* ThermoTuneTests */,
+				A1000000000000000000F00A /* Sources */,
+				A1000000000000000000F00B /* Tests */,
 				A1000000000000000000F003 /* Products */,
 			);
+			sourceTree = "<group>";
+		};
+		A1000000000000000000F00A /* Sources */ = {
+			isa = PBXGroup;
+			children = (
+				A1000000000000000000F006 /* ThermoTune */,
+				A1000000000000000000F007 /* ThermoTuneHelper */,
+				A1000000000000000000F008 /* Shared */,
+			);
+			path = Sources;
+			sourceTree = "<group>";
+		};
+		A1000000000000000000F00B /* Tests */ = {
+			isa = PBXGroup;
+			children = (
+				A1000000000000000000F065 /* ThermoTuneTests */,
+			);
+			path = Tests;
 			sourceTree = "<group>";
 		};
 		A1000000000000000000F003 /* Products */ = {
@@ -154,7 +170,7 @@
 			dependencies = (
 			);
 			fileSystemSynchronizedGroups = (
-				A1000000000000000000F007 /* Helper */,
+				A1000000000000000000F007 /* ThermoTuneHelper */,
 				A1000000000000000000F008 /* Shared */,
 			);
 			name = ThermoTuneHelper;
@@ -341,7 +357,7 @@
 					"$(inherited)",
 					"@executable_path/../Frameworks",
 				);
-				MARKETING_VERSION = 0.1.6;
+				MARKETING_VERSION = 0.1.7;
 				PRODUCT_BUNDLE_IDENTIFIER = com.armend.ThermoTune;
 				PRODUCT_NAME = "$(TARGET_NAME)";
 				LOCALIZATION_PREFERS_STRING_CATALOGS = YES;
@@ -364,7 +380,7 @@
 					"$(inherited)",
 					"@executable_path/../Frameworks",
 				);
-				MARKETING_VERSION = 0.1.6;
+				MARKETING_VERSION = 0.1.7;
 				PRODUCT_BUNDLE_IDENTIFIER = com.armend.ThermoTune;
 				PRODUCT_NAME = "$(TARGET_NAME)";
 				LOCALIZATION_PREFERS_STRING_CATALOGS = YES;

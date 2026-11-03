@@ -57,10 +57,10 @@ change spans everything. Keep the subject under about 72 characters.
 
 | Scope | Covers |
 |---|---|
-| `smc` | `Shared/`: the SMC client, fan reads and writes, sensor discovery |
-| `helper` | `Helper/` and `HelperInstaller.swift`: anything that runs as root or installs it |
-| `app` | `ThermoTune/Model`: polling, state, profiles, preferences |
-| `ui` | `ThermoTune/Views` |
+| `smc` | `Sources/Shared/`: the SMC client, fan reads and writes, sensor discovery |
+| `helper` | `Sources/ThermoTuneHelper/` and `HelperInstaller.swift`: anything that runs as root or installs it |
+| `app` | `Sources/ThermoTune/Model`: polling, state, profiles, preferences |
+| `ui` | `Sources/ThermoTune/Views` |
 
 ```
 fix(smc): wait for the 0x82 hand-over before giving up on manual mode
@@ -98,17 +98,24 @@ make fans-auto      # hand every fan back to macOS, whatever state they were lef
 ## Layout
 
 ```
-Shared/       SMC client (SMC.swift) and fan/sensor logic (Fans.swift). Compiled into BOTH targets.
-Helper/       main.swift of ThermoTuneHelper, the setuid-root tool. The only code that writes the SMC.
-ThermoTune/   the app: Model/ (HardwareMonitor, profiles, preferences, HelperInstaller), Views/
-docs/         README images
-ThermoTune.xcodeproj   hand-written; uses synchronized folders
+Sources/
+  ThermoTune/         the app: App/ (entry point, snapshots), Model/, Views/, Resources/ (strings)
+  ThermoTuneHelper/   main.swift of the setuid-root tool, the only code that writes the SMC
+  Shared/             SMC client (SMC.swift) and fan/sensor logic (Fans.swift), compiled into BOTH
+Tests/
+  ThermoTuneTests/    unit tests, hosted in the app
+Scripts/              DMG packaging and its checks
+docs/                 README images
+ThermoTune.xcodeproj  hand-written; uses synchronized folders
 ```
+
+The `Sources/<target>` and `Tests/<target>` layout is the Swift package convention: one folder per
+target, named after it.
 
 **`Shared/` is linked into a binary that runs as root, and must stay small and boring.**
 Foundation and IOKit only: no SwiftUI, no AppKit, no networking, no dependencies. Everything
 added there is attack surface on a setuid binary. If something in `Shared/` seems to need UI
-types, the part that needs them belongs in `ThermoTune/`.
+types, the part that needs them belongs in `Sources/ThermoTune/`.
 
 **The helper's command list is the security boundary.** `status`, `set <fan> <rpm>`,
 `auto <fan>`, `max-all`, `auto-all`, nothing else, every argument validated, RPM clamped to the
@@ -118,8 +125,8 @@ a looser parse is a security change and is reviewed as one. Never add a command 
 arbitrary key or value.
 
 **The project uses synchronized folders** (`PBXFileSystemSynchronizedRootGroup`, object version
-77). A file dropped into `ThermoTune/`, `Helper/` or `Shared/` is part of the build with no
-pbxproj edit; there are no per-file references to keep in sync. The pbxproj was written by
+77). A file dropped into any folder under `Sources/` or `Tests/` is part of its target's build
+with no pbxproj edit; there are no per-file references to keep in sync. The pbxproj was written by
 hand, its object IDs are the readable `A1000000000000000000Fxxx` series. After editing it,
 `xcodebuild -list -project ThermoTune.xcodeproj` is the quickest way to know it still parses.
 
@@ -180,6 +187,16 @@ fan to Auto made it read as manual again and the switch snapped back: there was 
 to stop the fans. Now that fan shows Auto with a "held at minimum" note, and *All Auto* is the
 way out. Never leave `Ftst = 1` with no fan in manual mode.
 
+**Newer Macs change the fan keys, and none of this has run on one.** From the open-source Stats
+app's SMC code (`exelban/stats`, `SMC/smc.swift`), not from hardware here: M5 Macs have no `Ftst`,
+so the mode is written directly with no hand-over wait, and some spell the mode key `F<n>md`
+instead of `F<n>Md`. `SMC.fanModeKey` tries both, and everything that touches `Ftst` checks
+`hasKey("Ftst")` first. Without the lowercase spelling, every fan write on those Macs fell through
+to Intel's `FS! ` key, which they don't have. M4 and M5 temperatures use the same `Tp`/`Te`/`Tg`
+prefixes, so discovery and grouping need nothing new; M5's "super" cores are `Tp` keys too and
+show among the performance cores. Fanless Macs (MacBook Air) report no fans and show only
+temperatures.
+
 **Mode values are not just 0 and 1.** This M3 Pro has reported `F0Md = 3` with its fans stopped
 at idle, and `0` while macOS was running them. ThermoTune writes `1` for manual and `0` for
 automatic. Manual means `== 1`, not "anything but 0"; whether macOS is in charge is `Ftst == 0`
@@ -202,8 +219,8 @@ would have stopped them. That is expected, not a bug.
 calls the installed helper out of date whenever its bytes differ from the bundled one. The
 installed helper normally comes from a Release build, so a Debug app always shows "Update
 Helper…". That is why `make run` and `make shot` build Release. It also means **any change to
-`Shared/` or `Helper/` makes every user re-enter their password** after updating; say so in the
-pull request.
+`Sources/Shared/` or `Sources/ThermoTuneHelper/` makes every user re-enter their password**
+after updating; say so in the pull request.
 
 **Downloaded apps are quarantined.** Install clears the copied helper's extended attributes
 (`xattr -c`) before making it setuid root, so a quarantine flag from the DMG can't come along
@@ -297,7 +314,7 @@ app; the toggle surfaces whatever error it returns.
 
 ## Testing
 
-`make test` runs the unit tests in `ThermoTuneTests/` (Swift Testing): SMC encoding for every type,
+`make test` runs the unit tests in `Tests/ThermoTuneTests/` (Swift Testing): SMC encoding for every type,
 curves and their validation, profile decoding and migration, smoothing, the safety net and profile
 decisions (`FanController`), rules, the CSV, sensor
 names, and a check that every German string keeps its English placeholders. None needs hardware
@@ -340,7 +357,7 @@ keeps them current.
 
 ## Translations
 
-Strings live in `ThermoTune/Localizable.xcstrings` (English source, German). SwiftUI translates
+Strings live in `Sources/ThermoTune/Resources/Localizable.xcstrings` (English source, German). SwiftUI translates
 only **literals**: `Text("Fans")` is looked up, `Text(someString)` is shown as it is. So any
 string built in code and later shown, such as a `title` property, an alert or an error message,
 is written `String(localized: "…")` at the point it's created. `FanInfo.name` lives in
@@ -351,7 +368,7 @@ catalog the way Xcode's editor does. After adding or changing user-facing text:
 
 ```sh
 make build
-xcrun xcstringstool sync ThermoTune/Localizable.xcstrings --stringsdata $(find build/Build/Intermediates.noindex/ThermoTune.build/Debug -name '*.stringsdata')
+xcrun xcstringstool sync Sources/ThermoTune/Resources/Localizable.xcstrings --stringsdata $(find build/Build/Intermediates.noindex/ThermoTune.build/Debug -name '*.stringsdata')
 ```
 
 then add the German for any new key. Machine translations are marked `needs_review`. To see the
