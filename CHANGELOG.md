@@ -4,6 +4,13 @@ Every pull request raises the version (`make bump`) and adds a section here for 
 `development` is merged into `main`, the release takes every section since the last release as
 its notes.
 
+## 0.1.7 (2026-11-03)
+
+* Fan control on M5 Macs that spell the fan mode key differently: every fan change on them used
+  to fail. Based on how the open-source Stats app drives them; not yet confirmed on an M5.
+* **Updating asks for your administrator password once:** the source files moved, which changes
+  the helper's bytes even though its code is the same.
+
 ## 0.1.6 (2026-11-02)
 
 * The Temperatures list shows each group's average as its main reading, with the hottest sensor

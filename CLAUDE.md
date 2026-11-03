@@ -187,6 +187,16 @@ fan to Auto made it read as manual again and the switch snapped back: there was 
 to stop the fans. Now that fan shows Auto with a "held at minimum" note, and *All Auto* is the
 way out. Never leave `Ftst = 1` with no fan in manual mode.
 
+**Newer Macs change the fan keys, and none of this has run on one.** From the open-source Stats
+app's SMC code (`exelban/stats`, `SMC/smc.swift`), not from hardware here: M5 Macs have no `Ftst`,
+so the mode is written directly with no hand-over wait, and some spell the mode key `F<n>md`
+instead of `F<n>Md`. `SMC.fanModeKey` tries both, and everything that touches `Ftst` checks
+`hasKey("Ftst")` first. Without the lowercase spelling, every fan write on those Macs fell through
+to Intel's `FS! ` key, which they don't have. M4 and M5 temperatures use the same `Tp`/`Te`/`Tg`
+prefixes, so discovery and grouping need nothing new; M5's "super" cores are `Tp` keys too and
+show among the performance cores. Fanless Macs (MacBook Air) report no fans and show only
+temperatures.
+
 **Mode values are not just 0 and 1.** This M3 Pro has reported `F0Md = 3` with its fans stopped
 at idle, and `0` while macOS was running them. ThermoTune writes `1` for manual and `0` for
 automatic. Manual means `== 1`, not "anything but 0"; whether macOS is in charge is `Ftst == 0`
