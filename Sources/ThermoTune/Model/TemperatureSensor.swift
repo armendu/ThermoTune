@@ -25,40 +25,29 @@ struct TemperatureSensor: Identifiable, Equatable {
 
     var id: String { key }
 
-    /// Grouping is based on the SMC key prefix: `Tp`/`Te` are the Apple Silicon
-    /// P/E-core clusters, `Tg` the Apple Silicon GPU, `TC`/`TG` Intel CPU/GPU.
-    var group: Group {
-        switch key.prefix(2) {
-        case "Tp": return .cpuPerformance
-        case "Te": return .cpuEfficiency
-        case "TC": return .cpu
-        case "Tg", "TG": return .gpu
-        default: return .other
-        }
-    }
+    /// Where a sensor most likely sits, by key prefix. Apple doesn't publish what each
+    /// key measures; these are the community's best guesses for Apple silicon, with
+    /// Intel's `TC` and `TG`.
+    private static let prefixes: [String: (group: Group, label: String)] = [
+        "Tp": (.cpuPerformance, String(localized: "Performance cores")),
+        "Te": (.cpuEfficiency, String(localized: "Efficiency cores")),
+        "TC": (.cpu, String(localized: "CPU package")),
+        "Tg": (.gpu, String(localized: "GPU")),
+        "TG": (.gpu, String(localized: "GPU")),
+        "TB": (.other, String(localized: "Battery")),
+        "TH": (.other, String(localized: "SSD")),
+        "TW": (.other, String(localized: "Wi-Fi")),
+        "Ts": (.other, String(localized: "Palm rest")),
+        "Ta": (.other, String(localized: "Airflow")),
+        "TA": (.other, String(localized: "Ambient")),
+        "Tm": (.other, String(localized: "Memory")),
+    ]
+
+    var group: Group { Self.prefixes[String(key.prefix(2))]?.group ?? .other }
+    var label: String { Self.prefixes[String(key.prefix(2))]?.label ?? String(localized: "Sensor") }
 
     var isCPU: Bool { [.cpuPerformance, .cpuEfficiency, .cpu].contains(group) }
     var isGPU: Bool { group == .gpu }
-
-    /// Where the sensor most likely sits, from its key's prefix. Apple doesn't
-    /// publish what each key measures; these are the community's best guesses
-    /// for Apple silicon, and unknown prefixes stay a plain "Sensor".
-    var label: String {
-        switch key.prefix(2) {
-        case "Tp": return String(localized: "Performance cores")
-        case "Te": return String(localized: "Efficiency cores")
-        case "Tg", "TG": return String(localized: "GPU")
-        case "TC": return String(localized: "CPU package")
-        case "TB": return String(localized: "Battery")
-        case "TH": return String(localized: "SSD")
-        case "TW": return String(localized: "Wi-Fi")
-        case "Ts": return String(localized: "Palm rest")
-        case "Ta": return String(localized: "Airflow")
-        case "TA": return String(localized: "Ambient")
-        case "Tm": return String(localized: "Memory")
-        default: return String(localized: "Sensor")
-        }
-    }
 
     /// A readable name per key: the label, numbered when several sensors share it
     /// ("Performance cores 3"), in key order so numbers stay stable between launches.

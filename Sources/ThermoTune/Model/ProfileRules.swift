@@ -106,9 +106,7 @@ final class ProfileRules {
     }
 
     private func save() {
-        if let data = try? JSONEncoder().encode(rules) {
-            defaults.set(data, forKey: PreferenceKey.rules)
-        }
+        defaults.setEncoded(rules, forKey: PreferenceKey.rules)
     }
 
     private final class SystemState {

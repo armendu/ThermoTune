@@ -138,7 +138,10 @@ struct FanController {
         let handBack: [Command] = fans.allSatisfy(\.isSystemControlled) ? [] : [.autoAll]
         guard let profile = input.profile else {
             smoothing = [:]
-            guard profileHoldsFans else { return [] }
+            // `Ftst` on with no fan manual is a fan nobody manages. Two quick per-fan Auto
+            // switches leave it: the second reads the first fan's mode before its write lands.
+            let isStranded = !fans.contains(where: \.isManual) && fans.contains(where: \.isControlUnlocked)
+            guard profileHoldsFans || isStranded else { return [] }
             profileHoldsFans = false
             isOverheating = false
             return [.autoAll]

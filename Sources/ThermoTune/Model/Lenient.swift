@@ -33,6 +33,10 @@ extension UserDefaults {
         return values
     }
 
+    func setEncoded<Value: Encodable>(_ value: Value, forKey key: String) {
+        if let data = try? JSONEncoder().encode(value) { set(data, forKey: key) }
+    }
+
     /// `nil` when nothing is saved.
     func lenientDictionary<Value: Decodable>(of type: Value.Type, forKey key: String) -> [String: Value]? {
         guard let data = data(forKey: key) else { return nil }

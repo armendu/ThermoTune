@@ -4,6 +4,19 @@ Every pull request raises the version (`make bump`) and adds a section here for 
 `development` is merged into `main`, the release takes every section since the last release as
 its notes.
 
+## 0.1.8 (2026-11-04)
+
+* Fans are handed back to macOS if ThermoTune finds the fan unlock left on with no fan in manual
+  mode. Switching two fans to Auto in quick succession could leave it that way, with every fan
+  held at its minimum.
+* Quitting hands the fans back even when it can't read them, instead of assuming they're fine.
+* A fan whose maximum speed can't be read no longer counts as already at full speed, which kept
+  the safety net from stepping in.
+* A full-speed safety trip's banner goes away once the trip ends.
+* Only one keyboard shortcut can be recorded at a time; a second one used to get stuck.
+* Removing a point from a curve can no longer crash the profile editor.
+* The security policy's removal steps hand the fans back before deleting the helper.
+
 ## 0.1.7 (2026-11-03)
 
 * Fan control on M5 Macs that spell the fan mode key differently: every fan change on them used

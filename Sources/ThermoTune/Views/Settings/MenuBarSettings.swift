@@ -37,7 +37,7 @@ struct MenuBarSettings: View {
                 }
                 Group {
                     Picker("Temperature", selection: $source) {
-                        ForEach(SensorSource.groups) { Text($0.title).tag($0) }
+                        SensorGroupOptions()
                     }
                     Picker("Reading", selection: $usesAverage) {
                         Text("Hottest sensor").tag(false)

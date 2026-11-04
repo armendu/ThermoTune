@@ -323,7 +323,7 @@ private struct SourcePicker: View {
 
     var body: some View {
         Picker("Follow", selection: $source) {
-            ForEach(SensorSource.groups) { Text($0.title).tag($0) }
+            SensorGroupOptions()
             Divider()
             ForEach(TemperatureSensor.Group.allCases, id: \.self) { group in
                 let sensors = monitor.sensors.filter { $0.group == group }
@@ -483,14 +483,16 @@ private struct CurveEditor: View {
         }
     }
 
+    // Checked: SwiftUI can still read a row's binding just after its point is removed.
+
     private func temperatureBinding(_ index: Int) -> Binding<Double> {
-        Binding(get: { curve[index].temperature },
-                set: { move(index, to: CurvePoint($0, curve[index].percent)) })
+        Binding(get: { curve.indices.contains(index) ? curve[index].temperature : 0 },
+                set: { if curve.indices.contains(index) { move(index, to: CurvePoint($0, curve[index].percent)) } })
     }
 
     private func percentBinding(_ index: Int) -> Binding<Double> {
-        Binding(get: { curve[index].percent },
-                set: { move(index, to: CurvePoint(curve[index].temperature, $0)) })
+        Binding(get: { curve.indices.contains(index) ? curve[index].percent : 0 },
+                set: { if curve.indices.contains(index) { move(index, to: CurvePoint(curve[index].temperature, $0)) } })
     }
 
     /// Clamped between its neighbours, so the order never changes.
