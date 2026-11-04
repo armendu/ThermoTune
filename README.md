@@ -70,7 +70,8 @@ no background daemons, no third-party code.
 ## Requirements
 
 - macOS 15 or newer
-- A Mac with fans. Apple silicon is tested; Intel is supported in the code but untested.
+- A Mac with fans to control them; temperatures work on any Mac. Tested on an M3 Pro. M1 to M5 and
+  Intel are supported in the code but not yet confirmed on hardware.
 
 ## Install
 
