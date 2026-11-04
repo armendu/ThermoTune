@@ -52,6 +52,9 @@ final class HotKeys {
     private(set) var shortcuts: [String: Shortcut]
     /// Usually because another app owns the combination.
     private(set) var failed: Set<String> = []
+    /// The action whose shortcut is being recorded. One row at a time: only the
+    /// first key monitor sees a keypress, so a second would never stop.
+    var recording: String?
 
     @ObservationIgnored private var registered: [String: EventHotKeyRef] = [:]
     @ObservationIgnored private var idsByNumber: [UInt32: String] = [:]
@@ -89,9 +92,7 @@ final class HotKeys {
     }
 
     private func save() {
-        if let data = try? JSONEncoder().encode(shortcuts) {
-            UserDefaults.standard.set(data, forKey: PreferenceKey.shortcuts)
-        }
+        UserDefaults.standard.setEncoded(shortcuts, forKey: PreferenceKey.shortcuts)
         registerAll()
     }
 

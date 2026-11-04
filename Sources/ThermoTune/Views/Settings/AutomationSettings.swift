@@ -14,16 +14,14 @@ struct AutomationSettings: View {
             Section {
                 Toggle("Switch profiles automatically", isOn: $rules.isEnabled)
                 ForEach($rules.rules) { $rule in
-                    RuleRow(rule: $rule, profiles: profiles,
+                    RuleRow(rule: $rule,
                             isMatched: rules.isEnabled && rules.matchedRuleID == rule.id,
                             move: { move(rule.id, by: $0) },
                             delete: { rules.rules.removeAll { $0.id == rule.id } })
                 }
                 .disabled(!rules.isEnabled)
                 Picker("When no rule matches", selection: $rules.fallbackProfileID) {
-                    Text("Leave as it is").tag(UUID?.none)
-                    Divider()
-                    ForEach(profiles) { Text($0.name).tag(Optional($0.id)) }
+                    ProfileOptions(noneTitle: "Leave as it is")
                 }
                 .disabled(!rules.isEnabled)
                 Menu("Add Rule") {
@@ -74,7 +72,6 @@ struct AutomationSettings: View {
 
 private struct RuleRow: View {
     @Binding var rule: ProfileRule
-    let profiles: [FanProfile]
     let isMatched: Bool
     let move: (Int) -> Void
     let delete: () -> Void
@@ -90,9 +87,7 @@ private struct RuleRow: View {
                 Text("Active").font(.caption).foregroundStyle(.tint)
             }
             Picker("Use", selection: $rule.profileID) {
-                Text("None").tag(UUID?.none)
-                Divider()
-                ForEach(profiles) { Text($0.name).tag(Optional($0.id)) }
+                ProfileOptions()
             }
             .labelsHidden()
             .fixedSize()
@@ -117,7 +112,7 @@ private struct RuleRow: View {
                     get: { source },
                     set: { rule.condition = .temperatureAbove(source: $0, limit: limit) }
                 )) {
-                    ForEach(SensorSource.groups) { Text($0.title).tag($0) }
+                    SensorGroupOptions()
                 }
                 .labelsHidden()
                 .fixedSize()
@@ -177,10 +172,14 @@ private struct ShortcutRow: View {
             }
         }
         .onDisappear(perform: stopRecording)
+        .onChange(of: monitor.hotKeys.recording) { _, recording in
+            if recording != action.storageKey { stopRecording() }
+        }
     }
 
     private func startRecording() {
         isRecording = true
+        monitor.hotKeys.recording = action.storageKey
         // Carbon takes the key before this monitor, so a set combination would fire.
         monitor.hotKeys.unregisterAll()
         monitorToken = NSEvent.addLocalMonitorForEvents(matching: .keyDown) { event in
@@ -207,6 +206,8 @@ private struct ShortcutRow: View {
         isRecording = false
         if let monitorToken { NSEvent.removeMonitor(monitorToken) }
         monitorToken = nil
-        monitor.hotKeys.registerAll()
+        if monitor.hotKeys.recording == action.storageKey { monitor.hotKeys.recording = nil }
+        // Another row may have started recording, and needs the shortcuts kept off.
+        if monitor.hotKeys.recording == nil { monitor.hotKeys.registerAll() }
     }
 }

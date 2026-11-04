@@ -37,3 +37,10 @@ extension Binding where Value == Bool {
                   set: { if !$0 { optional.wrappedValue = nil } })
     }
 }
+
+/// CPU, GPU and the hottest of the two, as a picker's choices.
+struct SensorGroupOptions: View {
+    var body: some View {
+        ForEach(SensorSource.groups) { Text($0.title).tag($0) }
+    }
+}

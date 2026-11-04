@@ -143,7 +143,7 @@ struct FanBehavior: Codable, Hashable {
             } else if temperature >= last.temperature {
                 percent = last.percent
             } else {
-                let upper = curve.firstIndex { $0.temperature >= temperature }!
+                guard let upper = curve.firstIndex(where: { $0.temperature >= temperature }), upper > 0 else { return nil }
                 let a = curve[upper - 1], b = curve[upper]
                 let t = (temperature - a.temperature) / max(b.temperature - a.temperature, 0.001)
                 percent = a.percent + (b.percent - a.percent) * t
@@ -261,9 +261,7 @@ final class ProfileStore {
     }
 
     private func save() {
-        if let data = try? JSONEncoder().encode(profiles) {
-            UserDefaults.standard.set(data, forKey: PreferenceKey.profiles)
-        }
+        UserDefaults.standard.setEncoded(profiles, forKey: PreferenceKey.profiles)
     }
 }
 
