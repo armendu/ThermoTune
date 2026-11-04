@@ -209,6 +209,8 @@ final class HardwareMonitor {
             safetyTrip = trip
             alerts.postSafetyNet(temperature: trip.temperature, action: trip.action)
         }
+        // A Max trip's banner says the fans run at full speed until it cools down.
+        if safetyTrip?.action == .max, !controller.isOverheating { safetyTrip = nil }
         if decision.endsProfile { profiles.activeProfileID = nil }
         perform(decision.commands)
     }
@@ -374,7 +376,7 @@ final class HardwareMonitor {
                     return
                 }
             }
-            // The profile stays until the helper is gone, so cancelling the prompt changes nothing.
+            // The profile stays until the helper is gone, so cancelling the prompt keeps it.
             if await runAsAdministrator({ try HelperInstaller.uninstall() }) {
                 takeOverFromProfile()
             }
@@ -405,8 +407,10 @@ final class HardwareMonitor {
         let helperRanRecently = HelperInstaller.waitForRecentCalls(timeout: 30)
         // Any installed root helper can run `auto-all`, even one out of date.
         guard HelperInstaller.isInstalledAsRoot else { return }
-        if !helperRanRecently {
-            guard let smc = try? SMC(), !smc.fans().allSatisfy(\.isSystemControlled) else { return }
+        // Skipped only when every fan reads as macOS's: fans that can't be read count as not.
+        if !helperRanRecently, let smc = try? SMC() {
+            let fans = smc.fans()
+            if !fans.isEmpty, fans.allSatisfy(\.isSystemControlled) { return }
         }
         try? HelperInstaller.run(["auto-all"])
     }

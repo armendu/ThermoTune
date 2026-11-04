@@ -45,7 +45,8 @@ jobs:
             echo "v$version is already released; nothing to do."
             echo "release=false" >> "$GITHUB_OUTPUT"
           else
-            previous=$(gh release list --limit 1 --json tagName --jq '.[0].tagName // ""')
+            # Drafts aren't releases: a run that died partway leaves one for this very version.
+            previous=$(gh release list --exclude-drafts --limit 1 --json tagName --jq '.[0].tagName // ""')
             echo "PREVIOUS=${previous#v}" >> "$GITHUB_ENV"
             echo "Releasing v$version (previous release: ${previous:-none})."
             echo "release=true" >> "$GITHUB_OUTPUT"
@@ -84,7 +85,16 @@ jobs:
         env:
           GH_TOKEN: ${{ github.token }}
         run: |
-          gh release create "v$VERSION" "build/ThermoTune-$VERSION.dmg" \
-            --target "$GITHUB_SHA" \
-            --title "ThermoTune $VERSION" \
-            --notes-file build/release-notes.md
+          # `gh release create` makes a draft, uploads, then publishes. If GitHub failed in
+          # between (it has, with a 502), finish that draft, at the commit it was made for,
+          # rather than make a second release.
+          if [ "$(gh release view "v$VERSION" --json isDraft --jq .isDraft 2>/dev/null)" = "true" ]; then
+            gh release upload "v$VERSION" "build/ThermoTune-$VERSION.dmg" --clobber
+            gh release edit "v$VERSION" --draft=false \
+              --title "ThermoTune $VERSION" --notes-file build/release-notes.md
+          else
+            gh release create "v$VERSION" "build/ThermoTune-$VERSION.dmg" \
+              --target "$GITHUB_SHA" \
+              --title "ThermoTune $VERSION" \
+              --notes-file build/release-notes.md
+          fi

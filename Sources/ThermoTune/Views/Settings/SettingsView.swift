@@ -4,7 +4,9 @@ import SwiftUI
 /// when Settings closes, so plain ⌘, always lands on General.
 enum SettingsTab: String {
     case general, profiles, automation, safety, menuBar, advanced, about
-    static let storageKey = "settingsTab"
+    // A snapshot or test copy shares the owner's defaults: a key of its own keeps it
+    // from moving their open Settings window to another tab.
+    static let storageKey = RunMode.isReadOnly ? "snapshotSettingsTab" : "settingsTab"
 
     static func reset() {
         UserDefaults.standard.removeObject(forKey: storageKey)

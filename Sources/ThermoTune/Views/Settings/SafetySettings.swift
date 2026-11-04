@@ -25,14 +25,8 @@ struct SafetySettings: View {
             Section {
                 Toggle("Protect against overheating", isOn: $safetyEnabled)
                 Group {
-                    LabeledContent("When the hottest sensor reaches") {
-                        HStack {
-                            Slider(value: $safetyLimit, in: 80...FanController.backstopTemperature, step: 1)
-                            Text(safetyLimit.degrees)
-                                .monospacedDigit()
-                                .frame(width: 48, alignment: .trailing)
-                        }
-                    }
+                    TemperatureSlider("When the hottest sensor reaches", value: $safetyLimit,
+                                      in: 80...FanController.backstopTemperature)
                     Picker("For at least", selection: $safetyDelay) {
                         Text("Any time").tag(0.0)
                         Text("5 seconds").tag(5.0)
@@ -74,16 +68,9 @@ struct SafetySettings: View {
                 Toggle("When a temperature stays high", isOn: $alertTemperature)
                 if alertTemperature {
                     Picker("Temperature", selection: $temperatureSource) {
-                        ForEach(SensorSource.groups) { Text($0.title).tag($0) }
+                        SensorGroupOptions()
                     }
-                    LabeledContent("At or above") {
-                        HStack {
-                            Slider(value: $temperatureLimit, in: 60...105, step: 1)
-                            Text(temperatureLimit.degrees)
-                                .monospacedDigit()
-                                .frame(width: 48, alignment: .trailing)
-                        }
-                    }
+                    TemperatureSlider("At or above", value: $temperatureLimit, in: 60...105)
                     Picker("For at least", selection: $temperatureDuration) {
                         Text("10 seconds").tag(10.0)
                         Text("30 seconds").tag(30.0)
@@ -102,6 +89,30 @@ struct SafetySettings: View {
         .onAppear(perform: monitor.alerts.refreshAuthorization)
         .onChange(of: anyAlertOn) {
             if anyAlertOn, monitor.alerts.authorization == .notDetermined { monitor.alerts.requestAuthorization() }
+        }
+    }
+}
+
+/// A °C limit, shown in the unit chosen in Settings.
+private struct TemperatureSlider: View {
+    let title: LocalizedStringKey
+    @Binding var value: Double
+    let range: ClosedRange<Double>
+
+    init(_ title: LocalizedStringKey, value: Binding<Double>, in range: ClosedRange<Double>) {
+        self.title = title
+        _value = value
+        self.range = range
+    }
+
+    var body: some View {
+        LabeledContent(title) {
+            HStack {
+                Slider(value: $value, in: range, step: 1)
+                Text(value.degrees)
+                    .monospacedDigit()
+                    .frame(width: 48, alignment: .trailing)
+            }
         }
     }
 }

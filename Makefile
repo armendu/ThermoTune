@@ -12,7 +12,9 @@ HELPER      := /Library/PrivilegedHelperTools/com.armend.ThermoTune.Helper
 
 # -quiet keeps the output to warnings and errors. A fixed derived-data path keeps the
 # products where the targets below expect them instead of somewhere in ~/Library.
-XCODEBUILD  := xcodebuild -project $(PROJECT) -scheme $(SCHEME) -derivedDataPath $(DERIVED) -destination "generic/platform=macOS" -quiet
+# Builds can target any Mac; tests have to run on this one.
+DESTINATION := generic/platform=macOS
+XCODEBUILD   = xcodebuild -project $(PROJECT) -scheme $(SCHEME) -derivedDataPath $(DERIVED) -destination "$(DESTINATION)" -quiet
 
 .DEFAULT_GOAL := help
 .PHONY: help build release test dmg run shot open version bump helper-status fans-auto clean
@@ -33,8 +35,9 @@ dmg: release ## Release build packaged as build/ThermoTune-<version>.dmg
 
 # The tests run inside the app as their host. RunMode keeps that copy read-only, so testing
 # beside a ThermoTune someone is using never touches the fans.
+test: DESTINATION := platform=macOS
 test: ## run the unit tests (Debug)
-	xcodebuild -project $(PROJECT) -scheme $(SCHEME) -derivedDataPath $(DERIVED) -destination "platform=macOS" -quiet test
+	$(XCODEBUILD) test
 
 # run and shot use Release on purpose. The app compares the installed helper with the one it
 # bundles byte for byte, and the helper you installed came from a Release build, so a Debug

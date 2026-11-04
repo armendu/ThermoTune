@@ -14,7 +14,8 @@ Any local user can run the helper. By design it can only:
 - set every fan to maximum speed (`max-all`)
 - hand one fan, or every fan, back to macOS (`auto <fan>`, `auto-all`)
 
-It writes only fan-related SMC keys (`F<n>Md`, `F<n>Tg`, `Ftst`, and `FS! ` on Intel Macs).
+It writes only fan-related SMC keys (`F<n>Md`, or `F<n>md` on some M5 Macs, `F<n>Tg`, `Ftst`,
+and `FS! ` on Intel Macs).
 
 Anything beyond that is a vulnerability: writing other SMC keys, writing values outside the
 validated ranges, running code or reading or writing files as root, or affecting anything other
@@ -36,12 +37,14 @@ published and you'll be credited unless you'd rather not be.
 
 ## Supported versions
 
-Only the latest commit on `main` is supported. There are no maintained release branches.
+Only the latest release is supported. There are no maintained release branches.
 
 ## Removing the helper
 
-To remove the helper, use **Preferences › Helper › Uninstall Helper…**, or run:
+To remove the helper, use **Settings › Advanced › Uninstall Helper…**, which hands the fans
+back to macOS first. By hand, hand them back before removing it, since nothing can once it's gone:
 
 ```sh
+/Library/PrivilegedHelperTools/com.armend.ThermoTune.Helper auto-all
 sudo rm /Library/PrivilegedHelperTools/com.armend.ThermoTune.Helper
 ```

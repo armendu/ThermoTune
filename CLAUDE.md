@@ -86,7 +86,7 @@ make test           # unit tests, hosted in a read-only copy of the app
 make dmg            # Release build packaged as build/ThermoTune-<version>.dmg, what releases ship
 make version        # the current MARKETING_VERSION; everything that needs it asks this
 make bump           # raise it, once per pull request (PART=minor|major)
-make run            # Release build, then launch it
+make run            # Release build, then launch it (quits every running ThermoTune first)
 make shot           # Release build, launch, PNGs of its windows in build/screenshots
 make shot TAB=profiles   # …plus Preferences on that tab (general | profiles | automation | safety | menuBar | advanced | about)
 make helper-status  # what the installed helper reports for each fan
@@ -185,7 +185,10 @@ apart: `isManual` is the fan's own mode, `isControlUnlocked` is `Ftst`, and
 `isSystemControlled` needs both false. They used to be one flag, so after *All Max*, setting one
 fan to Auto made it read as manual again and the switch snapped back: there was no visible way
 to stop the fans. Now that fan shows Auto with a "held at minimum" note, and *All Auto* is the
-way out. Never leave `Ftst = 1` with no fan in manual mode.
+way out. Never leave `Ftst = 1` with no fan in manual mode. Two quick per-fan Auto switches could:
+the second reads the first fan's mode before its write lands and keeps `Ftst`. So with no profile
+running, `FanController` sends `auto-all` whenever it finds `Ftst` on, no fan manual and nothing
+in flight (the hand-over to manual looks the same, but always has a call in flight).
 
 **Newer Macs change the fan keys, and none of this has run on one.** From the open-source Stats
 app's SMC code (`exelban/stats`, `SMC/smc.swift`), not from hardware here: M5 Macs have no `Ftst`,
