@@ -22,7 +22,8 @@ extension FanInfo {
 
     var mode: FanMode {
         guard isManual else { return .automatic }
-        return target >= maximum - 1 ? .max : .manual
+        // A failed max read is 0, and must not make every manual fan count as already at Max.
+        return maximum > minimum && target >= maximum - 1 ? .max : .manual
     }
 
     /// A manual speed at the top of the range reads back as Max, and still counts as manual.

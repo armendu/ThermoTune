@@ -286,4 +286,24 @@ struct FanControllerTests {
         #expect(controller.applyProfile(readings) == [])
         #expect(!controller.profileHoldsFans)
     }
+
+    /// Every fan back on Auto but `Ftst` still on: nobody manages them, so they're handed back.
+    @Test func unlockLeftOnWithNoManualFanIsHandedBack() {
+        var controller = FanController()
+        let stranded = fans(.auto).map { fan -> FanInfo in
+            var fan = fan
+            fan.isControlUnlocked = true
+            return fan
+        }
+        #expect(controller.applyProfile(input(stranded, hottest: 60)) == [.autoAll])
+        // Not while a call is under way: during the hand-over to manual this is expected.
+        var busy = input(stranded, hottest: 60)
+        busy.isIdle = false
+        #expect(controller.applyProfile(busy) == [])
+        // One fan still manual is a fan someone set.
+        var mixed = stranded
+        mixed[0].isManual = true
+        #expect(controller.applyProfile(input(mixed, hottest: 60)) == [])
+        #expect(controller.applyProfile(input(fans(.auto), hottest: 60)) == [])
+    }
 }
