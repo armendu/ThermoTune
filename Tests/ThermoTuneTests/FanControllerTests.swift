@@ -125,6 +125,24 @@ struct FanControllerTests {
         #expect(!controller.profileHoldsFans)
     }
 
+    @Test func maxTripThatLosesEveryReadingHandsTheFansBack() {
+        var controller = FanController()
+        _ = controller.refresh(input(fans(.manual(3000)), hottest: 95, safety: fullSpeed, at: 0))
+        #expect(controller.refresh(input(fans(.manual(3000)), hottest: 95, safety: fullSpeed, at: 10)).commands == [.maxAll])
+        #expect(controller.refresh(input(fans(.max), hottest: nil, safety: fullSpeed, at: 11)).commands == [.autoAll])
+        #expect(!controller.isOverheating)
+    }
+
+    /// Picking a profile goes through `refresh`, so an Automatic one can't slow a trip's fans.
+    @Test func profilePickedDuringAMaxTripWaitsForItToEnd() {
+        var controller = FanController()
+        _ = controller.refresh(input(fans(.manual(3000)), hottest: 95, safety: fullSpeed, at: 0))
+        _ = controller.refresh(input(fans(.manual(3000)), hottest: 95, safety: fullSpeed, at: 10))
+        let automatic = profile(FanBehavior(kind: .automatic))
+        #expect(controller.refresh(input(fans(.max), hottest: 95, profile: automatic, safety: fullSpeed, at: 11)) == .init())
+        #expect(controller.isOverheating)
+    }
+
     @Test func helperErrorDuringAMaxTripEndsItInsteadOfRetrying() {
         var controller = FanController()
         let balanced = profile(curve)
@@ -287,23 +305,65 @@ struct FanControllerTests {
         #expect(!controller.profileHoldsFans)
     }
 
-    /// Every fan back on Auto but `Ftst` still on: nobody manages them, so they're handed back.
+    /// Every fan back on Auto but `Ftst` still on: nobody manages them, so they're handed back,
+    /// once it has lasted longer than an unlock's hand-over.
     @Test func unlockLeftOnWithNoManualFanIsHandedBack() {
         var controller = FanController()
-        let stranded = fans(.auto).map { fan -> FanInfo in
+        let stranded = strandedFans()
+        #expect(controller.applyProfile(input(stranded, hottest: 60, at: 0)) == [])
+        #expect(controller.applyProfile(input(stranded, hottest: 60, at: 24)) == [])
+        #expect(controller.applyProfile(input(stranded, hottest: 60, at: 25)) == [.autoAll])
+        // If that hand-back fails, the next one waits again instead of retrying every refresh.
+        #expect(controller.applyProfile(input(stranded, hottest: 60, at: 27)) == [])
+        #expect(controller.applyProfile(input(stranded, hottest: 60, at: 52)) == [.autoAll])
+    }
+
+    /// Another app unlocking the fans reads as stranded until its fans turn manual.
+    @Test func unlockThatTurnsManualIsLeftAlone() {
+        var controller = FanController()
+        #expect(controller.applyProfile(input(strandedFans(), hottest: 60, at: 0)) == [])
+        #expect(controller.applyProfile(input(fans(.manual(3000)), hottest: 60, at: 10)) == [])
+        #expect(controller.applyProfile(input(strandedFans(), hottest: 60, at: 20)) == [])
+        #expect(controller.applyProfile(input(strandedFans(), hottest: 60, at: 44)) == [])
+        #expect(controller.applyProfile(input(strandedFans(), hottest: 60, at: 45)) == [.autoAll])
+    }
+
+    @Test func strandedUnlockWaitsForCallsInFlight() {
+        var controller = FanController()
+        var busy = input(strandedFans(), hottest: 60, at: 0)
+        busy.isIdle = false
+        #expect(controller.applyProfile(busy) == [])
+        // The clock starts once nothing is in flight.
+        #expect(controller.applyProfile(input(strandedFans(), hottest: 60, at: 30)) == [])
+        // One fan still manual is a fan someone set.
+        var mixed = strandedFans()
+        mixed[0].isManual = true
+        #expect(controller.applyProfile(input(mixed, hottest: 60, at: 60)) == [])
+        #expect(controller.applyProfile(input(fans(.auto), hottest: 60, at: 90)) == [])
+    }
+
+    private func strandedFans() -> [FanInfo] {
+        fans(.auto).map { fan in
             var fan = fan
             fan.isControlUnlocked = true
             return fan
         }
-        #expect(controller.applyProfile(input(stranded, hottest: 60)) == [.autoAll])
-        // Not while a call is under way: during the hand-over to manual this is expected.
-        var busy = input(stranded, hottest: 60)
-        busy.isIdle = false
-        #expect(controller.applyProfile(busy) == [])
-        // One fan still manual is a fan someone set.
-        var mixed = stranded
-        mixed[0].isManual = true
-        #expect(controller.applyProfile(input(mixed, hottest: 60)) == [])
-        #expect(controller.applyProfile(input(fans(.auto), hottest: 60)) == [])
+    }
+
+    // MARK: Fan modes and quitting
+
+    @Test func unreadableMaximumIsNotMax() {
+        let fan = FanInfo(id: 0, actual: 0, minimum: 0, maximum: 0, target: 0, isManual: true, isControlUnlocked: true)
+        #expect(fan.mode == .manual)
+    }
+
+    @Test func quittingHandsBackUnlessEveryFanIsMacOSs() {
+        #expect(!HardwareMonitor.needsHandBackOnQuit(fans: fans(.auto), helperRanRecently: false))
+        #expect(HardwareMonitor.needsHandBackOnQuit(fans: fans(.manual(3000)), helperRanRecently: false))
+        #expect(HardwareMonitor.needsHandBackOnQuit(fans: strandedFans(), helperRanRecently: false))
+        // Unreadable fans, or a call whose writes may not have landed, count as not handed back.
+        #expect(HardwareMonitor.needsHandBackOnQuit(fans: nil, helperRanRecently: false))
+        #expect(HardwareMonitor.needsHandBackOnQuit(fans: [], helperRanRecently: false))
+        #expect(HardwareMonitor.needsHandBackOnQuit(fans: fans(.auto), helperRanRecently: true))
     }
 }

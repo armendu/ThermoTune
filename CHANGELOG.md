@@ -4,6 +4,20 @@ Every pull request raises the version (`make bump`) and adds a section here for 
 `development` is merged into `main`, the release takes every section since the last release as
 its notes.
 
+## 0.1.10 (2026-11-05)
+
+* With no profile running, finding the fan unlock on with no fan in manual mode now waits 25
+  seconds before handing the fans back to macOS. Acting at once fought other fan apps while they
+  switched to manual, sent a second hand-back after every one of ThermoTune's own, and retried
+  on every refresh when the hand-back failed.
+* Picking a profile during a full-speed safety trip no longer slows the fans before the Mac has
+  cooled down.
+* A full-speed safety trip ends, handing the fans back, if every temperature stops reading.
+  It used to hold the fans at full speed with nothing left to end it.
+* A helper error from a profile's speed change no longer switches off a profile picked after it.
+* Keyboard shortcuts stay off while one is being recorded, even when another is cleared
+  meanwhile; the recorded keypress used to run its action instead.
+
 ## 0.1.9 (2026-11-05)
 
 * The menu bar panel's Profile row highlights under the pointer like the rows around it. It

@@ -8,6 +8,8 @@ struct FanController {
     /// The limit with the safety net off, and the highest it can be set to.
     static let backstopTemperature: Double = 105
     static let backstopDelay: TimeInterval = 10
+    /// Longer than any unlock takes to hand over: the helper waits up to 20 s for one.
+    static let strandedDelay: TimeInterval = 25
 
     struct SafetyTrip: Equatable {
         let date: Date
@@ -70,6 +72,8 @@ struct FanController {
     /// A failed Max trip still owes a hand-back. Without it, a zero-delay safety
     /// net would trip again first and retry the failing call every refresh.
     private var handBackDue = false
+    /// When `Ftst` was first seen on with no fan manual.
+    private var strandedSince: Date?
 
     /// The safety net runs first so the profile can't undo it, and runs even with
     /// no readings, so a profile that lost its sensors lets go of the fans.
@@ -87,6 +91,8 @@ struct FanController {
         let fans = input.fans
         guard input.helperIsReady, !fans.isEmpty, let hottest = input.temperatures[.hottest] else {
             overLimitSince = nil
+            // Nothing can tell a Max trip it has cooled down, so it ends as if it had.
+            if isOverheating, input.profile == nil { profileHoldsFans = true }
             isOverheating = false
             return nil
         }
@@ -140,12 +146,18 @@ struct FanController {
             smoothing = [:]
             // `Ftst` on with no fan manual is a fan nobody manages. Two quick per-fan Auto
             // switches leave it: the second reads the first fan's mode before its write lands.
+            // Every unlock starts that way too, another app's included, and a hand-back reads
+            // that way until its last write lands, so it has to last first.
             let isStranded = !fans.contains(where: \.isManual) && fans.contains(where: \.isControlUnlocked)
-            guard profileHoldsFans || isStranded else { return [] }
+            strandedSince = isStranded ? strandedSince ?? input.now : nil
+            let strandedTooLong = strandedSince.map { input.now.timeIntervalSince($0) >= Self.strandedDelay } ?? false
+            guard profileHoldsFans || strandedTooLong else { return [] }
             profileHoldsFans = false
             isOverheating = false
+            strandedSince = nil
             return [.autoAll]
         }
+        strandedSince = nil
         let behaviors = fans.map { profile.behavior(forFan: $0.id) }
         profileHoldsFans = behaviors.contains { $0.kind != .automatic }
 
@@ -193,6 +205,7 @@ struct FanController {
         profileHoldsFans = false
         isOverheating = false
         handBackDue = false
+        strandedSince = nil
     }
 
     /// A failed Max trip hands the fans back on the next refresh rather than retrying.
