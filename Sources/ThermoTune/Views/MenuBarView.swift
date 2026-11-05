@@ -174,7 +174,7 @@ struct MenuBarView: View {
             Divider()
 
             if monitor.helperState == .ready {
-                FanCommands()
+                FanCommands(isInPanel: true)
                 Divider()
             }
             Button("Open ThermoTune") {

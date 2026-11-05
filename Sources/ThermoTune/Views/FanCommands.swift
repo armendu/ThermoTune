@@ -3,6 +3,7 @@ import SwiftUI
 /// The Fans menu, also shown in the menu bar item's panel.
 struct FanCommands: View {
     @Environment(HardwareMonitor.self) private var monitor
+    var isInPanel = false
 
     var body: some View {
         Group {
@@ -11,7 +12,7 @@ struct FanCommands: View {
             Button("Hand All Fans to macOS") { monitor.setAllAutomatic() }
                 .disabled(monitor.fansAreSystemControlled)
             Divider()
-            ProfilePicker()
+            if isInPanel { ProfileMenu() } else { ProfilePicker() }
         }
         .disabled(!monitor.canControlFans)
     }
