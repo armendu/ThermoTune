@@ -187,8 +187,10 @@ fan to Auto made it read as manual again and the switch snapped back: there was 
 to stop the fans. Now that fan shows Auto with a "held at minimum" note, and *All Auto* is the
 way out. Never leave `Ftst = 1` with no fan in manual mode. Two quick per-fan Auto switches could:
 the second reads the first fan's mode before its write lands and keeps `Ftst`. So with no profile
-running, `FanController` sends `auto-all` whenever it finds `Ftst` on, no fan manual and nothing
-in flight (the hand-over to manual looks the same, but always has a call in flight).
+running, `FanController` sends `auto-all` once it has found `Ftst` on, no fan manual and nothing
+in flight for 25 seconds. Not straight away: every unlock looks the same for its 5-10 second
+hand-over, another fan app's included, and so does ThermoTune's own hand-back until its last
+write lands. Acting at once fought Macs Fan Control and doubled every hand-back.
 
 **Newer Macs change the fan keys, and none of this has run on one.** From the open-source Stats
 app's SMC code (`exelban/stats`, `SMC/smc.swift`), not from hardware here: M5 Macs have no `Ftst`,
