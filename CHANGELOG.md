@@ -4,6 +4,11 @@ Every pull request raises the version (`make bump`) and adds a section here for 
 `development` is merged into `main`, the release takes every section since the last release as
 its notes.
 
+## 0.1.9 (2026-11-05)
+
+* The menu bar panel's Profile row highlights under the pointer like the rows around it. It
+  opens the list of profiles as a menu, with a checkmark on the active one.
+
 ## 0.1.8 (2026-11-04)
 
 * Fans are handed back to macOS if ThermoTune finds the fan unlock left on with no fan in manual
