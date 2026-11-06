@@ -254,8 +254,9 @@ final class HardwareMonitor {
         applyActiveProfile()
     }
 
+    /// Through the safety net, so picking a profile can't undo a trip.
     private func applyActiveProfile() {
-        perform(controller.applyProfile(controllerInput()))
+        perform(controller.refresh(controllerInput()))
     }
 
     // MARK: Fan control
@@ -319,6 +320,7 @@ final class HardwareMonitor {
             busyFans.insert(id)
             pendingModes[id] = mode
         }
+        let profileID = profiles.activeProfileID
         // One at a time: concurrent unlocks would each wait out the ~10 s hand-over.
         let previous = helperQueue
         let run = Task {
@@ -329,7 +331,8 @@ final class HardwareMonitor {
                 errorMessage = error.localizedDescription
                 for id in ids { pendingModes[id] = nil }
                 controller.helperFailed()
-                profiles.activeProfileID = nil
+                // A profile picked since sends calls of its own.
+                if profiles.activeProfileID == profileID { profiles.activeProfileID = nil }
             }
             for id in ids { busyFans.remove(id) }
             refresh()
@@ -407,11 +410,14 @@ final class HardwareMonitor {
         let helperRanRecently = HelperInstaller.waitForRecentCalls(timeout: 30)
         // Any installed root helper can run `auto-all`, even one out of date.
         guard HelperInstaller.isInstalledAsRoot else { return }
-        // Skipped only when every fan reads as macOS's: fans that can't be read count as not.
-        if !helperRanRecently, let smc = try? SMC() {
-            let fans = smc.fans()
-            if !fans.isEmpty, fans.allSatisfy(\.isSystemControlled) { return }
-        }
+        let fans = helperRanRecently ? nil : (try? SMC())?.fans()
+        guard needsHandBackOnQuit(fans: fans, helperRanRecently: helperRanRecently) else { return }
         try? HelperInstaller.run(["auto-all"])
+    }
+
+    /// Skipped only when every fan reads as macOS's: fans that can't be read count as not.
+    nonisolated static func needsHandBackOnQuit(fans: [FanInfo]?, helperRanRecently: Bool) -> Bool {
+        guard !helperRanRecently, let fans, !fans.isEmpty else { return true }
+        return !fans.allSatisfy(\.isSystemControlled)
     }
 }

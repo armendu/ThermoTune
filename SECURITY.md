@@ -20,6 +20,9 @@ and `FS! ` on Intel Macs).
 Anything beyond that is a vulnerability: writing other SMC keys, writing values outside the
 validated ranges, running code or reading or writing files as root, or affecting anything other
 than fans. So is a way to make the app install something other than its own bundled helper.
+That helper is only as trustworthy as the app bundle it ships in: code already running as you
+can change it before you install, and could as easily fake the password prompt, so that is out
+of scope.
 
 ## Reporting a vulnerability
 

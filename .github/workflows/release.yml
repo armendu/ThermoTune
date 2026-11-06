@@ -86,11 +86,11 @@ jobs:
           GH_TOKEN: ${{ github.token }}
         run: |
           # `gh release create` makes a draft, uploads, then publishes. If GitHub failed in
-          # between (it has, with a 502), finish that draft, at the commit it was made for,
-          # rather than make a second release.
+          # between (it has, with a 502), finish that draft rather than make a second release,
+          # tagged at the commit this DMG was built from.
           if [ "$(gh release view "v$VERSION" --json isDraft --jq .isDraft 2>/dev/null)" = "true" ]; then
             gh release upload "v$VERSION" "build/ThermoTune-$VERSION.dmg" --clobber
-            gh release edit "v$VERSION" --draft=false \
+            gh release edit "v$VERSION" --draft=false --target "$GITHUB_SHA" \
               --title "ThermoTune $VERSION" --notes-file build/release-notes.md
           else
             gh release create "v$VERSION" "build/ThermoTune-$VERSION.dmg" \
