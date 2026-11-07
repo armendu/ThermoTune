@@ -96,8 +96,9 @@ final class HotKeys {
         registerAll()
     }
 
+    /// Not while a row records one: its keypress would run the action instead.
     func registerAll() {
-        guard !RunMode.isReadOnly else { return }
+        guard !RunMode.isReadOnly, recording == nil else { return }
         installHandler()
         unregisterAll()
         failed = []

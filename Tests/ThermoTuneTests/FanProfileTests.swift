@@ -22,6 +22,7 @@ struct FanBehaviorTests {
         #expect(try #require(curve.speedFraction(at: 80)).isApproximately(0.7))
         #expect(curve.speedFraction(at: 120) == 1)
         #expect(curve.speedFraction(at: nil) == nil)
+        #expect(curve.speedFraction(at: .nan) == nil)
     }
 
     @Test func targetIsAFractionOfTheFansOwnRange() {
